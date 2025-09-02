@@ -1,450 +1,290 @@
 import React, { useState } from 'react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { FaChevronDown, FaStore, FaChartBar, FaFilePdf } from 'react-icons/fa';
-import { MdInfoOutline } from 'react-icons/md';
-import { RiCloseFill } from 'react-icons/ri';
-import { BsThreeDots } from 'react-icons/bs';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 
-const statsCards = [
-  { title: 'متوسط حاصل الأرباح', value: '20%', icon: 'bag' },
-  { title: 'حصة التطبيق', value: '70,000 د.ك', icon: 'mobile' },
-  { title: 'حصة التاجر', value: '280,000 د.ك', icon: 'store' },
-  { title: 'إجمالي المبيعات', value: '350,000 د.ك', icon: 'package' },
+// البيانات التجريبية لتقرير الأرباح الشهرية
+const profitsData = [
+    { name: 'يناير', 'إجمالي المبيعات': 30000, 'صافي الأرباح': 25000, 'عمولة التطبيق': 5000 },
+    { name: 'فبراير', 'إجمالي المبيعات': 40000, 'صافي الأرباح': 32000, 'عمولة التطبيق': 8000 },
+    { name: 'مارس', 'إجمالي المبيعات': 25000, 'صافي الأرباح': 20000, 'عمولة التطبيق': 5000 },
+    { name: 'أبريل', 'إجمالي المبيعات': 50000, 'صافي الأرباح': 40000, 'عمولة التطبيق': 10000 },
+    { name: 'مايو', 'إجمالي المبيعات': 60000, 'صافي الأرباح': 48000, 'عمولة التطبيق': 12000 },
+    { name: 'يونيو', 'إجمالي المبيعات': 86000, 'صافي الأرباح': 70000, 'عمولة التطبيق': 16000 },
+    { name: 'يوليو', 'إجمالي المبيعات': 70000, 'صافي الأرباح': 58000, 'عمولة التطبيق': 12000 },
+    { name: 'أغسطس', 'إجمالي المبيعات': 55000, 'صافي الأرباح': 45000, 'عمولة التطبيق': 10000 },
+    { name: 'سبتمبر', 'إجمالي المبيعات': 75000, 'صافي الأرباح': 60000, 'عمولة التطبيق': 15000 },
+    { name: 'أكتوبر', 'إجمالي المبيعات': 65000, 'صافي الأرباح': 52000, 'عمولة التطبيق': 13000 },
+    { name: 'نوفمبر', 'إجمالي المبيعات': 58000, 'صافي الأرباح': 46000, 'عمولة التطبيق': 12000 },
+    { name: 'ديسمبر', 'إجمالي المبيعات': 90000, 'صافي الأرباح': 75000, 'عمولة التطبيق': 15000 },
 ];
 
-const productsData = [
-  { name: 'تيشيرت رجالي', wholesalePrice: '2.500 د.ك', retailPrice: '4.000 د.ك', discount: '0.000 د.ك', difference: '1.500 د.ك', appShare: '0.600 د.ك', merchantShare: '3.400 د.ك', ratio: '15%', category: 'الملابس', seller: 'متجر فيت ستور', referenceBarcode: 'PRD-4589', salesCount: 47, rating: 3.5, netProfit: '159.800 د.ك' },
-  { name: 'بنطال رياضي', wholesalePrice: '4,000 د.ك', retailPrice: '6,500 د.ك', discount: '0.500 د.ك', difference: '2,000 د.ك', appShare: '1,300 د.ك', merchantShare: '5,200 د.ك', ratio: '20%', category: 'الملابس', seller: 'متجر جديد', referenceBarcode: 'PRD-4590', salesCount: 12, rating: 4.0, netProfit: '120.000 د.ك' },
-  { name: 'جاكيت شتوي', wholesalePrice: '12,000 د.ك', retailPrice: '18,000 د.ك', discount: '1,000 د.ك', difference: '5,000 د.ك', appShare: '1,000 د.ك', merchantShare: '4,000 د.ك', ratio: '20%', category: 'ملابس شتوية', seller: 'محل الدفء', referenceBarcode: 'PRD-4591', salesCount: 8, rating: 5.0, netProfit: '150.000 د.ك' },
-  { name: 'حذاء رياضي', wholesalePrice: '25,000 د.ك', retailPrice: '40,000 د.ك', discount: '5,000 د.ك', difference: '10,000 د.ك', appShare: '2,000 د.ك', merchantShare: '8,000 د.ك', ratio: '20%', category: 'أحذية', seller: 'متجر الأحذية', referenceBarcode: 'PRD-4592', salesCount: 25, rating: 4.5, netProfit: '200.000 د.ك' },
-  { name: 'بنطال رياضي', wholesalePrice: '4,000 د.ك', retailPrice: '6,500 د.ك', discount: '0.500 د.ك', difference: '2,000 د.ك', appShare: '1,300 د.ك', merchantShare: '5,200 د.ك', ratio: '20%', category: 'الملابس', seller: 'متجر رياضي', referenceBarcode: 'PRD-4593', salesCount: 30, rating: 4.0, netProfit: '180.000 د.ك' },
-  { name: 'بنطال رياضي', wholesalePrice: '4,000 د.ك', retailPrice: '6,500 د.ك', discount: '0.500 د.ك', difference: '2,000 د.ك', appShare: '1,300 د.ك', merchantShare: '5,200 د.ك', ratio: '20%', category: 'الملابس', seller: 'متجر كلاسيك', referenceBarcode: 'PRD-4594', salesCount: 50, rating: 3.0, netProfit: '220.000 د.ك' },
-  { name: 'بنطال رياضي', wholesalePrice: '4,000 د.ك', retailPrice: '6,500 د.ك', discount: '0.500 د.ك', difference: '2,000 د.ك', appShare: '1,300 د.ك', merchantShare: '5,200 د.ك', ratio: '20%', category: 'الملابس', seller: 'متجر فاشون', referenceBarcode: 'PRD-4595', salesCount: 65, rating: 4.5, netProfit: '250.000 د.ك' },
-  { name: 'بنطال رياضي', wholesalePrice: '4,000 د.ك', retailPrice: '6,500 د.ك', discount: '0.500 د.ك', difference: '2,000 د.ك', appShare: '1,300 د.ك', merchantShare: '5,200 د.ك', ratio: '20%', category: 'الملابس', seller: 'متجر الموضة', referenceBarcode: 'PRD-4596', salesCount: 72, rating: 4.0, netProfit: '300.000 د.ك' },
+// البيانات التجريبية للأرباح اليومية لآخر 30 يوم
+const dailyProfitsData = [
+    { day: '30', 'صافي الربح': 5000 },
+    { day: '29', 'صافي الربح': 22000 },
+    { day: '28', 'صافي الربح': 15000 },
+    { day: '27', 'صافي الربح': 3500 },
+    { day: '26', 'صافي الربح': 18000 },
+    { day: '25', 'صافي الربح': 2000 },
+    { day: '24', 'صافي الربح': 4000 },
+    { day: '23', 'صافي الربح': 8000 },
+    { day: '22', 'صافي الربح': 15000 },
+    { day: '21', 'صافي الربح': 12000 },
+    { day: '20', 'صافي الربح': 20000 },
+    { day: '19', 'صافي الربح': 18000 },
+    { day: '18', 'صافي الربح': 25000 },
+    { day: '17', 'صافي الربح': 10000 },
+    { day: '16', 'صافي الربح': 18000 },
+    { day: '15', 'صافي الربح': 1000 }, // قيمة منخفضة لإظهار تأثير الخط
+    { day: '14', 'صافي الربح': 16000 },
+    { day: '13', 'صافي الربح': 10000 },
+    { day: '12', 'صافي الربح': 14000 },
+    { day: '11', 'صافي الربح': 8000 },
+    { day: '10', 'صافي الربح': 12000 },
+    { day: '9', 'صافي الربح': 10000 },
+    { day: '8', 'صافي الربح': 6000 },
+    { day: '7', 'صافي الربح': 25000 },
+    { day: '6', 'صافي الربح': 10000 },
+    { day: '5', 'صافي الربح': 14000 },
+    { day: '4', 'صافي الربح': 12000 },
+    { day: '3', 'صافي الربح': 18000 },
+    { day: '2', 'صافي الربح': 20000 },
+    { day: '1', 'صافي الربح': 12000 },
 ];
 
-const sharedProfitChartData = [
-  { name: 'يناير', appShare: 7500, merchantShare: 14000 },
-  { name: 'فبراير', appShare: 6000, merchantShare: 10000 },
-  { name: 'مارس', appShare: 8500, merchantShare: 13000 },
-  { name: 'أبريل', appShare: 9200, merchantShare: 12500 },
-  { name: 'مايو', appShare: 9200, merchantShare: 15000 },
-  { name: 'يونيو', appShare: 8000, merchantShare: 12000 },
-  { name: 'يوليو', appShare: 9000, merchantShare: 18000 },
-  { name: 'اغسطس', appShare: 10000, merchantShare: 15000 },
-];
-
-const profitGrowthChartData = [
-  { name: 'يناير', appProfit: 1050, merchantProfit: 1750 },
-  { name: 'فبراير', appProfit: 1100, merchantProfit: 1800 },
-  { name: 'مارس', appProfit: 950, merchantProfit: 1500 },
-  { name: 'أبريل', appProfit: 800, merchantProfit: 1200 },
-  { name: 'مايو', appProfit: 700, merchantProfit: 1050 },
-  { name: 'يونيو', appProfit: 650, merchantProfit: 900 },
-  { name: 'يوليو', appProfit: 750, merchantProfit: 1000 },
-  { name: 'أغسطس', appProfit: 800, merchantProfit: 1300 },
-  { name: 'سبتمبر', appProfit: 920, merchantProfit: 1400 },
-  { name: 'أكتوبر', appProfit: 850, merchantProfit: 1100 },
-  { name: 'نوفمبر', appProfit: 900, merchantProfit: 1200 },
-  { name: 'ديسمبر', appProfit: 1000, merchantProfit: 1500 },
-];
-
-const CustomSharedTooltip = ({ active, payload, label }) => {
-  if (active && payload && payload.length) {
-    const merchantValue = payload.find(p => p.dataKey === 'merchantShare').value;
-    const appValue = payload.find(p => p.dataKey === 'appShare').value;
-
-    return (
-      <div className="bg-gray-800 text-white p-3 rounded-md text-right border border-white font-sans">
-        <p className="font-bold text-sm">{label}</p>
-        <p className="text-sm">
-          <span style={{ color: '#EF4444' }}>●</span> {`التاجر: ${merchantValue.toLocaleString()} د.ك +1.8% مقارنة قياس`}
-        </p>
-        <p className="text-sm">
-          <span style={{ color: '#22C55E' }}>●</span> {`التطبيق: ${appValue.toLocaleString()} د.ك +2.2% مقارنة قياس`}
-        </p>
-      </div>
-    );
-  }
-  return null;
-};
-
-const CustomProfitTooltip = ({ active, payload, label }) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-gray-800 text-white p-3 rounded-md text-center border border-white font-sans">
-        <p className="font-bold text-sm">{`القيمة: ${payload[0].value.toLocaleString()}K`}</p>
-      </div>
-    );
-  }
-  return null;
-};
-
-const ChartContainer = ({ title, data, chartType }) => {
-  const [timeframe, setTimeframe] = useState('شهر');
-
-  const getProfitYAxisTicks = () => {
-    return [50, 100, 250, 650, 800, 1000, 5000];
-  };
-
-  const getSharedYAxisTicks = () => {
-    return [0, 5000, 10000, 15000, 20000];
-  };
-
-  const yAxisTickFormatter = (value) => {
-    if (chartType === 'sharedProfit') {
-      return value.toLocaleString();
+// Custom Tooltip for Line Chart
+const CustomLineTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-gray-800 text-white p-3 rounded-lg text-right text-sm shadow-lg custom-tooltip">
+                <p className="font-bold mb-1">{label}</p>
+                {payload.map((entry, index) => (
+                    <p key={`item-${index}`} style={{ color: entry.color }}>
+                        {entry.name}: {entry.value.toLocaleString()} د.ك
+                    </p>
+                ))}
+            </div>
+        );
     }
+    return null;
+};
 
-    if (value >= 1000) {
-      return `${(value / 1000)}m`;
+// Custom Tooltip for Bar Chart
+const CustomBarTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-gray-800 text-white p-3 rounded-lg text-right text-sm shadow-lg custom-tooltip">
+                <p className="font-bold mb-1">يوم {label}</p>
+                <p style={{ color: payload[0].color }}>
+                    {payload[0].name}: {payload[0].value.toLocaleString()} د.ك
+                </p>
+            </div>
+        );
     }
-    return `${value}k`;
-  };
-
-  return (
-    <div className="bg-white p-6 rounded-lg shadow-md flex flex-col h-full">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-bold text-gray-800">{title}</h3>
-        <div className="flex items-center space-x-2 rtl:space-x-reverse">
-          <button className={`px-3 py-1 text-sm rounded-full ${timeframe === 'يوم' ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-700'}`} onClick={() => setTimeframe('يوم')}>يوم</button>
-          <button className={`px-3 py-1 text-sm rounded-full ${timeframe === 'أسبوع' ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-700'}`} onClick={() => setTimeframe('أسبوع')}>أسبوع</button>
-          <button className={`px-3 py-1 text-sm rounded-full ${timeframe === 'شهر' ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-700'}`} onClick={() => setTimeframe('شهر')}>شهر</button>
-        </div>
-      </div>
-      <div className="flex-grow h-80" style={{ direction: 'ltr' }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-            <XAxis dataKey="name" reversed={true} axisLine={false} tickLine={false} style={{ direction: 'rtl', fontFamily: 'Cairo' }} />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              ticks={chartType === 'sharedProfit' ? getSharedYAxisTicks() : getProfitYAxisTicks()}
-              tickFormatter={yAxisTickFormatter}
-              tick={{ fill: '#6B7280' }}
-            />
-            {chartType === 'sharedProfit' ? (
-              <>
-                <defs>
-                  <linearGradient id="colorApp" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22C55E" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#22C55E" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorMerchant" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#EF4444" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <Area type="monotone" dataKey="appShare" stroke="#22C55E" strokeWidth={2} fillOpacity={1} fill="url(#colorApp)" dot={false} />
-                <Area type="monotone" dataKey="merchantShare" stroke="#EF4444" strokeWidth={2} fillOpacity={1} fill="url(#colorMerchant)" dot={false} />
-                <Tooltip content={<CustomSharedTooltip />} />
-                <Legend
-                  verticalAlign="bottom"
-                  align="center"
-                  height={36}
-                  iconType="circle"
-                  wrapperStyle={{ direction: 'rtl', marginTop: '20px' }}
-                  payload={[
-                    { value: 'حصة التطبيق', type: 'circle', id: 'appShare', color: '#22C55E' },
-                    { value: 'حصة التاجر', type: 'circle', id: 'merchantShare', color: '#EF4444' }
-                  ]}
-                />
-              </>
-            ) : (
-              <>
-                <defs>
-                  <linearGradient id="colorApp" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#EF4444" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="colorMerchant" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#F97316" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#F97316" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <Area type="monotone" dataKey="appProfit" stroke="#EF4444" strokeWidth={2} fillOpacity={1} fill="url(#colorApp)" dot={false} />
-                <Area type="monotone" dataKey="merchantProfit" stroke="#F97316" strokeWidth={2} fillOpacity={1} fill="url(#colorMerchant)" dot={false} />
-                <Tooltip content={<CustomProfitTooltip />} />
-              </>
-            )}
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
+    return null;
 };
 
-const StatCard = ({ title, value, icon }) => {
-  const icons = {
-    'bag': <div className="bg-gray-100 p-3 rounded-xl"><FaChartBar className="text-red-500 text-2xl" /></div>,
-    'mobile': <div className="bg-gray-100 p-3 rounded-xl"><FaStore className="text-red-500 text-2xl" /></div>,
-    'store': <div className="bg-gray-100 p-3 rounded-xl"><FaChartBar className="text-red-500 text-2xl" /></div>,
-    'package': <div className="bg-gray-100 p-3 rounded-xl"><FaStore className="text-red-500 text-2xl" /></div>,
-  };
+const ReportsPage = () => {
+    return (
+        <div className="rtl:text-right font-sans bg-gray-100 min-h-screen p-6">
+            <div className="container mx-auto">
+                {/* قسم البطاقات الإحصائية */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-500 mb-1">إجمالي المبيعات</p>
+                            <h3 className="text-3xl font-bold">240.00 د.ك</h3>
+                            <span className="text-xs text-green-500 flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8L11 17" />
+                                </svg>
+                                8% عن الفترة السابقة
+                            </span>
+                        </div>
+                        <div className="bg-gray-100 p-3 rounded-full text-red-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-500 mb-1">إجمالي الطلبات</p>
+                            <h3 className="text-3xl font-bold">4,753</h3>
+                            <span className="text-xs text-red-500 flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8L11 7" />
+                                </svg>
+                                2% عن الفترة السابقة
+                            </span>
+                        </div>
+                        <div className="bg-gray-100 p-3 rounded-full text-blue-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M17 16l-4-4-4 4" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-500 mb-1">صافي أرباحك</p>
+                            <h3 className="text-3xl font-bold">180.00 د.ك</h3>
+                            <span className="text-xs text-green-500 flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8L11 17" />
+                                </svg>
+                                8% عن الفترة السابقة
+                            </span>
+                        </div>
+                        <div className="bg-gray-100 p-3 rounded-full text-green-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 14V9m0 0H7m2 0h2m0 0h2m-2 0V9m0 0h2m0 0h2m0 0V9M12 2a10 10 0 100 20 10 10 0 000-20z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-500 mb-1">عمولة تطبيق (25%)</p>
+                            <h3 className="text-3xl font-bold">40.000 د.ك</h3>
+                            <span className="text-xs text-green-500 flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8L11 17" />
+                                </svg>
+                                8% عن الفترة السابقة
+                            </span>
+                        </div>
+                        <div className="bg-gray-100 p-3 rounded-full text-purple-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
 
-  return (
-    <div className="bg-white rounded-xl shadow-md p-4 flex items-center justify-between text-right">
-      <div className="flex flex-col">
-        <span className="text-gray-400 text-xs mb-1">{title}</span>
-        <p className="text-xl font-bold mb-1">{value}</p>
-        <span className="text-xs text-green-500 flex items-center">
-          <FaChevronDown className="transform rotate-180 text-green-500 ml-1" />
-          8%
-          <span className="text-gray-400 mr-1">عن الفترة السابقة</span>
-        </span>
-      </div>
-      {icons[icon]}
-    </div>
-  );
+                {/* تقرير الأرباح (AreaChart) */}
+                <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-bold">تقرير الأرباح</h2>
+                        <div className="flex space-x-2">
+                            <button className="flex items-center bg-gray-100 text-gray-700 font-semibold py-2 px-4 rounded-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                تصدير
+                            </button>
+                            <div className="relative">
+                                <select className="block appearance-none w-full bg-gray-100 border border-gray-200 text-gray-700 py-2 px-4 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-gray-500">
+                                    <option>شهري</option>
+                                    <option>سنوي</option>
+                                </select>
+                                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center px-2 text-gray-700">
+                                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828l-4.243-4.242L4.343 8z"/></svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style={{ width: '100%', height: 300 }}>
+                        <ResponsiveContainer>
+                            <AreaChart data={profitsData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                <defs>
+                                    <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#FF6B6B" stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor="#FF6B6B" stopOpacity={0} />
+                                    </linearGradient>
+                                    <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#5EC3B0" stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor="#5EC3B0" stopOpacity={0} />
+                                    </linearGradient>
+                                    <linearGradient id="colorCommission" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#A0D8D8" stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor="#A0D8D8" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e0e0e0" />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                                <YAxis orientation="right" axisLine={false} tickLine={false} tickFormatter={(value) => `${value / 1000}k`} />
+                                <Tooltip content={<CustomLineTooltip />} />
+                                <Area
+                                    type="monotone"
+                                    dataKey="إجمالي المبيعات"
+                                    stroke="#FF6B6B"
+                                    fillOpacity={1}
+                                    fill="url(#colorSales)"
+                                    name="إجمالي المبيعات"
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="صافي الأرباح"
+                                    stroke="#5EC3B0"
+                                    fillOpacity={1}
+                                    fill="url(#colorProfit)"
+                                    name="صافي الأرباح"
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="عمولة التطبيق"
+                                    stroke="#A0D8D8"
+                                    fillOpacity={1}
+                                    fill="url(#colorCommission)"
+                                    name="عمولة التطبيق"
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* الأرباح اليومية - آخر 30 يوم (Bar Chart) */}
+                <div className="bg-white p-6 rounded-lg shadow-md mb-6">
+                    <h2 className="text-xl font-bold mb-4">الأرباح اليومية - آخر 30 يوم</h2>
+                    <div style={{ width: '100%', height: 300 }}>
+                        <ResponsiveContainer>
+                            <BarChart data={dailyProfitsData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e0e0e0" />
+                                <XAxis dataKey="day" axisLine={false} tickLine={false} />
+                                <YAxis orientation="right" axisLine={false} tickLine={false} tickFormatter={(value) => `${value / 1000}k`} />
+                                <Tooltip content={<CustomBarTooltip />} />
+                                <Bar dataKey="صافي الربح" fill="#FCA56E" name="صافي الربح" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* معلومات العمولة والتحويل */}
+                <div className="mb-6">
+                    <h2 className="text-xl font-bold mb-4">معلومات العمولة والتحويل</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="bg-white p-6 rounded-lg shadow-md text-center">
+                            <h3 className="text-2xl font-bold mb-2">5,000 د.ك</h3>
+                            <p className="text-sm text-gray-500">الحد الأدنى للتحويل والحسب</p>
+                        </div>
+                        <div className="bg-blue-50 p-6 rounded-lg shadow-md text-center">
+                            <h3 className="text-2xl font-bold mb-2">مجانية</h3>
+                            <p className="text-sm text-gray-500">رسوم التحويل</p>
+                        </div>
+                        <div className="bg-green-50 p-6 rounded-lg shadow-md text-center">
+                            <h3 className="text-2xl font-bold mb-2">كل 15 يوم</h3>
+                            <p className="text-sm text-gray-500">موعد التحويل</p>
+                        </div>
+                        <div className="bg-red-50 p-6 rounded-lg shadow-md text-center">
+                            <h3 className="text-2xl font-bold mb-2">25%</h3>
+                            <p className="text-sm text-gray-500">نسبة العمولة من كل عملية بيع</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* معلومة مهمة */}
+                <div className="bg-blue-50 p-4 rounded-lg flex items-start space-x-3 rtl:space-x-reverse">
+                    <div className="flex-shrink-0 text-blue-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <p className="text-sm text-blue-700">
+                        <span className="font-bold">معلومة مهمة</span><br />
+                        يتم خصم عمولة التطبيق فقط عند إتمام الطلب بنجاح في حالة إلغاء الطلب، لا يتم خصم أي عمولة. مستحقاتك المتراكمة سيتم تحويلها إلى حسابك البنكي المسجل كل 15 من الشهر تلقائيًا.
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
 };
 
-const Th = ({ children, className = '' }) => (
-  <th className={`p-3 font-semibold text-gray-500 ${className}`}>{children}</th>
-);
-
-const Td = ({ children }) => (
-  <td className="p-3 text-xs text-gray-700">{children}</td>
-);
-
-const ProductModal = ({ product, onClose }) => {
-  if (!product) return null;
-  const ratingStars = product.rating ? Math.floor(product.rating) : 0;
-  const hasHalfStar = product.rating ? product.rating % 1 !== 0 : false;
-
-  return (
-    <div className="fixed inset-0 z-50 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4" dir="rtl">
-      <div className="bg-white p-4 rounded-lg shadow-xl max-w-sm w-full">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold">تفاصيل المنتج</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-            <RiCloseFill size={24} />
-          </button>
-        </div>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between items-center pb-1">
-            <span className="font-semibold text-gray-500">اسم المنتج</span>
-            <span className="font-medium text-gray-800">{product.name}</span>
-          </div>
-          <div className="flex justify-between items-center pb-1">
-            <span className="font-semibold text-gray-500">التصنيف</span>
-            <span className="font-medium text-gray-800">{product.category}</span>
-          </div>
-          <div className="flex justify-between items-center pb-1">
-            <span className="font-semibold text-gray-500">التاجر</span>
-            <span className="font-medium text-gray-800">{product.seller}</span>
-          </div>
-          <div className="flex justify-between items-center pb-1">
-            <span className="font-semibold text-gray-500">الكود المرجعي</span>
-            <span className="font-medium text-gray-800">{product.referenceBarcode}</span>
-          </div>
-          <div className="flex justify-between items-center pb-1">
-            <span className="font-semibold text-gray-500">عدد المرات المباعة</span>
-            <span className="font-medium text-gray-800">{product.salesCount} عملية</span>
-          </div>
-          <div className="flex justify-between items-center pb-1">
-            <span className="font-semibold text-gray-500">تقييم الزبائن</span>
-            <span className="font-medium text-yellow-500 flex">
-              {[...Array(ratingStars)].map((_, i) => <span key={`star-${i}`} className="text-lg">&#9733;</span>)}
-              {hasHalfStar && <span className="text-lg">&#9734;</span>}
-            </span>
-          </div>
-          <div className="flex justify-between items-center pb-1">
-            <span className="font-semibold text-gray-500">سعر الجملة</span>
-            <span className="font-medium text-gray-800">{product.wholesalePrice}</span>
-          </div>
-          <div className="flex justify-between items-center pb-1">
-            <span className="font-semibold text-gray-500">سعر البيع المفرد</span>
-            <span className="font-medium text-gray-800">{product.retailPrice}</span>
-          </div>
-          <div className="flex justify-between items-center pb-1">
-            <span className="font-semibold text-gray-500">الخصم</span>
-            <span className="font-medium text-gray-800">{product.discount}</span>
-          </div>
-          <div className="flex justify-between items-center pb-1">
-            <span className="font-semibold text-gray-500">الفرق</span>
-            <span className="font-medium text-gray-800">{product.difference}</span>
-          </div>
-          <div className="flex justify-between items-center pb-1">
-            <span className="font-semibold text-gray-500">نسبة حصة التطبيق</span>
-            <span className="font-medium text-gray-800">{product.ratio}</span>
-          </div>
-          <div className="flex justify-between items-center pb-1">
-            <span className="font-semibold text-gray-500">حصة التطبيق</span>
-            <span className="font-medium text-gray-800">{product.appShare}</span>
-          </div>
-          <div className="flex justify-between items-center pb-1">
-            <span className="font-semibold text-gray-500">حصة التاجر</span>
-            <span className="font-medium text-gray-800">{product.merchantShare}</span>
-          </div>
-          <div className="flex justify-between items-center pb-1">
-            <span className="font-semibold text-gray-500">صافي ربح التاجر</span>
-            <span className="font-medium text-gray-800">{product.netProfit}</span>
-          </div>
-        </div>
-        <div className="mt-4">
-          <button className="w-full bg-red-500 text-white font-bold py-2 rounded-lg hover:bg-red-600 transition">تعديل</button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const MoreOptionsModal = ({ onClose, onShowDetails, onDownloadReport }) => {
-  return (
-    <div className="absolute top-8 right-0 bg-white p-2 rounded-lg shadow-lg border border-gray-200 z-10" dir="rtl">
-      <ul className="text-sm text-gray-700">
-        <li className="flex items-center p-2 hover:bg-gray-100 rounded-md cursor-pointer" onClick={onShowDetails}>
-          <span className="ml-2"><MdInfoOutline size={18} /></span>
-          عرض التفاصيل
-        </li>
-        <li className="flex items-center p-2 hover:bg-gray-100 rounded-md cursor-pointer" onClick={onDownloadReport}>
-          <span className="ml-2"><FaFilePdf size={18} /></span>
-          تحميل التقرير
-        </li>
-        <li className="flex items-center p-2 text-red-500 hover:bg-gray-100 rounded-md cursor-pointer" onClick={onClose}>
-          <span className="ml-2"><RiCloseFill size={18} /></span>
-          اغلاق
-        </li>
-      </ul>
-    </div>
-  );
-};
-
-const ExportReportModal = ({ onClose }) => {
-  return (
-    <div className="fixed inset-0 z-50 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4" dir="rtl">
-      <div className="bg-white p-4 rounded-lg shadow-xl max-w-xs w-full">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold">تصدير التقرير</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-            <RiCloseFill size={24} />
-          </button>
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm font-semibold text-gray-500 mb-2">نوع التقرير</label>
-          <div className="relative">
-            <select className="block w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500">
-              <option>pdf</option>
-              <option>excel</option>
-            </select>
-          </div>
-        </div>
-        <div className="flex justify-between items-center">
-          <button onClick={onClose} className="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition">الغاء</button>
-          <button className="bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600 transition">تصدير التقرير</button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const ProductTable = () => {
-  const [activeProduct, setActiveProduct] = useState(null);
-  const [showMoreMenu, setShowMoreMenu] = useState(null);
-  const [showExportModal, setShowExportModal] = useState(false);
-
-  const handleMoreClick = (product, index) => {
-    setActiveProduct(product);
-    setShowMoreMenu(showMoreMenu === index ? null : index);
-  };
-
-  const handleShowDetails = () => {
-    setShowMoreMenu(null);
-  };
-
-  const handleDownloadReport = () => {
-    setShowMoreMenu(null);
-    setShowExportModal(true);
-  };
-
-  return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
-      <h3 className="text-lg font-bold text-gray-800 mb-4">كل المنتجات</h3>
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50 text-right">
-            <tr>
-              <Th>المنتج</Th>
-              <Th>سعر الجملة</Th>
-              <Th>سعر المفرد</Th>
-              <Th>الخصم</Th>
-              <Th>الفرق</Th>
-              <Th>حصة التطبيق</Th>
-              <Th>حصة التاجر</Th>
-              <Th>النسبة للتجار</Th>
-              <Th>الإجراءات</Th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200 text-right">
-            {productsData.map((product, index) => (
-              <tr key={index}>
-                <Td>{product.name}</Td>
-                <Td>{product.wholesalePrice}</Td>
-                <Td>{product.retailPrice}</Td>
-                <Td>{product.discount}</Td>
-                <Td>{product.difference}</Td>
-                <Td>{product.appShare}</Td>
-                <Td>{product.merchantShare}</Td>
-                <Td>{product.ratio}</Td>
-                <Td>
-                  <div className="relative">
-                    <button className="text-gray-500 hover:text-gray-700" onClick={() => handleMoreClick(product, index)}>
-                      <BsThreeDots className="text-xl" />
-                    </button>
-                    {showMoreMenu === index && (
-                      <MoreOptionsModal
-                        onClose={() => setShowMoreMenu(null)}
-                        onShowDetails={handleShowDetails}
-                        onDownloadReport={handleDownloadReport}
-                      />
-                    )}
-                  </div>
-                </Td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="mt-4 flex justify-between items-center text-sm">
-        <span className="text-gray-700">إجمالي المنتجات: 8764</span>
-        <div className="flex items-center space-x-2 rtl:space-x-reverse">
-          <span className="text-gray-500">أعرض في الصفحة 5</span>
-          <div className="flex space-x-1 rtl:space-x-reverse">
-            {[1, 2, 3, 4, 5].map(page => (
-              <button
-                key={page}
-                className={`px-3 py-1 rounded-md text-sm ${page === 1 ? 'bg-red-500 text-white' : 'bg-white text-gray-700 border'}`}
-              >
-                {page}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-      {activeProduct && !showMoreMenu && (
-        <ProductModal product={activeProduct} onClose={() => setActiveProduct(null)} />
-      )}
-      {showExportModal && <ExportReportModal onClose={() => setShowExportModal(false)} />}
-    </div>
-  );
-};
-
-const Dashboard = () => {
-  return (
-    <div dir="rtl" className="p-6 bg-gray-50 min-h-screen font-sans">
-      <h1 className="text-2xl font-bold text-gray-800 mb-6">لوحة التحكم</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        {statsCards.map((card, index) => (
-          <StatCard key={index} {...card} />
-        ))}
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <ChartContainer title="مقارنة حصة التطبيق والتاجر" data={sharedProfitChartData} chartType="sharedProfit" />
-        <ChartContainer title="تطور أرباح التطبيق" data={profitGrowthChartData} chartType="profitGrowth" />
-      </div>
-      <ProductTable />
-    </div>
-  );
-};
-
-export default Dashboard;
+export default ReportsPage;

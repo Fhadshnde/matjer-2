@@ -1,422 +1,303 @@
-import React, { useState } from 'react';
-import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import React from 'react';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from 'recharts';
 
-const barChartData = [
-  { name: 'الأسبوع الرابع', value: 8322, color: '#000000', details: 'تم الشحن' },
-  { name: 'الأسبوع الثالث', value: 7432, color: '#00C853', details: 'قيد المتابعة' },
-  { name: 'الأسبوع الثاني', value: 6754, color: '#FFD600', details: 'تم التوصيل' },
-  { name: 'الأسبوع الأول', value: 743, color: '#E53935', details: 'ملغي' },
+const monthlySalesData = [
+  { name: 'يناير', uv: 50000, uv2: 80000 },
+  { name: 'فبراير', uv: 100000, uv2: 120000 },
+  { name: 'مارس', uv: 250000, uv2: 200000 },
+  { name: 'أبريل', uv: 680000, uv2: 500000 },
+  { name: 'مايو', uv: 200000, uv2: 300000 },
+  { name: 'يونيو', uv: 850000, uv2: 700000 },
+  { name: 'يوليو', uv: 200000, uv2: 400000 },
+  { name: 'أغسطس', uv: 350000, uv2: 250000 },
+  { name: 'سبتمبر', uv: 200000, uv2: 380000 },
+  { name: 'أكتوبر', uv: 600000, uv2: 550000 },
+  { name: 'نوفمبر', uv: 300000, uv2: 280000 },
+  { name: 'ديسمبر', uv: 150000, uv2: 180000 },
 ];
 
-const areaChartData = [
-  { name: 'يناير', value: 50000 },
-  { name: 'فبراير', value: 65000 },
-  { name: 'مارس', value: 80000 },
-  { name: 'أبريل', value: 68000 },
-  { name: 'مايو', value: 100000 },
-  { name: 'يونيو', value: 90000 },
-  { name: 'يوليو', value: 110000 },
-  { name: 'أغسطس', value: 150000 },
-  { name: 'سبتمبر', value: 120000 },
-  { name: 'أكتوبر', value: 170000 },
-  { name: 'نوفمبر', value: 190000 },
-  { name: 'ديسمبر', value: 250000 },
+const weeklyOrdersData = [
+  { name: 'الأسبوع الرابع', total: 35000 },
+  { name: 'الأسبوع الثالث', total: 23500 },
+  { name: 'الأسبوع الثاني', total: 23251 },
+  { name: 'الأسبوع الأول', total: 23251 },
 ];
 
-const productsData = [
-  { merchant: 'أتلانتا', stock: 45, sales: '1,70', conversion: '8.6%', addition: '2,45', visits: '12,56', product: 'هاتف ذكي A15 128GB' },
-  { merchant: 'أتلانتا', stock: 45, sales: '1,70', conversion: '8.6%', addition: '2,45', visits: '12,56', product: 'هاتف ذكي A15 128GB' },
-  { merchant: 'أتلانتا', stock: 45, sales: '1,70', conversion: '8.6%', addition: '2,45', visits: '12,56', product: 'هاتف ذكي A15 128GB' },
-  { merchant: 'أتلانتا', stock: 45, sales: '1,70', conversion: '8.6%', addition: '2,45', visits: '12,56', product: 'هاتف ذكي A15 128GB' },
-  { merchant: 'أتلانتا', stock: 45, sales: '1,70', conversion: '8.6%', addition: '2,45', visits: '12,56', product: 'هاتف ذكي A15 128GB' },
+const popularProducts = [
+  {
+    name: 'هاتف ذكي 128GB A15',
+    visits: '١٢،٠٥٠',
+    addToCart: '٠،٢٤٠',
+    conversion: '8.6%',
+    sales: '١،٠٧٠',
+    stock: 45,
+    img: 'https://via.placeholder.com/30'
+  },
+  {
+    name: 'هاتف ذكي 128GB A15',
+    visits: '١٢،٠٥٠',
+    addToCart: '٠،٢٤٠',
+    conversion: '8.6%',
+    sales: '١،٠٧٠',
+    stock: 45,
+    img: 'https://via.placeholder.com/30'
+  },
+  {
+    name: 'هاتف ذكي 128GB A15',
+    visits: '١٢،٠٥٠',
+    addToCart: '٠،٢٤٠',
+    conversion: '8.6%',
+    sales: '١،٠٧٠',
+    stock: 45,
+    img: 'https://via.placeholder.com/30'
+  },
+  {
+    name: 'هاتف ذكي 128GB A15',
+    visits: '١٢،٠٥٠',
+    addToCart: '٠،٢٤٠',
+    conversion: '8.6%',
+    sales: '١،٠٧٠',
+    stock: 45,
+    img: 'https://via.placeholder.com/30'
+  },
+  {
+    name: 'هاتف ذكي 128GB A15',
+    visits: '١٢،٠٥٠',
+    addToCart: '٠،٢٤٠',
+    conversion: '8.6%',
+    sales: '١،٠٧٠',
+    stock: 45,
+    img: 'https://via.placeholder.com/30'
+  },
 ];
 
-const ordersNeedingAttention = [
-  { id: '#A-10254', status: 'متأخر عن ETA', customer: 'محمد الفاضلي', store: 'متجر النور', rating: 5 },
-  { id: '#A-10254', status: 'متأخر عن ETA', customer: 'محمد الفاضلي', store: 'متجر النور', rating: 5 },
-  { id: '#A-10254', status: 'متأخر عن ETA', customer: 'محمد الفاضلي', store: 'متجر النور', rating: 5 },
-  { id: '#A-10254', status: 'متأخر عن ETA', customer: 'محمد الفاضلي', store: 'متجر النور', rating: 5 },
-];
+const barColors = ['#E41B26', '#30B538', '#FFC107', '#000000'];
 
-const App = () => {
-  const [activeTab, setActiveTab] = useState('شهري');
+const TotalOrdersTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    const totalOrders = payload[0].value.toLocaleString();
+    return (
+      <div className="bg-white p-4 shadow-lg rounded-xl text-center font-sans text-sm">
+        <p className="font-bold mb-2" style={{ direction: 'rtl' }}>{label}</p>
+        <p style={{ direction: 'rtl' }}>إجمالي الطلبات: <span className="font-bold">{totalOrders}</span></p>
+      </div>
+    );
+  }
+  return null;
+};
 
+const SalesChartTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    const uvValue = payload[0].value.toLocaleString();
+    const uv2Value = payload[1]?.value.toLocaleString();
+    return (
+      <div className="bg-black text-white px-3 py-2 rounded-xl text-center font-sans text-sm" style={{ direction: 'rtl' }}>
+        <p className="font-bold">القيمة: {uvValue}k</p>
+        {uv2Value && <p className="font-bold">القيمة 2: {uv2Value}k</p>}
+      </div>
+    );
+  }
+  return null;
+};
+
+const Card = ({ title, value, change, isPositive, icon: Icon }) => (
+  <div className="bg-white rounded-2xl shadow-md p-6 flex items-center space-x-4">
+    <div className="flex-shrink-0 bg-gray-100 p-4 rounded-xl">
+      {Icon}
+    </div>
+    <div className="flex-grow text-right">
+      <div className="text-sm text-gray-500">{title}</div>
+      <div className="text-2xl font-bold mt-1" style={{ direction: 'rtl' }}>{value}</div>
+      <div className={`text-sm mt-1 ${isPositive ? 'text-green-500' : 'text-red-500'}`} style={{ direction: 'rtl' }}>
+        {isPositive ? '🔺' : '🔻'} {change} عن الفترة السابقة
+      </div>
+    </div>
+  </div>
+);
+
+function App() {
   return (
-    <div dir="rtl" className="min-h-screen bg-gray-50 text-gray-900 p-6">
-      <div className="max-w-7xl mx-auto">
-        
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {/* أرباح التطبيق */}
-          <div className="bg-white rounded-lg p-6 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div className="text-right">
-                <p className="text-sm text-gray-500 mb-1">أرباح التطبيق</p>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">د.ك 245,000,00</h3>
-                <div className="flex items-center text-green-500 text-sm">
-                  <span className="mr-1">↗</span>
-                  <span>+5% عن الفترة السابقة</span>
-                </div>
-              </div>
-              <div className="bg-gray-900 p-3 rounded-lg">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                </svg>
-              </div>
+    <div className="min-h-screen bg-gray-100 p-8 font-sans">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8" style={{ direction: 'rtl' }}>
+        <Card
+          title="متوسط الطلب"
+          value="156 د.ك"
+          change="6%"
+          isPositive={false}
+          icon={
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-clock"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          }
+        />
+        <Card
+          title="عدد الزبائن"
+          value="764 د.ك"
+          change="5%"
+          isPositive={true}
+          icon={
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-users"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          }
+        />
+        <Card
+          title="المبيعات الشهرية"
+          value="8,500,00 د.ك"
+          change="9%"
+          isPositive={true}
+          icon={
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-line-chart"><path d="M3 3v18h18"/><path d="m18 10-6 6-4-4L2 15"/></svg>
+          }
+        />
+        <Card
+          title="إجمالي الطلبات"
+          value="1,234"
+          change="2%"
+          isPositive={true}
+          icon={
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-calendar-days"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+          }
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8" style={{ direction: 'rtl' }}>
+        <div className="bg-white rounded-2xl shadow-md p-6 text-right">
+          <h2 className="text-xl font-bold mb-4">حالة طلبات هذا الشهر</h2>
+          <div className="flex justify-start items-center mb-4">
+            <div className="flex flex-row-reverse space-x-2 space-x-reverse">
+              <span className="text-sm font-semibold text-black">المبيعات</span>
             </div>
           </div>
-
-          {/* التجار المسجلون */}
-          <div className="bg-white rounded-lg p-6 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div className="text-right">
-                <p className="text-sm text-gray-500 mb-1">التجار المسجلون</p>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">37</h3>
-                <div className="flex items-center text-green-500 text-sm">
-                  <span className="mr-1">↗</span>
-                  <span>+2% عن الفترة السابقة</span>
-                </div>
-              </div>
-              <div className="bg-gray-900 p-3 rounded-lg">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-              </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={weeklyOrdersData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <XAxis dataKey="name" axisLine={false} tickLine={false} />
+              <YAxis type="number" orientation="right" axisLine={false} tickLine={false} />
+              <Tooltip cursor={{ fill: 'transparent' }} content={<TotalOrdersTooltip />} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <Bar dataKey="total" barSize={50}>
+                {
+                  weeklyOrdersData.map((entry, index) => (
+                    <Bar key={`bar-${index}`} fill={barColors[index % barColors.length]} />
+                  ))
+                }
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="bg-white rounded-2xl shadow-md p-6 text-right">
+          <h2 className="text-xl font-bold mb-4">المبيعات</h2>
+          <div className="flex justify-start items-center mb-4">
+            <div className="flex space-x-2" dir="rtl">
+              <button className="px-4 py-1 rounded-full text-sm font-semibold bg-red-500 text-white">شهر</button>
+              <button className="px-4 py-1 rounded-full text-sm font-semibold text-gray-500">أسبوع</button>
+              <button className="px-4 py-1 rounded-full text-sm font-semibold text-gray-500">يوم</button>
             </div>
           </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={monthlySalesData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="colorUv2" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="name" axisLine={false} tickLine={false} />
+              <YAxis orientation="right" axisLine={false} tickLine={false} />
+              <Tooltip content={<SalesChartTooltip />} />
+              <Area type="monotone" dataKey="uv" stroke="#ef4444" fillOpacity={1} fill="url(#colorUv)" />
+              <Area type="monotone" dataKey="uv2" stroke="#3b82f6" fillOpacity={1} fill="url(#colorUv2)" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
 
-          {/* إجمالي المبيعات */}
-          <div className="bg-white rounded-lg p-6 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div className="text-right">
-                <p className="text-sm text-gray-500 mb-1">إجمالي المبيعات</p>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">د.ك 1,500,00</h3>
-                <div className="flex items-center text-green-500 text-sm">
-                  <span className="mr-1">↗</span>
-                  <span>+8% عن الفترة السابقة</span>
-                </div>
-              </div>
-              <div className="bg-gray-900 p-3 rounded-lg">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V4m0 16v-4" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          {/* معدل الإرجاع */}
-          <div className="bg-white rounded-lg p-6 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div className="text-right">
-                <p className="text-sm text-gray-500 mb-1">معدل الإرجاع</p>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">2.4%</h3>
-                <div className="flex items-center text-green-500 text-sm">
-                  <span className="mr-1">↗</span>
-                  <span>+4% عن الفترة السابقة</span>
-                </div>
-              </div>
-              <div className="bg-gray-900 p-3 rounded-lg">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          {/* الطلبات */}
-          <div className="bg-white rounded-lg p-6 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div className="text-right">
-                <p className="text-sm text-gray-500 mb-1">الطلبات</p>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">970</h3>
-                <div className="flex items-center gap-4 text-xs text-gray-500">
-                  <span>قيد الشحن 150</span>
-                  <span>مكتمل 1567</span>
-                  <span>ملغي 532</span>
-                </div>
-              </div>
-              <div className="bg-gray-900 p-3 rounded-lg">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          {/* زمن التجهيز */}
-          <div className="bg-white rounded-lg p-6 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div className="text-right">
-                <p className="text-sm text-gray-500 mb-1">زمن التجهيز (متوسط)</p>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">11:30 ساعة</h3>
-                <div className="flex items-center text-red-500 text-sm">
-                  <span className="mr-1">↘</span>
-                  <span>-6% عن الفترة السابقة</span>
-                </div>
-              </div>
-              <div className="bg-gray-900 p-3 rounded-lg">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
+      <div className="bg-white rounded-2xl shadow-md p-6 text-right" style={{ direction: 'rtl' }}>
+        <h2 className="text-xl font-bold mb-4">المنتجات الأكثر مبيعاً</h2>
+        <div className="flex justify-start items-center mb-4">
+          <div className="flex space-x-2" dir="rtl">
+            <button className="px-4 py-1 rounded-full text-sm font-semibold bg-red-500 text-white">شهر</button>
+            <button className="px-4 py-1 rounded-full text-sm font-semibold text-gray-500">أسبوع</button>
+            <button className="px-4 py-1 rounded-full text-sm font-semibold text-gray-500">يوم</button>
           </div>
         </div>
-
-        {/* Charts Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          
-          {/* Bar Chart */}
-          <div className="bg-white rounded-lg p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex space-x-2 space-x-reverse">
-                <button className={`px-4 py-2 rounded-lg text-sm ${activeTab === 'يوم' ? 'bg-gray-100 text-gray-800' : 'text-gray-500'}`} 
-                        onClick={() => setActiveTab('يوم')}>يوم</button>
-                <button className={`px-4 py-2 rounded-lg text-sm ${activeTab === 'أسبوع' ? 'bg-gray-100 text-gray-800' : 'text-gray-500'}`} 
-                        onClick={() => setActiveTab('أسبوع')}>أسبوع</button>
-                <button className={`px-4 py-2 rounded-lg text-sm ${activeTab === 'شهري' ? 'bg-red-500 text-white' : 'text-gray-500'}`} 
-                        onClick={() => setActiveTab('شهري')}>شهري</button>
-              </div>
-              <h2 className="text-lg font-semibold text-gray-900">حالة طلبات هذا الشهر</h2>
-            </div>
-            
-            <div className="flex items-center justify-between mb-4">
-              <div className="space-y-2 text-sm">
-                {barChartData.map((item, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <div className={`w-3 h-3 rounded`} style={{backgroundColor: item.color}}></div>
-                    <span className="text-gray-600">{item.details}</span>
-                    <span className="font-medium">{item.value}</span>
+        <div className="overflow-x-auto">
+          <table className="w-full text-right text-sm">
+            <thead className="border-b">
+              <tr>
+                <th className="py-2 px-4 font-normal text-gray-500 text-right">
+                  <div className="flex items-center justify-start">
+                    <span>المنتج</span>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={barChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#000', 
-                    border: 'none', 
-                    borderRadius: '8px',
-                    color: '#fff',
-                    fontSize: '12px'
-                  }} 
-                />
-                <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={40}>
-                  {barChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-
-          {/* Area Chart */}
-          <div className="bg-white rounded-lg p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex space-x-2 space-x-reverse">
-                <button className="px-4 py-2 rounded-lg text-sm text-gray-500">يوم</button>
-                <button className="px-4 py-2 rounded-lg text-sm text-gray-500">أسبوع</button>
-                <button className="px-4 py-2 rounded-lg text-sm bg-red-500 text-white">شهري</button>
-              </div>
-              <h2 className="text-lg font-semibold text-gray-900">المبيعات حسب الوقت</h2>
-            </div>
-
-            <div className="relative">
-              {/* Y-axis labels */}
-              <div className="absolute right-0 top-0 h-full flex flex-col justify-between text-xs text-gray-400 pr-4">
-                <span>5m</span>
-                <span>1m</span>
-                <span>800k</span>
-                <span>650k</span>
-                <span>250k</span>
-                <span>100k</span>
-                <span>50k</span>
-              </div>
-
-              <ResponsiveContainer width="100%" height={375}>
-                <AreaChart data={areaChartData} margin={{ top: 20, right: 40, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="colorValue1" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#EF4444" stopOpacity={0.4}/>
-                      <stop offset="95%" stopColor="#EF4444" stopOpacity={0.1}/>
-                    </linearGradient>
-                    <linearGradient id="colorValue2" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#10B981" stopOpacity={0.1}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis 
-                    dataKey="name" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fontSize: 10, fill: '#6b7280' }}
-                  />
-                  <YAxis hide />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#000', 
-                      border: 'none', 
-                      borderRadius: '8px',
-                      color: '#fff',
-                      fontSize: '12px'
-                    }}
-                    formatter={(value) => [`القيمة ${Math.round(value/1000)}k`, '']}
-                    labelFormatter={(label) => `الشهر: ${label}`}
-                    position={{ x: 150, y: 80 }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="value" 
-                    stroke="#EF4444" 
-                    strokeWidth={3}
-                    fill="url(#colorValue1)"
-                    dot={{ fill: '#EF4444', strokeWidth: 2, r: 4 }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-              
-              {/* Tooltip pointing to specific point */}
-              <div className="absolute top-20 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded z-10">
-                القيمة 680k
-                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-2 border-r-2 border-t-2 border-transparent border-t-black"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Products Table */}
-        <div className="bg-white rounded-lg p-6 shadow-sm mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex space-x-2 space-x-reverse">
-              <button className="px-4 py-2 rounded-lg text-sm text-gray-500">يوم</button>
-              <button className="px-4 py-2 rounded-lg text-sm text-gray-500">أسبوع</button>
-              <button className="px-4 py-2 rounded-lg text-sm bg-red-500 text-white">شهري</button>
-            </div>
-            <h2 className="text-lg font-semibold text-gray-900">المنتجات الأكثر أداءً</h2>
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full text-right">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="pb-3 text-sm font-medium text-gray-500">المنتج</th>
-                  <th className="pb-3 text-sm font-medium text-gray-500">الزيارات</th>
-                  <th className="pb-3 text-sm font-medium text-gray-500">الإضافة للسلة</th>
-                  <th className="pb-3 text-sm font-medium text-gray-500">التحويل %</th>
-                  <th className="pb-3 text-sm font-medium text-gray-500">المبيعات</th>
-                  <th className="pb-3 text-sm font-medium text-gray-500">المخزون</th>
-                  <th className="pb-3 text-sm font-medium text-gray-500">التاجر</th>
+                </th>
+                <th className="py-2 px-4 font-normal text-gray-500 text-right">
+                  <div className="flex items-center justify-start">
+                    <span>الزيارات</span>
+                  </div>
+                </th>
+                <th className="py-2 px-4 font-normal text-gray-500 text-right">
+                  <div className="flex items-center justify-start">
+                    <span>الإضافة للسلة</span>
+                  </div>
+                </th>
+                <th className="py-2 px-4 font-normal text-gray-500 text-right">
+                  <div className="flex items-center justify-start">
+                    <span>التحويل %</span>
+                  </div>
+                </th>
+                <th className="py-2 px-4 font-normal text-gray-500 text-right">
+                  <div className="flex items-center justify-start">
+                    <span>المبيعات</span>
+                  </div>
+                </th>
+                <th className="py-2 px-4 font-normal text-gray-500 text-right">
+                  <div className="flex items-center justify-start">
+                    <span>المخزون</span>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {popularProducts.map((product, index) => (
+                <tr key={index} className="border-b">
+                  <td className="py-4 px-4 flex items-center justify-start">
+                    <span className="text-base font-semibold text-gray-800">{product.name}</span>
+                    <img src={product.img} alt="product" className="h-8 w-8 ml-2 rounded-md" />
+                  </td>
+                  <td className="py-4 px-4 text-gray-700">{product.visits}</td>
+                  <td className="py-4 px-4 text-gray-700">{product.addToCart}</td>
+                  <td className="py-4 px-4 text-gray-700">{product.conversion}</td>
+                  <td className="py-4 px-4 text-gray-700">{product.sales}</td>
+                  <td className="py-4 px-4 text-gray-700">{product.stock}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {productsData.map((item, index) => (
-                  <tr key={index} className="border-b border-gray-100">
-                    <td className="py-4 text-sm font-medium text-gray-900">{item.product}</td>
-                    <td className="py-4 text-sm text-gray-900">{item.visits}</td>
-                    <td className="py-4 text-sm text-gray-900">{item.addition}</td>
-                    <td className="py-4 text-sm text-gray-900">{item.conversion}</td>
-                    <td className="py-4 text-sm text-gray-900">{item.sales}</td>
-                    <td className="py-4 text-sm text-gray-900">{item.stock}</td>
-                    <td className="py-4 text-sm text-gray-900">{item.merchant}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          
-          <div className="flex items-center justify-between mt-6">
-            <div className="text-sm text-gray-500">إجمالي المنتجات: 8764</div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-500">اعرض في الصفحة</span>
-              <select className="border border-gray-300 rounded px-2 py-1 text-sm">
-                <option>5</option>
-                <option>10</option>
-                <option>25</option>
-              </select>
-            </div>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
-
-        {/* Bottom Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
-          {/* Orders Needing Attention */}
-          <div className="bg-white rounded-lg p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex space-x-2 space-x-reverse">
-                <button className="px-4 py-2 rounded-lg text-sm text-gray-500">يوم</button>
-                <button className="px-4 py-2 rounded-lg text-sm text-gray-500">أسبوع</button>
-                <button className="px-4 py-2 rounded-lg text-sm bg-red-500 text-white">شهري</button>
-              </div>
-              <h2 className="text-lg font-semibold text-gray-900">طلبات تحتاج انتباه</h2>
-            </div>
-
-            <div className="space-y-4">
-              {ordersNeedingAttention.map((order, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-red-600 font-medium">{order.status}</span>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-semibold text-gray-900">{order.id}</div>
-                    <div className="flex items-center justify-center gap-1 mt-1">
-                      {[...Array(5)].map((_, i) => (
-                        <span key={i} className={`text-sm ${i < order.rating ? 'text-yellow-400' : 'text-gray-300'}`}>★</span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium text-gray-900">تغليف ممتاز والتسليم سريع</div>
-                    <div className="text-xs text-gray-500 mt-1">{order.store}، هدى أحمد، هاتف A15، اليوم</div>
-                  </div>
-                </div>
-              ))}
-            </div>
+        <div className="flex justify-between items-center mt-4">
+          <div className="text-gray-500 text-sm">إجمالي المنتجات: ٨٧٦٤</div>
+          <div className="flex items-center space-x-1" dir="rtl">
+            <button className="p-2 border rounded-md text-gray-500 hover:bg-gray-200">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-left"><path d="m15 6-6 6 6 6"/></svg>
+            </button>
+            <button className="p-2 border rounded-md text-white bg-red-500">1</button>
+            <button className="p-2 border rounded-md text-gray-500 hover:bg-gray-200">2</button>
+            <button className="p-2 border rounded-md text-gray-500 hover:bg-gray-200">3</button>
+            <button className="p-2 border rounded-md text-gray-500 hover:bg-gray-200">4</button>
+            <button className="p-2 border rounded-md text-gray-500 hover:bg-gray-200">5</button>
+            <button className="p-2 border rounded-md text-gray-500 hover:bg-gray-200">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-right"><path d="m9 18 6-6-6-6"/></svg>
+            </button>
           </div>
-
-          {/* Customer Reviews */}
-          <div className="bg-white rounded-lg p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex space-x-2 space-x-reverse">
-                <button className="px-4 py-2 rounded-lg text-sm text-gray-500">يوم</button>
-                <button className="px-4 py-2 rounded-lg text-sm text-gray-500">أسبوع</button>
-                <button className="px-4 py-2 rounded-lg text-sm bg-red-500 text-white">شهري</button>
-              </div>
-              <h2 className="text-lg font-semibold text-gray-900">آراء الزبائن</h2>
-            </div>
-
-            <div className="space-y-4">
-              {ordersNeedingAttention.map((order, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-red-600 font-medium">{order.status}</span>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-lg font-semibold text-gray-900">{order.id}</div>
-                    <div className="flex items-center justify-center gap-1 mt-1">
-                      {[...Array(5)].map((_, i) => (
-                        <span key={i} className={`text-sm ${i < order.rating ? 'text-yellow-400' : 'text-gray-300'}`}>★</span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-sm font-medium text-gray-900">تغليف ممتاز والتسليم سريع</div>
-                    <div className="text-xs text-gray-500 mt-1">{order.store}، هدى أحمد، هاتف A15، اليوم</div>
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="text-gray-500 text-sm flex items-center">
+            عرض في الصفحة 5
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-down mr-1"><path d="m6 9 6 6 6-6"/></svg>
           </div>
         </div>
       </div>
     </div>
   );
-};
+}
 
 export default App;
