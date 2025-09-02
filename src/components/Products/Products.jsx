@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { IoChevronUpOutline, IoChevronDownOutline, IoSearchOutline, IoAdd, IoEllipsisHorizontal, IoEyeOutline, IoPencilOutline, IoTrashOutline } from 'react-icons/io5';
 
 const dummyProducts = [
     {
@@ -77,7 +78,6 @@ const dummyProducts = [
     {
         id: '9',
         image: 'https://placehold.co/40x40/e0e0e0/ffffff?text=P9',
-        name: 'هاتف 1 A15...',
         price: '154.90 د.ك',
         quantity: 15,
         status: 'متوفر',
@@ -143,54 +143,68 @@ const Dashboard = () => {
         setIsMoreActionsDropdownOpen(false);
     };
 
+    const Modal = ({ isOpen, onClose, children }) => {
+        if (!isOpen) return null;
+        return (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
+                <div className="bg-white rounded-lg shadow-lg w-full max-w-sm p-6 relative">
+                    <button onClick={onClose} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+                    {children}
+                </div>
+            </div>
+        );
+    };
+
     return (
-        <>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                <div className="bg-white p-6 rounded-lg shadow-sm flex items-center justify-between">
+        <div className="bg-gray-100 min-h-screen p-8 text-right font-['Tajawal']">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
                     <div>
                         <h3 className="text-gray-500 text-sm">إجمالي المنتجات</h3>
-                        <p className="text-2xl font-bold">820</p>
+                        <p className="text-2xl font-bold mt-1 text-gray-900">820</p>
                     </div>
-                    <span className="text-sm text-green-500">↑ 8%</span>
+                    <span className="text-sm font-semibold text-green-500">↑ 8%</span>
                 </div>
-                <div className="bg-white p-6 rounded-lg shadow-sm flex items-center justify-between">
+                <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
                     <div>
                         <h3 className="text-gray-500 text-sm">منتجات منخفضة المخزون</h3>
-                        <p className="text-2xl font-bold">18</p>
+                        <p className="text-2xl font-bold mt-1 text-gray-900">18</p>
                     </div>
-                    <span className="text-sm text-red-500">↓ 2%</span>
+                    <span className="text-sm font-semibold text-red-500">↓ 2%</span>
                 </div>
-                <div className="bg-white p-6 rounded-lg shadow-sm flex items-center justify-between">
+                <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
                     <div>
                         <h3 className="text-gray-500 text-sm">منتجات غير متوفرة</h3>
-                        <p className="text-2xl font-bold">32</p>
+                        <p className="text-2xl font-bold mt-1 text-gray-900">32</p>
                     </div>
-                    <span className="text-sm text-red-500">↓ 2%</span>
+                    <span className="text-sm font-semibold text-red-500">↓ 2%</span>
                 </div>
-                <div className="bg-white p-6 rounded-lg shadow-sm flex items-center justify-between">
+                <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
                     <div>
                         <h3 className="text-gray-500 text-sm">تعديلات تلقائية منقطعة</h3>
-                        <p className="text-2xl font-bold">14</p>
+                        <p className="text-2xl font-bold mt-1 text-gray-900">14</p>
                     </div>
-                    <span className="text-sm text-red-500">↑ 8%</span>
+                    <span className="text-sm font-semibold text-red-500">↑ 8%</span>
                 </div>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-sm">
+            <div className="bg-white p-6 rounded-lg shadow-md">
                 <div className="flex justify-between items-center mb-4 flex-wrap gap-4">
                     <div className="flex items-center space-x-2 rtl:space-x-reverse">
                         <button
-                            className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-700 transition-colors"
+                            className="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition-colors flex items-center"
                             onClick={() => navigate('/add-product')}
                         >
-                            + إضافة منتج
+                            <IoAdd className="w-5 h-5 ml-2" />
+                            إضافة منتج
                         </button>
                         <div className="relative">
                             <button
-                                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg flex items-center hover:bg-gray-300 transition-colors"
+                                className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg flex items-center hover:bg-gray-200 transition-colors"
                                 onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
                             >
-                                الكل <span className="ml-2 rtl:mr-2">^</span>
+                                <span className="text-sm">الكل</span>
+                                <IoChevronDownOutline className="w-4 h-4 mr-2 text-gray-500" />
                             </button>
                             {isFilterDropdownOpen && (
                                 <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-10">
@@ -204,65 +218,71 @@ const Dashboard = () => {
                             <input
                                 type="text"
                                 placeholder="ابحث باسم المنتج / الحالة"
-                                className="bg-gray-100 text-gray-700 px-4 py-2 pr-10 rounded-lg w-full md:w-auto focus:outline-none focus:ring-2 focus:ring-red-500"
+                                className="bg-gray-100 text-gray-700 px-4 py-2 pr-10 rounded-lg w-full md:w-auto focus:outline-none focus:ring-2 focus:ring-red-500 text-right"
                             />
+                            <IoSearchOutline className="absolute right-3 text-gray-400" />
                         </div>
                     </div>
-                    <h2 className="text-xl font-semibold text-gray-800">إدارة المنتجات</h2>
+                    <h2 className="text-xl font-bold text-gray-800">إدارة المنتجات</h2>
                 </div>
 
                 <div className="overflow-x-auto">
                     <table className="min-w-full text-right bg-white">
                         <thead>
-                            <tr className="border-b border-gray-200 text-gray-500">
-                                <th className="py-3 px-4 font-normal text-sm">الإجراءات</th>
-                                <th className="py-3 px-4 font-normal text-sm">القسم</th>
-                                <th className="py-3 px-4 font-normal text-sm">الحالة</th>
-                                <th className="py-3 px-4 font-normal text-sm">الكمية</th>
-                                <th className="py-3 px-4 font-normal text-sm">السعر</th>
-                                <th className="py-3 px-4 font-normal text-sm">اسم المنتج</th>
-                                <th className="py-3 px-4 font-normal text-sm">صورة المنتج</th>
+                            <tr className="border-b border-gray-300">
+                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">الإجراءات</th>
+                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">القسم</th>
+                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">الحالة</th>
+                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">الكمية</th>
+                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">السعر</th>
+                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">اسم المنتج</th>
+                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">صورة المنتج</th>
                             </tr>
                         </thead>
                         <tbody>
                             {dummyProducts.map((product) => (
-                                <tr key={product.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                                <tr key={product.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
                                     <td className="py-3 px-4 relative">
                                         <button
-                                            className="text-gray-400 hover:text-gray-600"
+                                            className="text-gray-500 hover:text-gray-900"
                                             onClick={() => setIsMoreActionsDropdownOpen(isMoreActionsDropdownOpen === product.id ? null : product.id)}
                                         >
-                                            ...
+                                            <IoEllipsisHorizontal className="w-5 h-5" />
                                         </button>
                                         {isMoreActionsDropdownOpen === product.id && (
                                             <div className="absolute left-5 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-10 text-sm text-gray-700">
-                                                <a href="#" className="flex items-center px-4 py-2 hover:bg-gray-100" onClick={() => handleOpenProductDetails(product)}>
+                                                <button className="flex items-center w-full text-right px-4 py-2 hover:bg-gray-100" onClick={() => handleOpenProductDetails(product)}>
+                                                    <IoEyeOutline className="w-5 h-5 ml-2 text-gray-500" />
                                                     عرض التفاصيل
-                                                </a>
+                                                </button>
                                                 <button className="flex items-center w-full text-right px-4 py-2 hover:bg-gray-100" onClick={() => handleOpenEditProduct(product)}>
+                                                    <IoPencilOutline className="w-5 h-5 ml-2 text-gray-500" />
                                                     تعديل المنتج
                                                 </button>
-                                                <a href="#" className="flex items-center px-4 py-2 hover:bg-gray-100" onClick={handleOpenEditStock}>
+                                                <button className="flex items-center w-full text-right px-4 py-2 hover:bg-gray-100" onClick={handleOpenEditStock}>
+                                                    <IoPencilOutline className="w-5 h-5 ml-2 text-gray-500" />
                                                     تعديل المخزون
-                                                </a>
-                                                <a href="#" className="flex items-center px-4 py-2 hover:bg-gray-100" onClick={handleOpenEditPrice}>
+                                                </button>
+                                                <button className="flex items-center w-full text-right px-4 py-2 hover:bg-gray-100" onClick={handleOpenEditPrice}>
+                                                    <IoPencilOutline className="w-5 h-5 ml-2 text-gray-500" />
                                                     تعديل السعر
-                                                </a>
-                                                <a href="#" className="flex items-center px-4 py-2 hover:bg-red-50 text-red-600 border-t border-gray-200 mt-2 pt-2" onClick={handleOpenDeleteModal}>
+                                                </button>
+                                                <button className="flex items-center w-full text-right px-4 py-2 text-red-600 hover:bg-red-50" onClick={handleOpenDeleteModal}>
+                                                    <IoTrashOutline className="w-5 h-5 ml-2 text-red-600" />
                                                     حذف المنتج
-                                                </a>
+                                                </button>
                                             </div>
                                         )}
                                     </td>
-                                    <td className="py-3 px-4 text-sm">{product.category}</td>
+                                    <td className="py-3 px-4 text-sm text-gray-800">{product.category}</td>
                                     <td className="py-3 px-4">
-                                        <span className={`text-xs font-semibold px-2 py-1 rounded-full ${getStatusClass(product.status)}`}>
+                                        <span className={`text-xs font-semibold px-3 py-1 rounded-full ${getStatusClass(product.status)}`}>
                                             {product.status}
                                         </span>
                                     </td>
-                                    <td className="py-3 px-4 text-sm">{product.quantity}</td>
-                                    <td className="py-3 px-4 text-sm">{product.price}</td>
-                                    <td className="py-3 px-4 text-sm">{product.name}</td>
+                                    <td className="py-3 px-4 text-sm text-gray-800">{product.quantity}</td>
+                                    <td className="py-3 px-4 text-sm text-gray-800">{product.price}</td>
+                                    <td className="py-3 px-4 text-sm text-gray-800">{product.name}</td>
                                     <td className="py-3 px-4">
                                         <img src={product.image} alt="product" className="w-10 h-10 rounded-md object-cover" />
                                     </td>
@@ -272,96 +292,121 @@ const Dashboard = () => {
                     </table>
                 </div>
 
-                <div className="flex justify-between items-center mt-4 text-gray-600">
+                <div className="flex justify-between items-center mt-4 text-gray-500 text-sm">
+                    <p>إجمالي المنتجات: 8764</p>
                     <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                        <span className="text-sm">اعرض في الصفحة</span>
-                        <select className="bg-gray-100 p-1 rounded-md text-sm">
+                        <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 transition-colors">
+                            <IoChevronDownOutline className="w-4 h-4 rotate-90" />
+                        </button>
+                        <span className="bg-red-500 text-white px-3 py-1 rounded-md">1</span>
+                        <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 transition-colors">2</button>
+                        <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 transition-colors">3</button>
+                        <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 transition-colors">4</button>
+                        <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 transition-colors">5</button>
+                        <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 transition-colors">
+                            <IoChevronUpOutline className="w-4 h-4 rotate-90" />
+                        </button>
+                    </div>
+                    <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                        <span className="text-sm">عرض في الصفحة</span>
+                        <select className="bg-gray-100 text-gray-900 rounded-md px-2 py-1 border border-gray-300">
                             <option>10</option>
                             <option>20</option>
                             <option>50</option>
                         </select>
                     </div>
-                    <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                        <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 transition-colors">&lt;</button>
-                        <span className="bg-red-600 text-white px-3 py-1 rounded-md">1</span>
-                        <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 transition-colors">2</button>
-                        <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 transition-colors">3</button>
-                        <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 transition-colors">4</button>
-                        <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 transition-colors">5</button>
-                        <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 transition-colors">&gt;</button>
-                    </div>
-                    <div className="text-sm">إجمالي المنتجات: 8764</div>
                 </div>
             </div>
 
-            {isEditStockModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
-                    <div className="bg-white rounded-lg shadow-lg w-full max-w-sm p-6">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-lg font-bold text-gray-800">تعديل المخزون</h2>
-                            <button onClick={() => setIsEditStockModalOpen(false)} className="text-gray-400 text-2xl font-bold hover:text-gray-600">&times;</button>
-                        </div>
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium mb-1 text-gray-700">الكمية في المخزون</label>
-                            <input type="number" className="bg-gray-100 w-full p-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-800" defaultValue="15" />
-                        </div>
-                        <div className="flex justify-end space-x-4 rtl:space-x-reverse">
-                            <button onClick={() => setIsEditStockModalOpen(false)} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors">إلغاء</button>
-                            <button className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">تعديل</button>
-                        </div>
+            <Modal isOpen={isEditStockModalOpen} onClose={() => setIsEditStockModalOpen(false)}>
+                <div className="text-center">
+                    <h2 className="text-xl font-bold mb-4 text-gray-800">تعديل المخزون</h2>
+                    <div className="mb-4">
+                        <input
+                            type="number"
+                            placeholder="الكمية في المخزون"
+                            className="bg-gray-100 w-full p-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-800 text-right"
+                            defaultValue="15"
+                        />
+                    </div>
+                    <div className="flex justify-center space-x-4 rtl:space-x-reverse">
+                        <button
+                            onClick={() => setIsEditStockModalOpen(false)}
+                            className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+                        >
+                            إلغاء
+                        </button>
+                        <button
+                            className="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition-colors"
+                        >
+                            تعديل
+                        </button>
                     </div>
                 </div>
-            )}
+            </Modal>
 
-            {isEditPriceModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
-                    <div className="bg-white rounded-lg shadow-lg w-full max-w-sm p-6">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-lg font-bold text-gray-800">تعديل السعر</h2>
-                            <button onClick={() => setIsEditPriceModalOpen(false)} className="text-gray-400 text-2xl font-bold hover:text-gray-600">&times;</button>
-                        </div>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium mb-1 text-gray-700">السعر الأساسي</label>
-                                <input type="text" className="bg-gray-100 w-full p-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-800" defaultValue="150 د.ك" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium mb-1 text-gray-700">السعر بعد الخصم</label>
-                                <input type="text" className="bg-gray-100 w-full p-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-800" defaultValue="140 د.ك" />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium mb-1 text-gray-700">نسبة الخصم</label>
-                                <input type="text" className="bg-gray-100 w-full p-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-800" defaultValue="10%" />
-                            </div>
-                        </div>
-                        <div className="flex justify-end mt-6 space-x-4 rtl:space-x-reverse">
-                            <button onClick={() => setIsEditPriceModalOpen(false)} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors">إلغاء</button>
-                            <button className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">تعديل</button>
-                        </div>
+            <Modal isOpen={isEditPriceModalOpen} onClose={() => setIsEditPriceModalOpen(false)}>
+                <div className="text-center">
+                    <h2 className="text-xl font-bold mb-4 text-gray-800">تعديل السعر</h2>
+                    <div className="space-y-4">
+                        <input
+                            type="text"
+                            placeholder="السعر الأساسي"
+                            className="bg-gray-100 w-full p-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-800 text-right"
+                            defaultValue="150 د.ك"
+                        />
+                        <input
+                            type="text"
+                            placeholder="السعر بعد الخصم"
+                            className="bg-gray-100 w-full p-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-800 text-right"
+                            defaultValue="140 د.ك"
+                        />
+                        <input
+                            type="text"
+                            placeholder="نسبة الخصم"
+                            className="bg-gray-100 w-full p-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-800 text-right"
+                            defaultValue="10%"
+                        />
+                    </div>
+                    <div className="flex justify-center mt-6 space-x-4 rtl:space-x-reverse">
+                        <button
+                            onClick={() => setIsEditPriceModalOpen(false)}
+                            className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+                        >
+                            إلغاء
+                        </button>
+                        <button
+                            className="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition-colors"
+                        >
+                            تعديل
+                        </button>
                     </div>
                 </div>
-            )}
+            </Modal>
 
-            {isDeleteModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
-                    <div className="bg-white rounded-lg shadow-lg w-full max-w-md text-center p-6">
-                        <div className="mb-4">
-                            <div className="flex justify-center mb-4">
-                                <div className="bg-red-100 text-red-600 p-4 rounded-full">
-                                    <span className="text-3xl font-bold">❌</span>
-                                </div>
-                            </div>
-                            <h3 className="text-xl font-bold mt-2 text-gray-800">هل أنت متأكد أنك تريد حذف المنتج؟</h3>
-                            <p className="text-sm text-gray-500 mt-2">سوف يتم حذف هذا المنتج نهائيًا من قائمة المنتجات لديك</p>
-                            <p className="text-sm text-gray-500 mt-1">هل أنت متأكد أنك تريد الحذف؟</p>
-                        </div>
-                        <div className="flex justify-center space-x-4 rtl:space-x-reverse mt-6">
-                            <button onClick={() => setIsDeleteModalOpen(false)} className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors">إلغاء</button>
-                            <button className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">حذف المنتج</button>
-                        </div>
+            <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)}>
+                <div className="flex flex-col items-center text-center">
+                    <div className="bg-red-100 text-red-600 p-4 rounded-full mb-4">
+                        <IoTrashOutline className="w-10 h-10" />
+                    </div>
+                    <h3 className="text-xl font-bold mt-2 text-gray-800">هل أنت متأكد أنك تريد حذف المنتج؟</h3>
+                    <p className="text-sm text-gray-500 mt-2">سوف يتم حذف هذا المنتج نهائيًا من قائمة المنتجات لديك</p>
+                    <p className="text-sm text-gray-500 mt-1">هل أنت متأكد أنك تريد الحذف؟</p>
+                    <div className="flex justify-center space-x-4 rtl:space-x-reverse mt-6 w-full">
+                        <button
+                            onClick={() => setIsDeleteModalOpen(false)}
+                            className="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+                        >
+                            إلغاء
+                        </button>
+                        <button
+                            className="flex-1 bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition-colors"
+                        >
+                            حذف المنتج
+                        </button>
                     </div>
                 </div>
-            )}
+            </Modal>
 
             {isProductDetailsModalOpen && selectedProduct && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
@@ -381,36 +426,38 @@ const Dashboard = () => {
                             </div>
                             <div className="space-y-4 text-gray-700">
                                 <div className="flex items-center p-2 bg-gray-50 rounded-lg">
-                                    <span className="w-1/3 text-gray-500">الاسم</span>
-                                    <span className="w-2/3">{selectedProduct.name}</span>
+                                    <span className="w-1/3 text-gray-500 text-right pr-4">الاسم</span>
+                                    <span className="w-2/3 text-left pl-4 text-gray-900">{selectedProduct.name}</span>
                                 </div>
                                 <div className="flex items-center p-2 bg-gray-50 rounded-lg">
-                                    <span className="w-1/3 text-gray-500">صورة المنتج</span>
-                                    <img src={selectedProduct.image} alt="product" className="w-16 h-16 rounded-lg object-cover" />
+                                    <span className="w-1/3 text-gray-500 text-right pr-4">صورة المنتج</span>
+                                    <span className="w-2/3 text-left pl-4">
+                                        <img src={selectedProduct.image} alt="product" className="w-16 h-16 rounded-lg object-cover" />
+                                    </span>
                                 </div>
                                 <div className="flex items-center p-2 bg-gray-50 rounded-lg">
-                                    <span className="w-1/3 text-gray-500">السعر</span>
-                                    <span className="w-2/3">{selectedProduct.price}</span>
+                                    <span className="w-1/3 text-gray-500 text-right pr-4">السعر</span>
+                                    <span className="w-2/3 text-left pl-4 text-gray-900">{selectedProduct.price}</span>
                                 </div>
                                 <div className="flex items-center p-2 bg-gray-50 rounded-lg">
-                                    <span className="w-1/3 text-gray-500">الحالة</span>
-                                    <span className="w-2/3">{selectedProduct.status}</span>
+                                    <span className="w-1/3 text-gray-500 text-right pr-4">الحالة</span>
+                                    <span className="w-2/3 text-left pl-4 text-gray-900">{selectedProduct.status}</span>
                                 </div>
                                 <div className="flex items-center p-2 bg-gray-50 rounded-lg">
-                                    <span className="w-1/3 text-gray-500">المخزون</span>
-                                    <span className="w-2/3">{selectedProduct.quantity}</span>
+                                    <span className="w-1/3 text-gray-500 text-right pr-4">المخزون</span>
+                                    <span className="w-2/3 text-left pl-4 text-gray-900">{selectedProduct.quantity}</span>
                                 </div>
                                 <div className="flex items-center p-2 bg-gray-50 rounded-lg">
-                                    <span className="w-1/3 text-gray-500">القسم</span>
-                                    <span className="w-2/3">{selectedProduct.category}</span>
+                                    <span className="w-1/3 text-gray-500 text-right pr-4">القسم</span>
+                                    <span className="w-2/3 text-left pl-4 text-gray-900">{selectedProduct.category}</span>
                                 </div>
                                 <div className="flex items-center p-2 bg-gray-50 rounded-lg">
-                                    <span className="w-1/3 text-gray-500">تحديث تلقائي</span>
-                                    <span className="w-2/3">نشط</span>
+                                    <span className="w-1/3 text-gray-500 text-right pr-4">تحديث تلقائي</span>
+                                    <span className="w-2/3 text-left pl-4 text-gray-900">نشط</span>
                                 </div>
                                 <div className="p-2 bg-gray-50 rounded-lg">
-                                    <span className="block text-gray-500 mb-1">وصف المنتج</span>
-                                    <span className="block">جهاز محمول حديث من سامسونج</span>
+                                    <span className="block text-gray-500 text-right pr-4 mb-1">وصف المنتج</span>
+                                    <span className="block text-right pr-4 text-gray-900">جهاز محمول حديث من سامسونج</span>
                                 </div>
                             </div>
                             <div className="flex justify-end mt-6 space-x-4 rtl:space-x-reverse">
@@ -420,7 +467,7 @@ const Dashboard = () => {
                                         setIsProductDetailsModalOpen(false);
                                         handleOpenEditProduct(selectedProduct);
                                     }}
-                                    className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                                    className="bg-red-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-red-600 transition-colors"
                                 >
                                     تعديل
                                 </button>
@@ -429,7 +476,7 @@ const Dashboard = () => {
                     </div>
                 </div>
             )}
-        </>
+        </div>
     );
 };
 
