@@ -150,7 +150,7 @@ const AddProduct = () => {
                     {/* Right Column */}
                     <div>
                         <div className="mb-4">
-                            <label className="block text-gray-700 text-sm font-medium mb-1">السعر الأساسي</label>
+                            <label className="block text-gray-700 text-sm font-medium mb-1">سعر الجملة </label>
                             <input
                                 type="text"
                                 value={product.price}
@@ -159,7 +159,7 @@ const AddProduct = () => {
                             />
                         </div>
                         <div className="mb-4">
-                            <label className="block text-gray-700 text-sm font-medium mb-1">السعر بعد الخصم</label>
+                            <label className="block text-gray-700 text-sm font-medium mb-1"> سعر البيع </label>
                             <input
                                 type="text"
                                 value={product.discountPrice}

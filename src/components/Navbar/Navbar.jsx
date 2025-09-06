@@ -30,16 +30,18 @@ const Navbar = () => {
 
   const menuItems = [
     { path: "/", icon: <LayoutDashboard className="w-4 h-4" />, text: "نظرة عامة" },
-    { path: "/analytics", icon: <BarChart2 className="w-4 h-4" />, text: "التحليلات" },
+    // { path: "/analytics", icon: <BarChart2 className="w-4 h-4" />, text: "التحليلات" },
     { path: "/products", icon: <Package className="w-4 h-4" />, text: "المنتجات" },
     { path: "/orders", icon: <ShoppingCart className="w-4 h-4" />, text: "الطلبات" },
-    { path: "/product-analytics", icon: <Truck className="w-4 h-4" />, text: "تحليلات المنتحات" },
-    { path: "/user-analytics", icon: <History className="w-4 h-4" />, text: "تحليلات الزبائن" },
+    { path: "/product-analytics",icon: <History className="w-4 h-4" />, text: "التحليلات " },
+    // { path: "/user-analytics", icon: <History className="w-4 h-4" />, text: "تحليلات الزبائن" },
     { path: "/my-dues", icon: <ClipboardList className="w-4 h-4" />, text: "مستحقاتي" },
+    { path: "/sections", icon: <Bell className="w-4 h-4" />, text: "الاقسام" },
     // { path: "/merchants", icon: <Store className="w-4 h-4" />, text: "التجار" },
-    { path: "/customers", icon: <Globe className="w-4 h-4" />, text: "الزبائن" },
+    { path: "/customers", icon: <Globe className="w-4 h-4" />, text: "اعدادات التوصيل" },
     { path: "/profits", icon: <Wallet className="w-4 h-4" />, text: "الارباح" },
     { path: "/offers-dashboard", icon: <Tag className="w-4 h-4" />, text: "العروض والخصومات" },
+
     { path: "/store-info", icon: <Tag className="w-4 h-4" />, text: "الإعدادات" },
 
   ];

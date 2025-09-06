@@ -8,89 +8,110 @@ const dummyProducts = [
         image: 'https://placehold.co/40x40/e0e0e0/ffffff?text=P1',
         name: 'هاتف 1 A15 128GB، سماعات بلوتوت 1x',
         price: '154.90 د.ك',
+        hollyPrice: '120.00 د.ك',
         quantity: 15,
         status: 'متوفر',
-        category: 'هاتف محمول',
+        mainCategory: 'إلكترونيات',
+        subCategory: 'هواتف ذكية'
     },
     {
         id: '2',
         image: 'https://placehold.co/40x40/e0e0e0/ffffff?text=P2',
         name: 'هاتف 2 Pro...',
         price: '299.00 د.ك',
+        hollyPrice: '250.00 د.ك',
         quantity: 5,
         status: 'كمية منخفضة',
-        category: 'هاتف محمول',
+        mainCategory: 'إلكترونيات',
+        subCategory: 'هواتف ذكية'
     },
     {
         id: '3',
         image: 'https://placehold.co/40x40/e0e0e0/ffffff?text=P3',
         name: 'سماعة بلوتوث',
         price: '75.50 د.ك',
+        hollyPrice: '60.00 د.ك',
         quantity: 0,
         status: 'غير متوفر',
-        category: 'ملحقات',
+        mainCategory: 'إلكترونيات',
+        subCategory: 'ملحقات صوتية'
     },
     {
         id: '4',
         image: 'https://placehold.co/40x40/e0e0e0/ffffff?text=P4',
         name: 'شاحن سريع',
         price: '20.00 د.ك',
+        hollyPrice: '15.00 د.ك',
         quantity: 20,
         status: 'متوفر',
-        category: 'ملحقات',
+        mainCategory: 'إلكترونيات',
+        subCategory: 'ملحقات شحن'
     },
     {
         id: '5',
         image: 'https://placehold.co/40x40/e0e0e0/ffffff?text=P5',
         name: 'هاتف 1 A15...',
         price: '154.90 د.ك',
+        hollyPrice: '120.00 د.ك',
         quantity: 15,
         status: 'متوفر',
-        category: 'هاتف محمول',
+        mainCategory: 'إلكترونيات',
+        subCategory: 'هواتف ذكية'
     },
     {
         id: '6',
         image: 'https://placehold.co/40x40/e0e0e0/ffffff?text=P6',
         name: 'هاتف 1 A15...',
         price: '154.90 د.ك',
+        hollyPrice: '120.00 د.ك',
         quantity: 15,
         status: 'متوفر',
-        category: 'هاتف محمول',
+        mainCategory: 'إلكترونيات',
+        subCategory: 'هواتف ذكية'
     },
     {
         id: '7',
         image: 'https://placehold.co/40x40/e0e0e0/ffffff?text=P7',
         name: 'هاتف 1 A15...',
         price: '154.90 د.ك',
+        hollyPrice: '120.00 د.ك',
         quantity: 15,
         status: 'متوفر',
-        category: 'هاتف محمول',
+        mainCategory: 'إلكترونيات',
+        subCategory: 'هواتف ذكية'
     },
     {
         id: '8',
         image: 'https://placehold.co/40x40/e0e0e0/ffffff?text=P8',
         name: 'هاتف 1 A15...',
         price: '154.90 د.ك',
+        hollyPrice: '120.00 د.ك',
         quantity: 15,
         status: 'متوفر',
-        category: 'هاتف محمول',
+        mainCategory: 'إلكترونيات',
+        subCategory: 'هواتف ذكية'
     },
     {
         id: '9',
         image: 'https://placehold.co/40x40/e0e0e0/ffffff?text=P9',
+        name: 'هاتف 1 A15...',
         price: '154.90 د.ك',
+        hollyPrice: '120.00 د.ك',
         quantity: 15,
         status: 'متوفر',
-        category: 'هاتف محمول',
+        mainCategory: 'إلكترونيات',
+        subCategory: 'هواتف ذكية'
     },
     {
         id: '10',
         image: 'https://placehold.co/40x40/e0e0e0/ffffff?text=P10',
         name: 'هاتف 1 A15...',
         price: '154.90 د.ك',
+        hollyPrice: '120.00 د.ك',
         quantity: 15,
         status: 'متوفر',
-        category: 'هاتف محمول',
+        mainCategory: 'إلكترونيات',
+        subCategory: 'هواتف ذكية'
     },
 ];
 
@@ -160,28 +181,28 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
                     <div>
-                        <h3 className="text-gray-500 text-sm">إجمالي المنتجات</h3>
+                        <h3 className="text-2xl">إجمالي المنتجات</h3>
                         <p className="text-2xl font-bold mt-1 text-gray-900">820</p>
                     </div>
                     <span className="text-sm font-semibold text-green-500">↑ 8%</span>
                 </div>
                 <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
                     <div>
-                        <h3 className="text-gray-500 text-sm">منتجات منخفضة المخزون</h3>
+                        <h3 className="text-2xl">منتجات منخفضة المخزون</h3>
                         <p className="text-2xl font-bold mt-1 text-gray-900">18</p>
                     </div>
                     <span className="text-sm font-semibold text-red-500">↓ 2%</span>
                 </div>
                 <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
                     <div>
-                        <h3 className="text-gray-500 text-sm">منتجات غير متوفرة</h3>
+                        <h3 className="text-2xl">منتجات غير متوفرة</h3>
                         <p className="text-2xl font-bold mt-1 text-gray-900">32</p>
                     </div>
                     <span className="text-sm font-semibold text-red-500">↓ 2%</span>
                 </div>
                 <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
                     <div>
-                        <h3 className="text-gray-500 text-sm">تعديلات تلقائية منقطعة</h3>
+                        <h3 className="text-2xl">منتجات مهجورة</h3>
                         <p className="text-2xl font-bold mt-1 text-gray-900">14</p>
                     </div>
                     <span className="text-sm font-semibold text-red-500">↑ 8%</span>
@@ -234,7 +255,8 @@ const Dashboard = () => {
                                 <th className="py-3 px-4 text-gray-500 font-normal text-sm">القسم</th>
                                 <th className="py-3 px-4 text-gray-500 font-normal text-sm">الحالة</th>
                                 <th className="py-3 px-4 text-gray-500 font-normal text-sm">الكمية</th>
-                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">السعر</th>
+                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">سعر البيع</th>
+                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">سعر الجملة</th>
                                 <th className="py-3 px-4 text-gray-500 font-normal text-sm">اسم المنتج</th>
                                 <th className="py-3 px-4 text-gray-500 font-normal text-sm">صورة المنتج</th>
                             </tr>
@@ -282,6 +304,7 @@ const Dashboard = () => {
                                     </td>
                                     <td className="py-3 px-4 text-sm text-gray-800">{product.quantity}</td>
                                     <td className="py-3 px-4 text-sm text-gray-800">{product.price}</td>
+                                    <td className="py-3 px-4 text-sm text-gray-800">{product.hollyPrice}</td>
                                     <td className="py-3 px-4 text-sm text-gray-800">{product.name}</td>
                                     <td className="py-3 px-4">
                                         <img src={product.image} alt="product" className="w-10 h-10 rounded-md object-cover" />
@@ -448,8 +471,12 @@ const Dashboard = () => {
                                     <span className="w-2/3 text-left pl-4 text-gray-900">{selectedProduct.quantity}</span>
                                 </div>
                                 <div className="flex items-center p-2 bg-gray-50 rounded-lg">
-                                    <span className="w-1/3 text-gray-500 text-right pr-4">القسم</span>
-                                    <span className="w-2/3 text-left pl-4 text-gray-900">{selectedProduct.category}</span>
+                                    <span className="w-1/3 text-gray-500 text-right pr-4">القسم الرئيسي</span>
+                                    <span className="w-2/3 text-left pl-4 text-gray-900">{selectedProduct.mainCategory}</span>
+                                </div>
+                                <div className="flex items-center p-2 bg-gray-50 rounded-lg">
+                                    <span className="w-1/3 text-gray-500 text-right pr-4">القسم الفرعي</span>
+                                    <span className="w-2/3 text-left pl-4 text-gray-900">{selectedProduct.subCategory}</span>
                                 </div>
                                 <div className="flex items-center p-2 bg-gray-50 rounded-lg">
                                     <span className="w-1/3 text-gray-500 text-right pr-4">تحديث تلقائي</span>

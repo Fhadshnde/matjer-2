@@ -26,6 +26,7 @@ import MyDues from './components/MyDues/MyDues'
 import EmployeesPage from './components/Settings/EmployeesPage'
 import TicketsPage from './components/Settings/TicketsPage'
 import StoreInfoPage from './components/Settings/StoreInfoPage'
+import Sections from './components/Sections/Sections'
 
 const App = () => {
   const navigate = useNavigate();
@@ -63,6 +64,7 @@ const App = () => {
         <Route path='/employees-page' element={<EmployeesPage />} />
         <Route path='/tickets' element={<TicketsPage />} />
         <Route path='/store-info' element={<StoreInfoPage />} />
+        <Route path='/sections' element={<Sections />} />
 
       </Routes>
     </div>

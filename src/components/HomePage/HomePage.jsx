@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from 'recharts';
 
 const monthlySalesData = [
@@ -116,6 +116,9 @@ const Card = ({ title, value, change, isPositive, icon: Icon }) => (
 );
 
 function App() {
+  const [salesDateRange, setSalesDateRange] = useState({ from: '2023-01-01', to: '2023-12-31' });
+  const [ordersDateRange, setOrdersDateRange] = useState({ from: '2023-11-01', to: '2023-11-30' });
+
   return (
     <div className="min-h-screen bg-gray-100 p-8 font-sans">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8" style={{ direction: 'rtl' }}>
@@ -158,36 +161,20 @@ function App() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8" style={{ direction: 'rtl' }}>
-        <div className="bg-white rounded-2xl shadow-md p-6 text-right">
-          <h2 className="text-xl font-bold mb-4">حالة طلبات هذا الشهر</h2>
-          <div className="flex justify-start items-center mb-4">
-            <div className="flex flex-row-reverse space-x-2 space-x-reverse">
-              <span className="text-sm font-semibold text-black">المبيعات</span>
-            </div>
-          </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={weeklyOrdersData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <XAxis dataKey="name" axisLine={false} tickLine={false} />
-              <YAxis type="number" orientation="right" axisLine={false} tickLine={false} />
-              <Tooltip cursor={{ fill: 'transparent' }} content={<TotalOrdersTooltip />} />
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <Bar dataKey="total" barSize={50}>
-                {
-                  weeklyOrdersData.map((entry, index) => (
-                    <Bar key={`bar-${index}`} fill={barColors[index % barColors.length]} />
-                  ))
-                }
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        {/* Sales Chart - Now on the left */}
         <div className="bg-white rounded-2xl shadow-md p-6 text-right">
           <h2 className="text-xl font-bold mb-4">المبيعات</h2>
-          <div className="flex justify-start items-center mb-4">
+          <div className="flex justify-between items-center mb-4">
             <div className="flex space-x-2" dir="rtl">
               <button className="px-4 py-1 rounded-full text-sm font-semibold bg-red-500 text-white">شهر</button>
               <button className="px-4 py-1 rounded-full text-sm font-semibold text-gray-500">أسبوع</button>
               <button className="px-4 py-1 rounded-full text-sm font-semibold text-gray-500">يوم</button>
+            </div>
+            <div className="flex items-center space-x-2" dir="rtl">
+              <span className="text-sm text-gray-500">من</span>
+              <input type="date" value={salesDateRange.from} onChange={(e) => setSalesDateRange({ ...salesDateRange, from: e.target.value })} className="border rounded-md px-2 py-1 text-sm" />
+              <span className="text-sm text-gray-500">إلى</span>
+              <input type="date" value={salesDateRange.to} onChange={(e) => setSalesDateRange({ ...salesDateRange, to: e.target.value })} className="border rounded-md px-2 py-1 text-sm" />
             </div>
           </div>
           <ResponsiveContainer width="100%" height={300}>
@@ -211,15 +198,52 @@ function App() {
             </AreaChart>
           </ResponsiveContainer>
         </div>
+
+        {/* Order Status Chart - Now on the right */}
+        <div className="bg-white rounded-2xl shadow-md p-6 text-right">
+          <h2 className="text-xl font-bold mb-4">حالة طلبات هذا الشهر</h2>
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-row-reverse space-x-2 space-x-reverse">
+              <span className="text-sm font-semibold text-black">المبيعات</span>
+            </div>
+            <div className="flex items-center space-x-2" dir="rtl">
+              <span className="text-sm text-gray-500">من</span>
+              <input type="date" value={ordersDateRange.from} onChange={(e) => setOrdersDateRange({ ...ordersDateRange, from: e.target.value })} className="border rounded-md px-2 py-1 text-sm" />
+              <span className="text-sm text-gray-500">إلى</span>
+              <input type="date" value={ordersDateRange.to} onChange={(e) => setOrdersDateRange({ ...ordersDateRange, to: e.target.value })} className="border rounded-md px-2 py-1 text-sm" />
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={weeklyOrdersData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <XAxis dataKey="name" axisLine={false} tickLine={false} />
+              <YAxis type="number" orientation="right" axisLine={false} tickLine={false} />
+              <Tooltip cursor={{ fill: 'transparent' }} content={<TotalOrdersTooltip />} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <Bar dataKey="total" barSize={50}>
+                {
+                  weeklyOrdersData.map((entry, index) => (
+                    <Bar key={`bar-${index}`} fill={barColors[index % barColors.length]} />
+                  ))
+                }
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl shadow-md p-6 text-right" style={{ direction: 'rtl' }}>
         <h2 className="text-xl font-bold mb-4">المنتجات الأكثر مبيعاً</h2>
-        <div className="flex justify-start items-center mb-4">
+        <div className="flex justify-between items-center mb-4">
           <div className="flex space-x-2" dir="rtl">
             <button className="px-4 py-1 rounded-full text-sm font-semibold bg-red-500 text-white">شهر</button>
             <button className="px-4 py-1 rounded-full text-sm font-semibold text-gray-500">أسبوع</button>
             <button className="px-4 py-1 rounded-full text-sm font-semibold text-gray-500">يوم</button>
+          </div>
+          <div className="flex items-center space-x-2" dir="rtl">
+            <span className="text-sm text-gray-500">من</span>
+            <input type="date" className="border rounded-md px-2 py-1 text-sm" />
+            <span className="text-sm text-gray-500">إلى</span>
+            <input type="date" className="border rounded-md px-2 py-1 text-sm" />
           </div>
         </div>
         <div className="overflow-x-auto">

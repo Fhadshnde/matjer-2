@@ -76,7 +76,7 @@ const PaymentsAndCashbackDashboard = () => {
             customerName: 'حسين عدنان',
             wholesalePrice: '10,000 د.ك',
             retailPrice: '12,000 د.ك',
-            discount: '10%',
+            discount: '10',
             appCommission: '1,200 د.ك',
             netMerchant: '9,600 د.ك',
             status: 'محسوبة',
@@ -87,7 +87,7 @@ const PaymentsAndCashbackDashboard = () => {
             customerName: 'علي كمال',
             wholesalePrice: '8,000 د.ك',
             retailPrice: '10,000 د.ك',
-            discount: '5%',
+            discount: '5',
             appCommission: '800 د.ك',
             netMerchant: '7,200 د.ك',
             status: 'قيد الانتظار',
@@ -98,7 +98,7 @@ const PaymentsAndCashbackDashboard = () => {
             customerName: 'فاطمة الزهراء',
             wholesalePrice: '15,000 د.ك',
             retailPrice: '18,000 د.ك',
-            discount: '15%',
+            discount: '15',
             appCommission: '1,500 د.ك',
             netMerchant: '13,500 د.ك',
             status: 'مكتملة',
@@ -109,7 +109,7 @@ const PaymentsAndCashbackDashboard = () => {
             customerName: 'محمد احمد',
             wholesalePrice: '6,000 د.ك',
             retailPrice: '7,500 د.ك',
-            discount: '0%',
+            discount: '0',
             appCommission: '600 د.ك',
             netMerchant: '5,400 د.ك',
             status: 'ملغاة',
@@ -120,7 +120,7 @@ const PaymentsAndCashbackDashboard = () => {
             customerName: 'زينب قاسم',
             wholesalePrice: '11,000 د.ك',
             retailPrice: '13,000 د.ك',
-            discount: '12%',
+            discount: '12',
             appCommission: '1,100 د.ك',
             netMerchant: '9,900 د.ك',
             status: 'محسوبة',
@@ -131,7 +131,7 @@ const PaymentsAndCashbackDashboard = () => {
             customerName: 'سارة خالد',
             wholesalePrice: '9,500 د.ك',
             retailPrice: '11,500 د.ك',
-            discount: '8%',
+            discount: '8',
             appCommission: '950 د.ك',
             netMerchant: '8,550 د.ك',
             status: 'قيد الانتظار',
@@ -142,7 +142,7 @@ const PaymentsAndCashbackDashboard = () => {
             customerName: 'احمد سالم',
             wholesalePrice: '14,000 د.ك',
             retailPrice: '16,500 د.ك',
-            discount: '10%',
+            discount: '10',
             appCommission: '1,400 د.ك',
             netMerchant: '12,600 د.ك',
             status: 'مكتملة',
@@ -174,7 +174,7 @@ const PaymentsAndCashbackDashboard = () => {
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                             </svg>
                         </div>
-                        <h3 className="text-gray-500 text-sm font-medium">إجمالي المدفوعات</h3>
+                        <h3 className="text-gray-500 text-sm font-medium">إجمالي المستحقات</h3>
                         <p className="text-xl font-bold">150,000 د.ك</p>
                         <span className="text-sm text-green-500">+8% من الفترة السابقة</span>
                     </div>
@@ -184,7 +184,7 @@ const PaymentsAndCashbackDashboard = () => {
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                             </svg>
                         </div>
-                        <h3 className="text-gray-500 text-sm font-medium">اجمالي الكاش باك</h3>
+                        <h3 className="text-gray-500 text-sm font-medium"> صافي الارباح </h3>
                         <p className="text-xl font-bold">45,000 د.ك</p>
                         <span className="text-sm text-green-500">+8% من الفترة السابقة</span>
                     </div>
@@ -194,7 +194,7 @@ const PaymentsAndCashbackDashboard = () => {
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m-4.5-6H15m-4.5 0v3.75m-4.5-3.75V15M3 12h18M3 6h18M3 18h18" />
                             </svg>
                         </div>
-                        <h3 className="text-gray-500 text-sm font-medium">عدد الطلبات</h3>
+                        <h3 className="text-gray-500 text-sm font-medium">عدد الطلبات المستلمة</h3>
                         <p className="text-xl font-bold">80 طلب</p>
                         <span className="text-sm text-green-500">+8% من الفترة السابقة</span>
                     </div>
@@ -276,7 +276,7 @@ const PaymentsAndCashbackDashboard = () => {
                                 <th className="py-3 px-4 text-right">الحالة</th>
                                 <th className="py-3 px-4 text-right">صافي التاجر</th>
                                 <th className="py-3 px-4 text-right">عمولة التطبيق</th>
-                                <th className="py-3 px-4 text-right">الخصم</th>
+                                <th className="py-3 px-4 text-right">سعر الجملة</th>
                                 <th className="py-3 px-4 text-right">السعر المفرد</th>
                                 <th className="py-3 px-4 text-right">سعر الجملة</th>
                                 <th className="py-3 px-4 text-right">اسم الزبون</th>
