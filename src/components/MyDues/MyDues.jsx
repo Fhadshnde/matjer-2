@@ -194,7 +194,7 @@ const PaymentsAndCashbackDashboard = () => {
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m-4.5-6H15m-4.5 0v3.75m-4.5-3.75V15M3 12h18M3 6h18M3 18h18" />
                             </svg>
                         </div>
-                        <h3 className="text-gray-500 text-sm font-medium">عدد الطلبات المستلمة</h3>
+                        <h3 className="text-gray-500 text-sm font-medium">عدد الطلبات </h3>
                         <p className="text-xl font-bold">80 طلب</p>
                         <span className="text-sm text-green-500">+8% من الفترة السابقة</span>
                     </div>
@@ -205,7 +205,7 @@ const PaymentsAndCashbackDashboard = () => {
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 2c-5.523 0-10 4.477-10 10s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.418 0-8-3.582-8-8s3.582-8 8-8 8 3.582 8 8-3.582 8-8 8z" />
                             </svg>
                         </div>
-                        <h3 className="text-gray-500 text-sm font-medium">اجمالي الخصميات</h3>
+                        <h3 className="text-gray-500 text-sm font-medium"> اعلى طلب</h3>
                         <p className="text-xl font-bold">12,000 د.ك</p>
                         <span className="text-sm text-green-500">+8% من الفترة السابقة</span>
                     </div>

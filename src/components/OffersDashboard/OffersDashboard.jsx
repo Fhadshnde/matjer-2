@@ -194,7 +194,7 @@ const OffersPage = () => {
                     </div>
                     <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500 mb-1">العروض النشطة الأقل أداءً</p>
+                            <p className="text-sm text-gray-500 mb-1">العروض الاقل تاثيرا</p>
                             <h3 className="text-3xl font-bold">5</h3>
                             <span className="text-xs text-red-500 flex items-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">

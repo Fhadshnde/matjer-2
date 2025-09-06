@@ -716,7 +716,7 @@ function App() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card title="متوسط زمن التوصيل" value="1.5يوم" change="-2% عن الفترة السابقة" />
         <Card title="العروض الفعالة" value="5 عروض" change="+8% عن الفترة السابقة" />
-        <Card title="مناطق مغطاة" value="5 مناطق" change="-2% عن الفترة السابقة" />
+        <Card title="المناطق المعطلة" value="5 مناطق" change="-2% عن الفترة السابقة" />
         <Card title="المناطق النشطة" value="28 منطقة" change="+8% عن الفترة السابقة" />
       </div>
       

@@ -3,14 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts';
 
 const statsCards = [
-    { title: 'متوسط وقت المشاهدة', value: '2:45', growth: '+5% من الشهر الماضي', icon: 'time' },
-    { title: 'معدل التحويل', value: '6.5%', growth: '+0.2% من الشهر الماضي', icon: 'conversion' },
-    { title: 'متوسط عدد الزوار', value: '25,000', growth: '+3% من الشهر الماضي', icon: 'visitors' },
-    { title: 'المبيعات الشهرية', value: '7,500 د.ك', growth: '+10% من الشهر الماضي', icon: 'sales' },
-    { title: 'الزيارات اليومية', value: '1,500', growth: '+15% من الشهر الماضي', icon: 'daily-visitors' },
-    { title: 'الزوار الجدد', value: '8,200', growth: '+10% من الشهر الماضي', icon: 'new-visitors' },
-    { title: 'متوسط الجلسة', value: '2:30', growth: '-2% من الشهر الماضي', icon: 'session-duration' },
-    { title: 'الزوار العائدون', value: '3,100', growth: '+7% من الشهر الماضي', icon: 'returning-visitors' },
+    { title: 'اجمالي المشاهدات', value: '2:45', growth: '+5% من الشهر الماضي', icon: 'time' },
+    { title: 'اضافة للسلة', value: '6.5%', growth: '+0.2% من الشهر الماضي', icon: 'conversion' },
+    { title: 'معدل التحويل ', value: '25,000', growth: '+3% من الشهر الماضي', icon: 'visitors' },
+    { title: ' متوسط وقت المشاهدة', value: '7,500 د.ك', growth: '+10% من الشهر الماضي', icon: 'sales' },
+    { title: ' المنتجات المهجورة', value: '1,500', growth: '+15% من الشهر الماضي', icon: 'daily-visitors' },
+    { title: 'الزبائن المتتردون', value: '8,200', growth: '+10% من الشهر الماضي', icon: 'new-visitors' },
+    // { title: 'متوسط الجلسة', value: '2:30', growth: '-2% من الشهر الماضي', icon: 'session-duration' },
+    // { title: 'الزوار العائدون', value: '3,100', growth: '+7% من الشهر الماضي', icon: 'returning-visitors' },
 ];
 
 const data = [
@@ -129,7 +129,7 @@ const ProductAnalytics = () => {
     return (
         <div className="bg-gray-100 p-4 min-h-screen rtl:text-right font-sans">
             <div className="container mx-auto">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                     {statsCards.map((card, index) => (
                         <div key={index} className="bg-white p-6 rounded-lg shadow-md flex flex-col items-end">
                             <div className="bg-gray-100 p-3 rounded-full text-red-600 mb-4">
