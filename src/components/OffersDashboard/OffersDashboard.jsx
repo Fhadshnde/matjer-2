@@ -1,71 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import axios from 'axios';
 
-const offersData = [
-    {
-        name: 'خصم الصيف 15%',
-        type: 'عام',
-        value: '15%',
-        scope: 'كل المنتجات',
-        period: '1/8 - 10 أغسطس',
-        status: 'نشط',
-    },
-    {
-        name: 'خصم الشتاء 10%',
-        type: 'عام',
-        value: '10%',
-        scope: 'كل المنتجات',
-        period: '1/12 - 15 ديسمبر',
-        status: 'نشط',
-    },
-    {
-        name: 'عرض اليوم الوطني',
-        type: 'منتج معين',
-        value: '20%',
-        scope: 'هواتف ذكية',
-        period: '23/9 - 25 سبتمبر',
-        status: 'منتهي',
-    },
-    {
-        name: 'عرض رأس السنة',
-        type: 'عام',
-        value: '5%',
-        scope: 'كل المنتجات',
-        period: '30/12 - 5 يناير',
-        status: 'مجدول',
-    },
-    {
-        name: 'تصفية نهاية الموسم',
-        type: 'فئة معينة',
-        value: '70%',
-        scope: 'ملابس شتوية',
-        period: '1/2 - 20 فبراير',
-        status: 'منتهي',
-    },
-    {
-        name: 'خصم خاص للمشتركين',
-        type: 'عام',
-        value: '25%',
-        scope: 'كل المنتجات',
-        period: '1/10 - 31 أكتوبر',
-        status: 'نشط',
-    },
-    {
-        name: 'عرض الجمعة البيضاء',
-        type: 'عام',
-        value: '40%',
-        scope: 'كل المنتجات',
-        period: '20/11 - 27 نوفمبر',
-        status: 'مجدول',
-    },
-];
-
-const offerPerformanceData = [
-    { name: 'الأسبوع الرابع', visits: 8322, conversions: 7432, orders: 6754 },
-    { name: 'الأسبوع الثالث', visits: 7000, conversions: 6500, orders: 5800 },
-    { name: 'الأسبوع الثاني', visits: 9500, conversions: 8000, orders: 7500 },
-    { name: 'الأسبوع الأول', visits: 6000, conversions: 5500, orders: 5000 },
-];
+const baseURL = 'https://products-api.cbc-apps.net';
 
 const CustomPerformanceTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -84,6 +21,8 @@ const CustomPerformanceTooltip = ({ active, payload, label }) => {
 };
 
 const OffersPage = () => {
+    const [offersData, setOffersData] = useState([]);
+    const [dashboardStats, setDashboardStats] = useState({ totalOffers: 0, activeOffers: 0, expiredOffers: 0, upcomingOffers: 0 });
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -92,6 +31,141 @@ const OffersPage = () => {
     const [isPerformanceModalOpen, setIsPerformanceModalOpen] = useState(false);
     const [selectedOffer, setSelectedOffer] = useState(null);
     const [activeDropdown, setActiveDropdown] = useState(null);
+    const [performanceData, setPerformanceData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [addForm, setAddForm] = useState({
+        title: '',
+        description: '',
+        startDate: '',
+        endDate: '',
+        categoryId: 1, // Default value as per API body
+        productIds: [],
+        discountType: 'percentage', // Default value as per API body
+        discountValue: 0
+    });
+    const [editForm, setEditForm] = useState({
+        title: '',
+        description: '',
+        isActive: false
+    });
+
+    const token = localStorage.getItem('token');
+    
+    // Default headers including Content-Type for other requests
+    const defaultHeaders = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+    };
+
+    const fetchOffers = async () => {
+        try {
+            setLoading(true);
+            const response = await axios.get(`${baseURL}/supplier/offers`, { headers: defaultHeaders });
+            const { offers, totalOffers, activeOffers, expiredOffers, upcomingOffers } = response.data;
+
+            setOffersData(offers.map(offer => ({
+                ...offer,
+                status: offer.isActive ? 'نشط' : (new Date(offer.endDate) < new Date() ? 'منتهي' : 'مجدول'),
+                period: `${new Date(offer.startDate).toLocaleDateString()} - ${new Date(offer.endDate).toLocaleDateString()}`,
+                name: offer.title,
+                type: 'عام', // API data doesn't provide this, so defaulting.
+                scope: 'كل المنتجات', // API data doesn't provide this, so defaulting.
+                value: 'غير محدد' // API data doesn't provide this, so defaulting.
+            })));
+            setDashboardStats({ totalOffers, activeOffers, expiredOffers, upcomingOffers });
+            setError(null);
+        } catch (err) {
+            setError('فشل في جلب العروض.');
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchOffers();
+    }, []);
+
+    const fetchOfferPerformance = async (offerId) => {
+        try {
+            const response = await axios.get(`${baseURL}/supplier/offers/${offerId}/performance`, { headers: defaultHeaders });
+            const { performance } = response.data;
+            setPerformanceData([
+                { name: 'الأداء العام', visits: performance.totalViews, conversions: performance.conversionRate, orders: performance.totalSales }
+            ]);
+            setIsPerformanceModalOpen(true);
+        } catch (err) {
+            setError('فشل في جلب أداء العرض.');
+            console.error(err);
+        }
+    };
+
+    const handleAddOffer = async (e) => {
+        e.preventDefault();
+        try {
+            const newOfferBody = {
+                ...addForm,
+                productIds: addForm.productIds.map(id => parseInt(id, 10)),
+                discountValue: parseFloat(addForm.discountValue)
+            };
+            await axios.post(`${baseURL}/supplier/offers`, newOfferBody, { headers: defaultHeaders });
+            closeModal();
+            fetchOffers(); // Refresh offers list
+        } catch (err) {
+            setError('فشل في إنشاء العرض.');
+            console.error(err);
+        }
+    };
+
+    const handleEditOffer = async (e) => {
+        e.preventDefault();
+        if (!selectedOffer) return;
+        try {
+            const updatedOfferBody = {
+                title: editForm.title,
+                description: editForm.description,
+                isActive: editForm.isActive
+            };
+            await axios.patch(`${baseURL}/supplier/offers/${selectedOffer.id}`, updatedOfferBody, { headers: defaultHeaders });
+            closeModal();
+            fetchOffers(); // Refresh offers list
+        } catch (err) {
+            setError('فشل في تعديل العرض.');
+            console.error(err);
+        }
+    };
+
+    const handleDeleteOffer = async () => {
+        if (!selectedOffer) return;
+        try {
+            await axios.delete(`${baseURL}/supplier/offers/${selectedOffer.id}`, { headers: defaultHeaders });
+            closeModal();
+            fetchOffers(); // Refresh offers list
+        } catch (err) {
+            setError('فشل في حذف العرض.');
+            console.error(err);
+        }
+    };
+    
+    // Corrected function to toggle offer status by removing Content-Type header
+    const handleToggleOfferStatus = async () => {
+        if (!selectedOffer) return;
+        try {
+            // Headers for a body-less PATCH request
+            const headersWithoutContentType = {
+                'Authorization': `Bearer ${token}`
+            };
+
+            await axios.patch(`${baseURL}/supplier/offers/${selectedOffer.id}/toggle`, null, { headers: headersWithoutContentType });
+            closeModal();
+            fetchOffers(); // Refresh offers list
+        } catch (err) {
+            setError('فشل في تغيير حالة العرض.');
+            console.error(err);
+        }
+    };
+
 
     const openDetailsModal = (offer) => {
         setSelectedOffer(offer);
@@ -101,6 +175,11 @@ const OffersPage = () => {
 
     const openEditModal = (offer) => {
         setSelectedOffer(offer);
+        setEditForm({
+            title: offer.title,
+            description: offer.description,
+            isActive: offer.isActive
+        });
         setIsEditModalOpen(true);
         setActiveDropdown(null);
     };
@@ -119,7 +198,7 @@ const OffersPage = () => {
 
     const openPerformanceModal = (offer) => {
         setSelectedOffer(offer);
-        setIsPerformanceModalOpen(true);
+        fetchOfferPerformance(offer.id);
         setActiveDropdown(null);
     };
 
@@ -131,11 +210,30 @@ const OffersPage = () => {
         setIsDeleteModalOpen(false);
         setIsPerformanceModalOpen(false);
         setSelectedOffer(null);
+        setPerformanceData([]);
+        setAddForm({
+            title: '',
+            description: '',
+            startDate: '',
+            endDate: '',
+            categoryId: 1,
+            productIds: [],
+            discountType: 'percentage',
+            discountValue: 0
+        });
+        setEditForm({
+            title: '',
+            description: '',
+            isActive: false
+        });
     };
 
     const toggleDropdown = (index) => {
         setActiveDropdown(activeDropdown === index ? null : index);
     };
+
+    if (loading) return <div className="rtl:text-right p-6 text-center">جاري تحميل البيانات...</div>;
+    if (error) return <div className="rtl:text-right p-6 text-center text-red-500">حدث خطأ: {error}</div>;
 
     return (
         <div className="rtl:text-right font-sans bg-gray-100 min-h-screen w-screen p-6">
@@ -143,31 +241,8 @@ const OffersPage = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500 mb-1">العروض النشطة</p>
-                            <h3 className="text-3xl font-bold">12</h3>
-                            <span className="text-xs text-green-500 flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8L11 17" />
-                                </svg>
-                                8% عن الفترة السابقة
-                            </span>
-                        </div>
-                        <div className="bg-gray-100 p-3 rounded-full text-green-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
-                    </div>
-                    <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
-                        <div>
-                            <p className="text-sm text-gray-500 mb-1">المنتجات المخفضة</p>
-                            <h3 className="text-3xl font-bold">264</h3>
-                            <span className="text-xs text-green-500 flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8L11 17" />
-                                </svg>
-                                8% عن الفترة السابقة
-                            </span>
+                            <p className="text-sm text-gray-500 mb-1">إجمالي العروض</p>
+                            <h3 className="text-3xl font-bold">{dashboardStats.totalOffers}</h3>
                         </div>
                         <div className="bg-gray-100 p-3 rounded-full text-blue-500">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -177,14 +252,19 @@ const OffersPage = () => {
                     </div>
                     <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500 mb-1">عروض ستنتهي قريبًا</p>
-                            <h3 className="text-3xl font-bold">5</h3>
-                            <span className="text-xs text-red-500 flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8L11 7" />
-                                </svg>
-                                3 ساعات 48 دقيقة
-                            </span>
+                            <p className="text-sm text-gray-500 mb-1">العروض النشطة</p>
+                            <h3 className="text-3xl font-bold">{dashboardStats.activeOffers}</h3>
+                        </div>
+                        <div className="bg-gray-100 p-3 rounded-full text-green-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-500 mb-1">عروض منتهية</p>
+                            <h3 className="text-3xl font-bold">{dashboardStats.expiredOffers}</h3>
                         </div>
                         <div className="bg-gray-100 p-3 rounded-full text-red-500">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -194,16 +274,10 @@ const OffersPage = () => {
                     </div>
                     <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
                         <div>
-                            <p className="text-sm text-gray-500 mb-1">العروض الاقل تاثيرا</p>
-                            <h3 className="text-3xl font-bold">5</h3>
-                            <span className="text-xs text-red-500 flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8L11 7" />
-                                </svg>
-                                8% عن الفترة السابقة
-                            </span>
+                            <p className="text-sm text-gray-500 mb-1">عروض مجدولة</p>
+                            <h3 className="text-3xl font-bold">{dashboardStats.upcomingOffers}</h3>
                         </div>
-                        <div className="bg-gray-100 p-3 rounded-full text-gray-500">
+                        <div className="bg-gray-100 p-3 rounded-full text-yellow-500">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
@@ -256,7 +330,7 @@ const OffersPage = () => {
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {offersData.map((offer, index) => (
-                                    <tr key={index}>
+                                    <tr key={offer.id}>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             <div className="relative inline-block text-right">
                                                 <button onClick={() => toggleDropdown(index)} className="text-gray-500 hover:text-gray-700 focus:outline-none">
@@ -314,7 +388,7 @@ const OffersPage = () => {
                 </div>
             </div>
 
-            {/* Modals */}
+            {/* Add Modal */}
             {isAddModalOpen && (
                 <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50" onClick={closeModal}>
                     <div className="relative bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-auto transform transition-all" onClick={e => e.stopPropagation()}>
@@ -326,41 +400,52 @@ const OffersPage = () => {
                                 </svg>
                             </button>
                         </div>
-                        <form>
+                        <form onSubmit={handleAddOffer}>
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2">الاسم</label>
-                                <input type="text" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
+                                <label className="block text-gray-700 text-sm font-bold mb-2">اسم العرض</label>
+                                <input type="text" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    value={addForm.title} onChange={(e) => setAddForm({...addForm, title: e.target.value})} />
                             </div>
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2">النسبة</label>
-                                <input type="text" placeholder="15%" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
+                                <label className="block text-gray-700 text-sm font-bold mb-2">الوصف</label>
+                                <textarea className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    value={addForm.description} onChange={(e) => setAddForm({...addForm, description: e.target.value})}></textarea>
+                            </div>
+                            <div className="mb-4">
+                                <label className="block text-gray-700 text-sm font-bold mb-2">نوع الخصم</label>
+                                <select className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    value={addForm.discountType} onChange={(e) => setAddForm({...addForm, discountType: e.target.value})}>
+                                    <option value="percentage">نسبة مئوية</option>
+                                    <option value="fixed">قيمة ثابتة</option>
+                                </select>
+                            </div>
+                            <div className="mb-4">
+                                <label className="block text-gray-700 text-sm font-bold mb-2">قيمة الخصم</label>
+                                <input type="number" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    value={addForm.discountValue} onChange={(e) => setAddForm({...addForm, discountValue: e.target.value})} />
                             </div>
                             <div className="mb-4">
                                 <label className="block text-gray-700 text-sm font-bold mb-2">الفترة</label>
                                 <div className="flex space-x-2 rtl:space-x-reverse">
                                     <div className="w-1/2 relative">
-                                        <input type="text" placeholder="من 1/8/2025" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h.01M16 11h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        <input type="date" placeholder="تاريخ البدء" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                            value={addForm.startDate} onChange={(e) => setAddForm({...addForm, startDate: e.target.value})} />
                                     </div>
                                     <div className="w-1/2 relative">
-                                        <input type="text" placeholder="إلى 10/8/2025" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" />
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h.01M16 11h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        <input type="date" placeholder="تاريخ الانتهاء" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                            value={addForm.endDate} onChange={(e) => setAddForm({...addForm, endDate: e.target.value})} />
                                     </div>
                                 </div>
                             </div>
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2">نوع العرض</label>
-                                <select className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                                    <option>عرض عام</option>
-                                    <option>عرض منتج معين</option>
-                                </select>
+                                <label className="block text-gray-700 text-sm font-bold mb-2">الفئة</label>
+                                <input type="number" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    value={addForm.categoryId} onChange={(e) => setAddForm({...addForm, categoryId: e.target.value})} />
                             </div>
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2">العرض يشمل</label>
-                                <select className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                                    <option>كل المنتجات</option>
-                                    <option>منتجات محددة</option>
-                                </select>
+                                <label className="block text-gray-700 text-sm font-bold mb-2">معرفات المنتجات (IDs) (مفصولة بفاصلة)</label>
+                                <input type="text" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    value={addForm.productIds.join(',')} onChange={(e) => setAddForm({...addForm, productIds: e.target.value.split(',')})} />
                             </div>
                             <div className="flex justify-end space-x-4 rtl:space-x-reverse mt-6">
                                 <button type="button" onClick={closeModal} className="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">
@@ -375,6 +460,7 @@ const OffersPage = () => {
                 </div>
             )}
             
+            {/* Edit Modal */}
             {isEditModalOpen && selectedOffer && (
                 <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50" onClick={closeModal}>
                     <div className="relative bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-auto transform transition-all" onClick={e => e.stopPropagation()}>
@@ -386,41 +472,21 @@ const OffersPage = () => {
                                 </svg>
                             </button>
                         </div>
-                        <form>
+                        <form onSubmit={handleEditOffer}>
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2">الاسم</label>
-                                <input type="text" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" defaultValue={selectedOffer.name} />
+                                <label className="block text-gray-700 text-sm font-bold mb-2">اسم العرض</label>
+                                <input type="text" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    value={editForm.title} onChange={(e) => setEditForm({...editForm, title: e.target.value})} />
                             </div>
                             <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2">النسبة</label>
-                                <input type="text" placeholder="15%" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" defaultValue={selectedOffer.value} />
+                                <label className="block text-gray-700 text-sm font-bold mb-2">الوصف</label>
+                                <textarea className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                                    value={editForm.description} onChange={(e) => setEditForm({...editForm, description: e.target.value})}></textarea>
                             </div>
-                            <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2">الفترة</label>
-                                <div className="flex space-x-2 rtl:space-x-reverse">
-                                    <div className="w-1/2 relative">
-                                        <input type="text" placeholder="من 1/8/2025" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" defaultValue={selectedOffer.period.split(' - ')[0]} />
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h.01M16 11h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                    </div>
-                                    <div className="w-1/2 relative">
-                                        <input type="text" placeholder="إلى 10/8/2025" className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" defaultValue={selectedOffer.period.split(' - ')[1]} />
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h.01M16 11h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2">نوع العرض</label>
-                                <select className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" defaultValue={selectedOffer.type}>
-                                    <option>عرض عام</option>
-                                    <option>عرض منتج معين</option>
-                                </select>
-                            </div>
-                            <div className="mb-4">
-                                <label className="block text-gray-700 text-sm font-bold mb-2">العرض يشمل</label>
-                                <select className="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" defaultValue={selectedOffer.scope}>
-                                    <option>كل المنتجات</option>
-                                    <option>منتجات محددة</option>
-                                </select>
+                            <div className="mb-4 flex items-center">
+                                <input type="checkbox" className="form-checkbox h-5 w-5 text-red-600"
+                                    checked={editForm.isActive} onChange={(e) => setEditForm({...editForm, isActive: e.target.checked})} />
+                                <label className="mr-2 text-gray-700 text-sm font-bold">نشط</label>
                             </div>
                             <div className="flex justify-end space-x-4 rtl:space-x-reverse mt-6">
                                 <button type="button" onClick={closeModal} className="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">
@@ -436,6 +502,7 @@ const OffersPage = () => {
             )}
 
 
+            {/* Details Modal */}
             {isDetailsModalOpen && selectedOffer && (
                 <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50" onClick={closeModal}>
                     <div className="relative bg-white p-8 rounded-lg shadow-xl w-full max-w-md mx-auto transform transition-all" onClick={e => e.stopPropagation()}>
@@ -450,19 +517,11 @@ const OffersPage = () => {
                         <div className="space-y-4 text-right">
                             <div className="flex justify-between items-center border-b pb-2">
                                 <p className="text-sm text-gray-500">الاسم</p>
-                                <p className="text-lg font-semibold">{selectedOffer.name}</p>
+                                <p className="text-lg font-semibold">{selectedOffer.title}</p>
                             </div>
                             <div className="flex justify-between items-center border-b pb-2">
-                                <p className="text-sm text-gray-500">النوع</p>
-                                <p className="text-lg font-semibold">{selectedOffer.type}</p>
-                            </div>
-                            <div className="flex justify-between items-center border-b pb-2">
-                                <p className="text-sm text-gray-500">النسبة</p>
-                                <p className="text-lg font-semibold">{selectedOffer.value}</p>
-                            </div>
-                            <div className="flex justify-between items-center border-b pb-2">
-                                <p className="text-sm text-gray-500">العرض يشمل</p>
-                                <p className="text-lg font-semibold">{selectedOffer.scope}</p>
+                                <p className="text-sm text-gray-500">الوصف</p>
+                                <p className="text-lg font-semibold">{selectedOffer.description}</p>
                             </div>
                             <div className="flex justify-between items-center border-b pb-2">
                                 <p className="text-sm text-gray-500">التاريخ</p>
@@ -478,22 +537,17 @@ const OffersPage = () => {
                                     {selectedOffer.status}
                                 </span>
                             </div>
-                            <div className="mt-6">
-                                <p className="text-sm text-gray-500 mb-2">ملاحظات إدارية</p>
-                                <div className="bg-gray-100 p-4 rounded-lg">
-                                    <p className="text-gray-700">عرض ممتاز ولاقى استحسان من الزبائن</p>
-                                </div>
-                            </div>
                         </div>
                         <div className="mt-6">
                             <button onClick={closeModal} className="w-full bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600">
-                                تعديل
+                                إغلاق
                             </button>
                         </div>
                     </div>
                 </div>
             )}
 
+            {/* Performance Modal */}
             {isPerformanceModalOpen && (
                 <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50" onClick={closeModal}>
                     <div className="relative bg-white p-8 rounded-lg shadow-xl w-full max-w-2xl mx-auto transform transition-all" onClick={e => e.stopPropagation()}>
@@ -505,17 +559,17 @@ const OffersPage = () => {
                                 </svg>
                             </button>
                         </div>
-                        <h4 className="text-lg font-semibold mb-4 text-center">تتبع حالة العرض هذا الشهر</h4>
+                        <h4 className="text-lg font-semibold mb-4 text-center">أداء العرض: {selectedOffer?.title}</h4>
                         <div style={{ width: '100%', height: 300 }}>
                             <ResponsiveContainer>
-                                <BarChart data={offerPerformanceData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                                <BarChart data={performanceData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                     <XAxis dataKey="name" />
                                     <YAxis orientation="right" />
                                     <Tooltip content={<CustomPerformanceTooltip />} />
-                                    <Bar dataKey="visits" fill="#000" name="زيارات" />
-                                    <Bar dataKey="conversions" fill="#82ca9d" name="تحويلات" />
-                                    <Bar dataKey="orders" fill="#ffc658" name="طلبات" />
+                                    <Bar dataKey="visits" fill="#000" name="الزيارات" />
+                                    <Bar dataKey="conversions" fill="#82ca9d" name="التحويلات" />
+                                    <Bar dataKey="orders" fill="#ffc658" name="الطلبات" />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
@@ -523,6 +577,7 @@ const OffersPage = () => {
                 </div>
             )}
 
+            {/* Pause Modal */}
             {isPauseModalOpen && (
                 <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50" onClick={closeModal}>
                     <div className="relative bg-white p-8 rounded-lg shadow-xl w-full max-w-sm mx-auto text-center transform transition-all" onClick={e => e.stopPropagation()}>
@@ -546,7 +601,7 @@ const OffersPage = () => {
                             <button onClick={closeModal} className="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">
                                 إلغاء
                             </button>
-                            <button onClick={closeModal} className="bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600">
+                            <button onClick={handleToggleOfferStatus} className="bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600">
                                 إيقاف العرض مؤقتًا
                             </button>
                         </div>
@@ -554,6 +609,7 @@ const OffersPage = () => {
                 </div>
             )}
             
+            {/* Delete Modal */}
             {isDeleteModalOpen && (
                 <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50" onClick={closeModal}>
                     <div className="relative bg-white p-8 rounded-lg shadow-xl w-full max-w-sm mx-auto text-center transform transition-all" onClick={e => e.stopPropagation()}>
@@ -577,7 +633,7 @@ const OffersPage = () => {
                             <button onClick={closeModal} className="bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">
                                 إلغاء
                             </button>
-                            <button onClick={closeModal} className="bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600">
+                            <button onClick={handleDeleteOffer} className="bg-red-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-600">
                                 حذف
                             </button>
                         </div>

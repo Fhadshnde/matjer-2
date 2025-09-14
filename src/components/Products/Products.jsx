@@ -1,119 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IoChevronUpOutline, IoChevronDownOutline, IoSearchOutline, IoAdd, IoEllipsisHorizontal, IoEyeOutline, IoPencilOutline, IoTrashOutline } from 'react-icons/io5';
-
-const dummyProducts = [
-    {
-        id: '1',
-        image: 'https://placehold.co/40x40/e0e0e0/ffffff?text=P1',
-        name: 'هاتف 1 A15 128GB، سماعات بلوتوت 1x',
-        price: '154.90 د.ك',
-        hollyPrice: '120.00 د.ك',
-        quantity: 15,
-        status: 'متوفر',
-        mainCategory: 'إلكترونيات',
-        subCategory: 'هواتف ذكية'
-    },
-    {
-        id: '2',
-        image: 'https://placehold.co/40x40/e0e0e0/ffffff?text=P2',
-        name: 'هاتف 2 Pro...',
-        price: '299.00 د.ك',
-        hollyPrice: '250.00 د.ك',
-        quantity: 5,
-        status: 'كمية منخفضة',
-        mainCategory: 'إلكترونيات',
-        subCategory: 'هواتف ذكية'
-    },
-    {
-        id: '3',
-        image: 'https://placehold.co/40x40/e0e0e0/ffffff?text=P3',
-        name: 'سماعة بلوتوث',
-        price: '75.50 د.ك',
-        hollyPrice: '60.00 د.ك',
-        quantity: 0,
-        status: 'غير متوفر',
-        mainCategory: 'إلكترونيات',
-        subCategory: 'ملحقات صوتية'
-    },
-    {
-        id: '4',
-        image: 'https://placehold.co/40x40/e0e0e0/ffffff?text=P4',
-        name: 'شاحن سريع',
-        price: '20.00 د.ك',
-        hollyPrice: '15.00 د.ك',
-        quantity: 20,
-        status: 'متوفر',
-        mainCategory: 'إلكترونيات',
-        subCategory: 'ملحقات شحن'
-    },
-    {
-        id: '5',
-        image: 'https://placehold.co/40x40/e0e0e0/ffffff?text=P5',
-        name: 'هاتف 1 A15...',
-        price: '154.90 د.ك',
-        hollyPrice: '120.00 د.ك',
-        quantity: 15,
-        status: 'متوفر',
-        mainCategory: 'إلكترونيات',
-        subCategory: 'هواتف ذكية'
-    },
-    {
-        id: '6',
-        image: 'https://placehold.co/40x40/e0e0e0/ffffff?text=P6',
-        name: 'هاتف 1 A15...',
-        price: '154.90 د.ك',
-        hollyPrice: '120.00 د.ك',
-        quantity: 15,
-        status: 'متوفر',
-        mainCategory: 'إلكترونيات',
-        subCategory: 'هواتف ذكية'
-    },
-    {
-        id: '7',
-        image: 'https://placehold.co/40x40/e0e0e0/ffffff?text=P7',
-        name: 'هاتف 1 A15...',
-        price: '154.90 د.ك',
-        hollyPrice: '120.00 د.ك',
-        quantity: 15,
-        status: 'متوفر',
-        mainCategory: 'إلكترونيات',
-        subCategory: 'هواتف ذكية'
-    },
-    {
-        id: '8',
-        image: 'https://placehold.co/40x40/e0e0e0/ffffff?text=P8',
-        name: 'هاتف 1 A15...',
-        price: '154.90 د.ك',
-        hollyPrice: '120.00 د.ك',
-        quantity: 15,
-        status: 'متوفر',
-        mainCategory: 'إلكترونيات',
-        subCategory: 'هواتف ذكية'
-    },
-    {
-        id: '9',
-        image: 'https://placehold.co/40x40/e0e0e0/ffffff?text=P9',
-        name: 'هاتف 1 A15...',
-        price: '154.90 د.ك',
-        hollyPrice: '120.00 د.ك',
-        quantity: 15,
-        status: 'متوفر',
-        mainCategory: 'إلكترونيات',
-        subCategory: 'هواتف ذكية'
-    },
-    {
-        id: '10',
-        image: 'https://placehold.co/40x40/e0e0e0/ffffff?text=P10',
-        name: 'هاتف 1 A15...',
-        price: '154.90 د.ك',
-        hollyPrice: '120.00 د.ك',
-        quantity: 15,
-        status: 'متوفر',
-        mainCategory: 'إلكترونيات',
-        subCategory: 'هواتف ذكية'
-    },
-];
+import axios from 'axios';
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -124,6 +12,11 @@ const Dashboard = () => {
     const [isMoreActionsDropdownOpen, setIsMoreActionsDropdownOpen] = useState(null);
     const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
+    const [products, setProducts] = useState([]);
+    const [stockToUpdate, setStockToUpdate] = useState('');
+
+    const baseURL = 'https://products-api.cbc-apps.net';
+    const token = localStorage.getItem('token');
 
     const getStatusClass = (status) => {
         switch (status) {
@@ -138,6 +31,25 @@ const Dashboard = () => {
         }
     };
 
+    const fetchProducts = async () => {
+        try {
+            const response = await axios.get(`${baseURL}/supplier/products`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            setProducts(response.data.products);
+        } catch (error) {
+            console.error('Error fetching products:', error);
+            alert('فشل جلب المنتجات، يرجى المحاولة لاحقاً.');
+        }
+    };
+
+    useEffect(() => {
+        fetchProducts();
+    }, []);
+
     const handleOpenProductDetails = (product) => {
         setSelectedProduct(product);
         setIsProductDetailsModalOpen(true);
@@ -145,15 +57,37 @@ const Dashboard = () => {
     };
 
     const handleOpenEditProduct = (product) => {
-        console.log(`Navigating to /edit-product/${product.id}`);
         navigate(`/edit-product/${product.id}`);
     };
 
-    const handleOpenEditStock = () => {
+    const handleOpenEditStock = (product) => {
+        setSelectedProduct(product);
+        setStockToUpdate(product.stock);
         setIsEditStockModalOpen(true);
         setIsMoreActionsDropdownOpen(false);
     };
 
+    const handleUpdateStock = async () => {
+        if (!selectedProduct) return;
+        try {
+            await axios.patch(`${baseURL}/supplier/products/${selectedProduct.id}/stock`, {
+                stock: parseInt(stockToUpdate, 10),
+                reason: "تحديث المخزون"
+            }, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            alert('تم تحديث المخزون بنجاح!');
+            fetchProducts();
+            setIsEditStockModalOpen(false);
+        } catch (error) {
+            console.error('Error updating stock:', error);
+            alert('فشل تحديث المخزون، يرجى المحاولة لاحقاً.');
+        }
+    };
+    
     const handleOpenEditPrice = () => {
         setIsEditPriceModalOpen(true);
         setIsMoreActionsDropdownOpen(false);
@@ -262,7 +196,7 @@ const Dashboard = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {dummyProducts.map((product) => (
+                            {products.map((product) => (
                                 <tr key={product.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
                                     <td className="py-3 px-4 relative">
                                         <button
@@ -281,33 +215,29 @@ const Dashboard = () => {
                                                     <IoPencilOutline className="w-5 h-5 ml-2 text-gray-500" />
                                                     تعديل المنتج
                                                 </button>
-                                                <button className="flex items-center w-full text-right px-4 py-2 hover:bg-gray-100" onClick={handleOpenEditStock}>
+                                                <button className="flex items-center w-full text-right px-4 py-2 hover:bg-gray-100" onClick={() => handleOpenEditStock(product)}>
                                                     <IoPencilOutline className="w-5 h-5 ml-2 text-gray-500" />
                                                     تعديل المخزون
                                                 </button>
-                                                <button className="flex items-center w-full text-right px-4 py-2 hover:bg-gray-100" onClick={handleOpenEditPrice}>
+                                                <button className="flex items-center w-full text-right px-4 py-2 hover:bg-gray-100" onClick={() => handleOpenEditPrice(product)}>
                                                     <IoPencilOutline className="w-5 h-5 ml-2 text-gray-500" />
                                                     تعديل السعر
                                                 </button>
-                                                <button className="flex items-center w-full text-right px-4 py-2 text-red-600 hover:bg-red-50" onClick={handleOpenDeleteModal}>
+                                                <button className="flex items-center w-full text-right px-4 py-2 text-red-600 hover:bg-red-50" onClick={() => handleOpenDeleteModal(product)}>
                                                     <IoTrashOutline className="w-5 h-5 ml-2 text-red-600" />
                                                     حذف المنتج
                                                 </button>
                                             </div>
                                         )}
                                     </td>
-                                    <td className="py-3 px-4 text-sm text-gray-800">{product.category}</td>
-                                    <td className="py-3 px-4">
-                                        <span className={`text-xs font-semibold px-3 py-1 rounded-full ${getStatusClass(product.status)}`}>
-                                            {product.status}
-                                        </span>
-                                    </td>
-                                    <td className="py-3 px-4 text-sm text-gray-800">{product.quantity}</td>
-                                    <td className="py-3 px-4 text-sm text-gray-800">{product.price}</td>
-                                    <td className="py-3 px-4 text-sm text-gray-800">{product.hollyPrice}</td>
+                                    <td className="py-3 px-4 text-sm text-gray-800">{product.category?.name || ''}</td>
+                                    <td className="py-3 px-4 text-sm text-gray-800">{product.section?.name || ''}</td>
+                                    <td className="py-3 px-4 text-sm text-gray-800">{product.stock}</td>
+                                    <td className="py-3 px-4 text-sm text-gray-800">{product.price.toLocaleString()}د.ع</td>
+                                    <td className="py-3 px-4 text-sm text-gray-800">{product.originalPrice ? `${product.originalPrice.toLocaleString()}د.ع` : '-'}</td>
                                     <td className="py-3 px-4 text-sm text-gray-800">{product.name}</td>
                                     <td className="py-3 px-4">
-                                        <img src={product.image} alt="product" className="w-10 h-10 rounded-md object-cover" />
+                                        <img src={product.mainImageUrl} alt={product.name} className="w-10 h-10 rounded-md object-cover" />
                                     </td>
                                 </tr>
                             ))}
@@ -316,7 +246,7 @@ const Dashboard = () => {
                 </div>
 
                 <div className="flex justify-between items-center mt-4 text-gray-500 text-sm">
-                    <p>إجمالي المنتجات: 8764</p>
+                    <p>إجمالي المنتجات: {products.length}</p>
                     <div className="flex items-center space-x-2 rtl:space-x-reverse">
                         <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 transition-colors">
                             <IoChevronDownOutline className="w-4 h-4 rotate-90" />
@@ -344,12 +274,14 @@ const Dashboard = () => {
             <Modal isOpen={isEditStockModalOpen} onClose={() => setIsEditStockModalOpen(false)}>
                 <div className="text-center">
                     <h2 className="text-xl font-bold mb-4 text-gray-800">تعديل المخزون</h2>
+                    {selectedProduct && <p className="mb-2 text-gray-600">المنتج: {selectedProduct.name}</p>}
                     <div className="mb-4">
                         <input
                             type="number"
                             placeholder="الكمية في المخزون"
                             className="bg-gray-100 w-full p-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-800 text-right"
-                            defaultValue="15"
+                            value={stockToUpdate}
+                            onChange={(e) => setStockToUpdate(e.target.value)}
                         />
                     </div>
                     <div className="flex justify-center space-x-4 rtl:space-x-reverse">
@@ -360,6 +292,7 @@ const Dashboard = () => {
                             إلغاء
                         </button>
                         <button
+                            onClick={handleUpdateStock}
                             className="bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition-colors"
                         >
                             تعديل
@@ -367,7 +300,7 @@ const Dashboard = () => {
                     </div>
                 </div>
             </Modal>
-
+            
             <Modal isOpen={isEditPriceModalOpen} onClose={() => setIsEditPriceModalOpen(false)}>
                 <div className="text-center">
                     <h2 className="text-xl font-bold mb-4 text-gray-800">تعديل السعر</h2>
@@ -376,13 +309,13 @@ const Dashboard = () => {
                             type="text"
                             placeholder="السعر الأساسي"
                             className="bg-gray-100 w-full p-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-800 text-right"
-                            defaultValue="150 د.ك"
+                            defaultValue="150د.ع"
                         />
                         <input
                             type="text"
                             placeholder="السعر بعد الخصم"
                             className="bg-gray-100 w-full p-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-800 text-right"
-                            defaultValue="140 د.ك"
+                            defaultValue="140د.ع"
                         />
                         <input
                             type="text"
@@ -455,7 +388,7 @@ const Dashboard = () => {
                                 <div className="flex items-center p-2 bg-gray-50 rounded-lg">
                                     <span className="w-1/3 text-gray-500 text-right pr-4">صورة المنتج</span>
                                     <span className="w-2/3 text-left pl-4">
-                                        <img src={selectedProduct.image} alt="product" className="w-16 h-16 rounded-lg object-cover" />
+                                        <img src={selectedProduct.mainImageUrl} alt="product" className="w-16 h-16 rounded-lg object-cover" />
                                     </span>
                                 </div>
                                 <div className="flex items-center p-2 bg-gray-50 rounded-lg">
@@ -468,15 +401,15 @@ const Dashboard = () => {
                                 </div>
                                 <div className="flex items-center p-2 bg-gray-50 rounded-lg">
                                     <span className="w-1/3 text-gray-500 text-right pr-4">المخزون</span>
-                                    <span className="w-2/3 text-left pl-4 text-gray-900">{selectedProduct.quantity}</span>
+                                    <span className="w-2/3 text-left pl-4 text-gray-900">{selectedProduct.stock}</span>
                                 </div>
                                 <div className="flex items-center p-2 bg-gray-50 rounded-lg">
                                     <span className="w-1/3 text-gray-500 text-right pr-4">القسم الرئيسي</span>
-                                    <span className="w-2/3 text-left pl-4 text-gray-900">{selectedProduct.mainCategory}</span>
+                                    <span className="w-2/3 text-left pl-4 text-gray-900">{selectedProduct.category?.name || ''}</span>
                                 </div>
                                 <div className="flex items-center p-2 bg-gray-50 rounded-lg">
                                     <span className="w-1/3 text-gray-500 text-right pr-4">القسم الفرعي</span>
-                                    <span className="w-2/3 text-left pl-4 text-gray-900">{selectedProduct.subCategory}</span>
+                                    <span className="w-2/3 text-left pl-4 text-gray-900">{selectedProduct.section?.name || ''}</span>
                                 </div>
                                 <div className="flex items-center p-2 bg-gray-50 rounded-lg">
                                     <span className="w-1/3 text-gray-500 text-right pr-4">تحديث تلقائي</span>
@@ -484,7 +417,7 @@ const Dashboard = () => {
                                 </div>
                                 <div className="p-2 bg-gray-50 rounded-lg">
                                     <span className="block text-gray-500 text-right pr-4 mb-1">وصف المنتج</span>
-                                    <span className="block text-right pr-4 text-gray-900">جهاز محمول حديث من سامسونج</span>
+                                    <span className="block text-right pr-4 text-gray-900">{selectedProduct.description}</span>
                                 </div>
                             </div>
                             <div className="flex justify-end mt-6 space-x-4 rtl:space-x-reverse">

@@ -1,85 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts';
 
-const statsCards = [
-    { title: 'اجمالي المشاهدات', value: '2:45', growth: '+5% من الشهر الماضي', icon: 'time' },
-    { title: 'اضافة للسلة', value: '6.5%', growth: '+0.2% من الشهر الماضي', icon: 'conversion' },
-    { title: 'معدل التحويل ', value: '25,000', growth: '+3% من الشهر الماضي', icon: 'visitors' },
-    { title: ' متوسط وقت المشاهدة', value: '7,500 د.ك', growth: '+10% من الشهر الماضي', icon: 'sales' },
-    { title: ' المنتجات المهجورة', value: '1,500', growth: '+15% من الشهر الماضي', icon: 'daily-visitors' },
-    { title: 'الزبائن المتتردون', value: '8,200', growth: '+10% من الشهر الماضي', icon: 'new-visitors' },
-    // { title: 'متوسط الجلسة', value: '2:30', growth: '-2% من الشهر الماضي', icon: 'session-duration' },
-    // { title: 'الزوار العائدون', value: '3,100', growth: '+7% من الشهر الماضي', icon: 'returning-visitors' },
-];
-
-const data = [
-    { name: 'هاتف A15', views: 80, sales: 1500, color: '#000000' },
-    { name: 'سماعة رأس', views: 70, sales: 1200, color: '#4CAF50' },
-    { name: 'جهاز لوحي', views: 90, sales: 1800, color: '#FFEB3B' },
-    { name: 'ساعة ذكية', views: 60, sales: 1400, color: '#F44336' },
-];
-
-const categoriesData = [
-    { name: 'إلكترونيات', value: 65, color: '#2B61A4' },
-    { name: 'منزل', value: 54, color: '#CC3A32' },
-    { name: 'أزياء', value: 45, color: '#2B61A4' },
-    { name: 'رياضة', value: 38, color: '#CC3A32' },
-    { name: 'ملابس', value: 33, color: '#2B61A4' },
-];
-
-const mostVisitedProducts = [
-    { name: 'هاتف ذكي A15 128GB', visits: '12,500', conversion: '4.2%', addedToCart: '200', sales: '15', quantity: '100' },
-    { name: 'هاتف ذكي A15 128GB', visits: '12,500', conversion: '4.2%', addedToCart: '200', sales: '15', quantity: '100' },
-    { name: 'هاتف ذكي A15 128GB', visits: '12,500', conversion: '4.2%', addedToCart: '200', sales: '15', quantity: '100' },
-    { name: 'هاتف ذكي A15 128GB', visits: '12,500', conversion: '4.2%', addedToCart: '200', sales: '15', quantity: '100' },
-    { name: 'هاتف ذكي A15 128GB', visits: '12,500', conversion: '4.2%', addedToCart: '200', sales: '15', quantity: '100' },
-    { name: 'هاتف ذكي A15 128GB', visits: '12,500', conversion: '4.2%', addedToCart: '200', sales: '15', quantity: '100' },
-    { name: 'هاتف ذكي A15 128GB', visits: '12,500', conversion: '4.2%', addedToCart: '200', sales: '15', quantity: '100' },
-    { name: 'هاتف ذكي A15 128GB', visits: '12,500', conversion: '4.2%', addedToCart: '200', sales: '15', quantity: '100' },
-    { name: 'هاتف ذكي A15 128GB', visits: '12,500', conversion: '4.2%', addedToCart: '200', sales: '15', quantity: '100' },
-    { name: 'هاتف ذكي A15 128GB', visits: '12,500', conversion: '4.2%', addedToCart: '200', sales: '15', quantity: '100' },
-];
-
-const monthlyData = [
-    { month: 'يناير', visits: 8500, sales: 500, purchases: 300, color: '#f56565' },
-    { month: 'فبراير', visits: 7200, sales: 450, purchases: 280, color: '#48bb78' },
-    { month: 'مارس', visits: 9100, sales: 600, purchases: 400, color: '#4299e1' },
-    { month: 'أبريل', visits: 8322, sales: 550, purchases: 350, color: '#f6ad55' },
-    { month: 'مايو', visits: 9500, sales: 620, purchases: 420, color: '#f56565' },
-    { month: 'يونيو', visits: 8900, sales: 580, purchases: 380, color: '#48bb78' },
-    { month: 'يوليو', visits: 7800, sales: 500, purchases: 320, color: '#4299e1' },
-    { month: 'أغسطس', visits: 10200, sales: 700, purchases: 450, color: '#f6ad55' },
-    { month: 'سبتمبر', visits: 9800, sales: 650, purchases: 410, color: '#f56565' },
-    { month: 'أكتوبر', visits: 8700, sales: 580, purchases: 370, color: '#48bb78' },
-    { month: 'نوفمبر', visits: 9300, sales: 610, purchases: 400, color: '#4299e1' },
-    { month: 'ديسمبر', visits: 10500, sales: 720, purchases: 480, color: '#f6ad55' },
-];
-
-const funnelData = [
-    { stage: 'زيارات المنتج', value: 250000, color: '#2b61a4' },
-    { stage: 'الإضافة للسلة', value: 8200, color: '#cc3a32' },
-    { stage: 'بدء الدفع', value: 2500, color: '#f6ad55' },
-    { stage: 'شراء', value: 9540, color: '#48bb78' },
-];
-
-const userRegistrationData = [
-    { month: 'يناير', 'المستخدمون المسجلون': 4000 },
-    { month: 'فبراير', 'المستخدمون المسجلون': 3000 },
-    { month: 'مارس', 'المستخدمون المسجلون': 5000 },
-    { month: 'أبريل', 'المستخدمون المسجلون': 4500 },
-    { month: 'مايو', 'المستخدمون المسجلون': 6000 },
-    { month: 'يونيو', 'المستخدمون المسجلون': 5500 },
-];
-
-const sessionsData = [
-    { month: 'يناير', 'عدد الجلسات': 100000 },
-    { month: 'فبراير', 'عدد الجلسات': 120000 },
-    { month: 'مارس', 'عدد الجلسات': 110000 },
-    { month: 'أبريل', 'عدد الجلسات': 140000 },
-    { month: 'مايو', 'عدد الجلسات': 130000 },
-    { month: 'يونيو', 'عدد الجلسات': 150000 },
-];
+const baseURL = 'https://products-api.cbc-apps.net';
 
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -96,9 +19,14 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 const TimelineTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
-        const visits = payload.find(p => p.dataKey === 'visits')?.value || 0;
-        const sales = payload.find(p => p.dataKey === 'sales')?.value || 0;
-        const purchases = payload.find(p => p.dataKey === 'purchases')?.value || 0;
+        const visitsPayload = payload.find(p => p.dataKey === 'visits');
+        const salesPayload = payload.find(p => p.dataKey === 'sales');
+        const purchasesPayload = payload.find(p => p.dataKey === 'purchases');
+
+        const visits = visitsPayload?.value || 0;
+        const sales = salesPayload?.value || 0;
+        const purchases = purchasesPayload?.value || 0;
+
         return (
             <div className="bg-white p-4 rounded-lg shadow-md text-right font-sans border-t-4 border-red-500">
                 <p className="font-bold text-gray-800 text-lg mb-2">{label}</p>
@@ -124,7 +52,177 @@ const TimelineTooltip = ({ active, payload, label }) => {
 
 const ProductAnalytics = () => {
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState('شهر');
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    const [statsCards, setStatsCards] = useState([]);
+    const [productPerformanceData, setProductPerformanceData] = useState([]);
+    const [categoriesData, setCategoriesData] = useState([]);
+    const [funnelData, setFunnelData] = useState([]);
+    const [userRegistrationData, setUserRegistrationData] = useState([]);
+    const [sessionsData, setSessionsData] = useState([]);
+    const [mostVisitedProducts, setMostVisitedProducts] = useState([]);
+    const [monthlyData, setMonthlyData] = useState([]);
+
+    useEffect(() => {
+        const fetchAnalyticsData = async () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                setError('Authentication token not found.');
+                setLoading(false);
+                return;
+            }
+
+            const headers = {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            };
+
+            try {
+                const [tablesChartsRes, enhancedRes, salesOverTimeRes] = await Promise.all([
+                    fetch(`${baseURL}/supplier/analytics/tables-charts`, { headers }),
+                    fetch(`${baseURL}/supplier/analytics/enhanced`, { headers }),
+                    fetch(`${baseURL}/supplier/sales/over-time`, { headers }),
+                ]);
+
+                if (!tablesChartsRes.ok || !enhancedRes.ok || !salesOverTimeRes.ok) {
+                    throw new Error('Failed to fetch analytics data.');
+                }
+
+                const tablesCharts = await tablesChartsRes.json();
+                const enhanced = await enhancedRes.json();
+                const salesOverTime = await salesOverTimeRes.json();
+
+                const newStatsCards = [
+                    {
+                        title: enhanced.cards.totalViews.title,
+                        value: enhanced.cards.totalViews.value.toLocaleString(),
+                        growth: enhanced.cards.totalViews.change,
+                        icon: 'time',
+                        trend: enhanced.cards.totalViews.trend,
+                    },
+                    {
+                        title: enhanced.cards.addToCartRate.title,
+                        value: enhanced.cards.addToCartRate.value,
+                        growth: enhanced.cards.addToCartRate.change,
+                        icon: 'conversion',
+                        trend: enhanced.cards.addToCartRate.trend,
+                    },
+                    {
+                        title: enhanced.cards.conversionRate.title,
+                        value: enhanced.cards.conversionRate.value,
+                        growth: enhanced.cards.conversionRate.change,
+                        icon: 'visitors',
+                        trend: enhanced.cards.conversionRate.trend,
+                    },
+                    {
+                        title: enhanced.cards.avgViewTime.title,
+                        value: enhanced.cards.avgViewTime.value,
+                        growth: enhanced.cards.avgViewTime.change,
+                        icon: 'sales',
+                        trend: enhanced.cards.avgViewTime.trend,
+                    },
+                    {
+                        title: enhanced.cards.abandonedProducts.title,
+                        value: enhanced.cards.abandonedProducts.value.toLocaleString(),
+                        growth: enhanced.cards.abandonedProducts.change,
+                        icon: 'daily-visitors',
+                        trend: enhanced.cards.abandonedProducts.trend,
+                    },
+                    {
+                        title: enhanced.cards.hesitantCustomers.title,
+                        value: enhanced.cards.hesitantCustomers.value.toLocaleString(),
+                        growth: enhanced.cards.hesitantCustomers.change,
+                        icon: 'new-visitors',
+                        trend: enhanced.cards.hesitantCustomers.trend,
+                    },
+                ];
+                setStatsCards(newStatsCards);
+
+                const mappedProductPerformance = tablesCharts.charts.productPerformance.data.map(item => ({
+                    name: item.productName,
+                    views: item.visits,
+                    sales: item.sales,
+                }));
+                setProductPerformanceData(mappedProductPerformance);
+
+                const mappedCategories = tablesCharts.charts.bestSellingCategories.data.map((item, index) => ({
+                    name: item.category,
+                    value: item.sales,
+                    color: index % 2 === 0 ? '#2B61A4' : '#CC3A32',
+                }));
+                setCategoriesData(mappedCategories);
+
+                const mappedFunnel = tablesCharts.charts.conversionFunnel.data.map(item => ({
+                    stage: item.stage,
+                    value: item.value,
+                    color: (() => {
+                        switch (item.stage) {
+                            case 'زيارة المنتج': return '#2b61a4';
+                            case 'إضافة للسلة': return '#cc3a32';
+                            case 'بدء الدفع': return '#f6ad55';
+                            case 'شراء': return '#48bb78';
+                            default: return '#ccc';
+                        }
+                    })(),
+                }));
+                setFunnelData(mappedFunnel);
+
+                const mappedUserRegistrations = tablesCharts.charts.userRegistrations.data.map(item => ({
+                    month: item.month,
+                    'المستخدمون المسجلون': item.registrations,
+                }));
+                setUserRegistrationData(mappedUserRegistrations);
+
+                const mappedSessions = tablesCharts.charts.monthlySessions.data.map(item => ({
+                    month: item.month,
+                    'عدد الجلسات': item.sessions,
+                }));
+                setSessionsData(mappedSessions);
+
+                const mappedMostVisited = tablesCharts.mostViewedProductsTable.map(item => ({
+                    name: item.name,
+                    visits: item.views.toLocaleString(),
+                    conversion: item.conversionRate,
+                    addedToCart: 'N/A',
+                    sales: item.sales,
+                    quantity: 'N/A',
+                }));
+                setMostVisitedProducts(mappedMostVisited);
+
+                const mappedSalesOverTime = salesOverTime.map(item => ({
+                    month: item.name,
+                    sales: item.value,
+                    visits: tablesCharts.charts.monthlySessions.data.find(session => session.month === item.name)?.sessions || 0,
+                    purchases: item.value / 1000,
+                }));
+                setMonthlyData(mappedSalesOverTime);
+
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAnalyticsData();
+    }, []);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-gray-100">
+                <p>Loading analytics data...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-gray-100">
+                <p className="text-red-500">Error: {error}</p>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-gray-100 p-4 min-h-screen rtl:text-right font-sans">
@@ -139,7 +237,7 @@ const ProductAnalytics = () => {
                             </div>
                             <h3 className="text-gray-500 text-sm font-medium">{card.title}</h3>
                             <p className="text-xl font-bold">{card.value}</p>
-                            <span className="text-sm text-green-500">{card.growth}</span>
+                            <span className={`text-sm ${card.trend === 'up' ? 'text-green-500' : card.trend === 'down' ? 'text-red-500' : 'text-gray-500'}`}>{card.growth}</span>
                         </div>
                     ))}
                 </div>
@@ -156,7 +254,7 @@ const ProductAnalytics = () => {
                             </div>
                         </div>
                         <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                            <BarChart data={productPerformanceData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="name" angle={-45} textAnchor="end" height={60} />
                                 <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
@@ -224,7 +322,7 @@ const ProductAnalytics = () => {
                                 <div key={index} className="flex items-center justify-between">
                                     <span className="w-1/4 text-sm text-gray-700">{item.stage}</span>
                                     <div className="w-3/4 bg-gray-200 rounded-full h-4">
-                                        <div className="h-4 rounded-full" style={{ width: `${(item.value / 250000) * 100}%`, backgroundColor: item.color }}></div>
+                                        <div className="h-4 rounded-full" style={{ width: `${(item.value / (funnelData[0]?.value || 1)) * 100}%`, backgroundColor: item.color }}></div>
                                     </div>
                                     <span className="ml-4 font-bold text-gray-900">{item.value.toLocaleString()}</span>
                                 </div>

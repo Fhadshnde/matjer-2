@@ -102,19 +102,19 @@ const SalesDashboard = () => {
             <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8L13 15M3 21v-8a2 2 0 012-2h10a2 2 0 012 2v8"></path>
           </svg>
         )} />
-        <StatCard title="مبيعات السنة" value="1,850,000 د.ك" percentage="+9%" icon={(
+        <StatCard title="مبيعات السنة" value="1,850,000د.ع" percentage="+9%" icon={(
           <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
             <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"></path>
             <path fillRule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zM2 10a8 8 0 1116 0A8 8 0 012 10z" clipRule="evenodd"></path>
           </svg>
         )} />
-        <StatCard title="مبيعات الشهر" value="320,000 د.ك" percentage="+9%" icon={(
+        <StatCard title="مبيعات الشهر" value="320,000د.ع" percentage="+9%" icon={(
           <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
             <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"></path>
             <path fillRule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zM2 10a8 8 0 1116 0A8 8 0 012 10z" clipRule="evenodd"></path>
           </svg>
         )} />
-        <StatCard title="مبيعات اليوم" value="45,200 د.ك" percentage="+9%" icon={(
+        <StatCard title="مبيعات اليوم" value="45,200د.ع" percentage="+9%" icon={(
           <svg className="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
             <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"></path>
             <path fillRule="evenodd" d="M10 2a8 8 0 100 16 8 8 0 000-16zM2 10a8 8 0 1116 0A8 8 0 012 10z" clipRule="evenodd"></path>
@@ -160,7 +160,7 @@ const SalesDashboard = () => {
                 <div className="relative w-full bg-gray-200 h-2.5 rounded-full mr-2">
                   <div className="bg-blue-500 h-2.5 rounded-full" style={{ width: `${item.percentage}%` }}></div>
                 </div>
-                <span className="text-sm font-semibold text-gray-800">{item.sales.toLocaleString()} د.ك</span>
+                <span className="text-sm font-semibold text-gray-800">{item.sales.toLocaleString()}د.ع</span>
               </div>
             ))}
           </div>

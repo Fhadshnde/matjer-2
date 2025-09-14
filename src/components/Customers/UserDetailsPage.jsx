@@ -27,7 +27,7 @@ const userOrders = [
   {
     orderId: 'A-10255',
     products: 'هاتف A1S 128GB، سماعات بلوتوث',
-    total: '154.90 د.ك',
+    total: '154.90د.ع',
     status: 'بانتظار الشحن',
     paymentStatus: 'مدفوع',
     shippingCompany: 'ارامكس',
@@ -35,7 +35,7 @@ const userOrders = [
   {
     orderId: 'A-10254',
     products: 'هاتف A1S 128GB، سماعات بلوتوث',
-    total: '154.90 د.ك',
+    total: '154.90د.ع',
     status: 'بانتظار الشحن',
     paymentStatus: 'مدفوع',
     shippingCompany: 'ارامكس',
@@ -43,7 +43,7 @@ const userOrders = [
   {
     orderId: 'A-10253',
     products: 'هاتف A1S 128GB، سماعات بلوتوث',
-    total: '154.90 د.ك',
+    total: '154.90د.ع',
     status: 'بانتظار الشحن',
     paymentStatus: 'مدفوع',
     shippingCompany: 'aramex',
@@ -51,7 +51,7 @@ const userOrders = [
   {
     orderId: 'A-10252',
     products: 'هاتف A1S 128GB، سماعات بلوتوث',
-    total: '154.90 د.ك',
+    total: '154.90د.ع',
     status: 'بانتظار الشحن',
     paymentStatus: 'مدفوع',
     shippingCompany: 'aramex',
@@ -59,7 +59,7 @@ const userOrders = [
   {
     orderId: 'A-10251',
     products: 'هاتف A1S 128GB، سماعات بلوتوث',
-    total: '154.90 د.ك',
+    total: '154.90د.ع',
     status: 'بانتظار الشحن',
     paymentStatus: 'مدفوع',
     shippingCompany: 'aramex',
@@ -494,7 +494,7 @@ const UserDetailsPage = ({ user, onClose }) => {
                   <span className="text-gray-400 text-xs">آخر طلب</span>
                   <BsThreeDots className="text-gray-400 text-base" />
                 </div>
-                <p className="text-xl font-semibold mb-1">320 د.ك</p>
+                <p className="text-xl font-semibold mb-1">320د.ع</p>
               </div>
               <div className="bg-gray-100 p-2.5 rounded-full text-xl text-red-500">
                 <FaRegClock />
