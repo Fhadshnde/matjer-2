@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AreaChart,
@@ -12,6 +12,8 @@ import {
   CartesianGrid,
   Cell
 } from 'recharts';
+import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
+import axios from 'axios';
 
 const salesOverTimeData = [
   { name: 'يناير', value: 400000, prevValue: 500000 },
@@ -81,6 +83,96 @@ const StripedBar = ({ fill, striped, ...props }) => {
 };
 
 const SalesDashboard = () => {
+  const [analyticsData, setAnalyticsData] = useState({
+    salesOverTime: salesOverTimeData,
+    citySales: citySalesData,
+    departmentData: departmentData,
+    loading: true,
+    error: null
+  });
+
+  useEffect(() => {
+    const fetchAnalyticsData = async () => {
+      try {
+        setAnalyticsData(prev => ({ ...prev, loading: true, error: null }));
+        
+        // Fetch analytics data from API
+        const [enhancedResponse, tablesChartsResponse, salesOverTimeResponse] = await Promise.all([
+          axios.get(getApiUrl(API_CONFIG.ENDPOINTS.ANALYTICS.ENHANCED), { headers: getAuthHeaders() }),
+          axios.get(getApiUrl(API_CONFIG.ENDPOINTS.ANALYTICS.TABLES_CHARTS), { headers: getAuthHeaders() }),
+          axios.get(getApiUrl(API_CONFIG.ENDPOINTS.ANALYTICS.SALES_OVER_TIME), { headers: getAuthHeaders() })
+        ]);
+
+        const enhancedData = enhancedResponse.data;
+        const tablesChartsData = tablesChartsResponse.data;
+        const salesData = salesOverTimeResponse.data;
+
+        // Transform API data to match component structure
+        const transformedSalesOverTime = salesData.monthlyData?.map(item => ({
+          name: item.month,
+          value: item.sales,
+          prevValue: item.previousSales || 0
+        })) || salesOverTimeData;
+
+        const transformedCitySales = tablesChartsData.citySales?.map((item, index) => ({
+          name: item.city,
+          sales: item.sales,
+          color: citySalesData[index]?.color || '#2C2B2B'
+        })) || citySalesData;
+
+        const transformedDepartmentData = tablesChartsData.departmentSales?.map(item => ({
+          name: item.department,
+          sales: item.sales,
+          percentage: item.percentage
+        })) || departmentData;
+
+        setAnalyticsData({
+          salesOverTime: transformedSalesOverTime,
+          citySales: transformedCitySales,
+          departmentData: transformedDepartmentData,
+          loading: false,
+          error: null
+        });
+      } catch (error) {
+        console.error('Error fetching analytics data:', error);
+        setAnalyticsData(prev => ({
+          ...prev,
+          loading: false,
+          error: 'فشل في تحميل بيانات التحليلات'
+        }));
+      }
+    };
+
+    fetchAnalyticsData();
+  }, []);
+
+  if (analyticsData.loading) {
+    return (
+      <div className="bg-gray-100 min-h-screen p-6 font-['Tajawal'] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">جاري تحميل بيانات التحليلات...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (analyticsData.error) {
+    return (
+      <div className="bg-gray-100 min-h-screen p-6 font-['Tajawal'] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{analyticsData.error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          >
+            إعادة المحاولة
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gray-100 min-h-screen p-8 text-right font-sans" dir="rtl">
       <div className="flex justify-start items-center p-4 bg-white shadow-md mb-6">
@@ -133,7 +225,7 @@ const SalesDashboard = () => {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={salesOverTimeData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            <AreaChart data={analyticsData.salesOverTime} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e0e0e0" />
               <XAxis dataKey="name" tickLine={false} axisLine={false} />
               <YAxis tickFormatter={(value) => `${value / 1000}K`} tickLine={false} axisLine={false} orientation="right" dx={15} />
@@ -154,7 +246,7 @@ const SalesDashboard = () => {
             </div>
           </div>
           <div className="space-y-4 pt-4">
-            {departmentData.map((item, index) => (
+            {analyticsData.departmentData.map((item, index) => (
               <div key={index} className="flex items-center">
                 <span className="w-24 text-sm text-gray-600 ml-4">{item.name}</span>
                 <div className="relative w-full bg-gray-200 h-2.5 rounded-full mr-2">
@@ -170,13 +262,13 @@ const SalesDashboard = () => {
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
         <h3 className="text-lg font-bold mb-4">المبيعات حسب المحافظة</h3>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={citySalesData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+          <BarChart data={analyticsData.citySales} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e0e0e0" />
             <XAxis dataKey="name" tickLine={false} axisLine={false} />
             <YAxis tickFormatter={(value) => `${value}`} tickLine={false} axisLine={false} orientation="right" />
             <Tooltip />
             <Bar dataKey="sales" barSize={35} radius={[10, 10, 0, 0]}>
-              {citySalesData.map((entry, index) => (
+              {analyticsData.citySales.map((entry, index) => (
                 <Cell 
                   key={`cell-${index}`} 
                   fill={entry.color} 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { getApiUrl, API_CONFIG } from '../../config/api';
 
 const Login = ({ setIsLoggedIn }) => {
   const [phone, setPhone] = useState('');
@@ -14,7 +15,7 @@ const Login = ({ setIsLoggedIn }) => {
     try {
       // إرسال طلب تسجيل الدخول
       const response = await axios.post(
-        'https://products-api.cbc-apps.net/supplier/auth/login',
+        getApiUrl(API_CONFIG.ENDPOINTS.AUTH.LOGIN),
         { phone, password }
       );
 

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>فحص التوكن</title>
+</head>
+<body>
+    <h1>فحص التوكن</h1>
+    <div id="token-info"></div>
+    <button onclick="checkToken()">فحص التوكن</button>
+    <button onclick="setTestToken()">تعيين توكن اختبار</button>
+    <button onclick="testAPI()">اختبار API</button>
+    
+    <script>
+        function checkToken() {
+            const token = localStorage.getItem('token');
+            const tokenInfo = document.getElementById('token-info');
+            
+            if (token) {
+                tokenInfo.innerHTML = `
+                    <p>✅ التوكن موجود</p>
+                    <p>الطول: ${token.length}</p>
+                    <p>البداية: ${token.substring(0, 20)}...</p>
+                `;
+            } else {
+                tokenInfo.innerHTML = '<p>❌ التوكن غير موجود</p>';
+            }
+        }
+        
+        function setTestToken() {
+            const testToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdXBwbGllcklkIjoxLCJwaG9uZSI6IjA3OTAxMjM0NTY3IiwibmFtZSI6IlRlc3QgU3VwcGxpZXIiLCJ0eXBlIjoic3VwcGxpZXIiLCJpYXQiOjE3NTgwNTk4NzQsImV4cCI6MTc1ODE0NjI3NH0.4uZ2LPwUn6EOdY1cLuuyW52FRwLUrDJHS8gY2cU8eFk';
+            localStorage.setItem('token', testToken);
+            checkToken();
+        }
+        
+        async function testAPI() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('لا يوجد توكن');
+                return;
+            }
+            
+            try {
+                const response = await fetch('http://localhost:4500/supplier/offers', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                console.log('API Response:', data);
+                alert('API يعمل بشكل صحيح');
+            } catch (error) {
+                console.error('API Error:', error);
+                alert('خطأ في API: ' + error.message);
+            }
+        }
+        
+        // فحص التوكن عند تحميل الصفحة
+        checkToken();
+    </script>
+</body>
+</html>

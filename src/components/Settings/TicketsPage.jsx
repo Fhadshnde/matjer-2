@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
+import axios from 'axios';
 
 const tabs = [
     { name: 'بيانات المتجر', path: '/store-info' },
@@ -192,11 +194,123 @@ const TicketsPage = () => {
     const [showNewTicketModal, setShowNewTicketModal] = useState(false);
     const [showTicketDetailsModal, setShowTicketDetailsModal] = useState(false);
     const [selectedTicket, setSelectedTicket] = useState(null);
+    const [ticketsData, setTicketsData] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        const fetchTicketsData = async () => {
+            try {
+                setLoading(true);
+                const response = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.TICKETS.LIST), {
+                    headers: getAuthHeaders()
+                });
+                
+                const data = response.data;
+                setTicketsData(data.tickets || []);
+                setError(null);
+            } catch (err) {
+                console.error('Error fetching tickets:', err);
+                setError('فشل في تحميل بيانات التذاكر');
+                setTicketsData([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchTicketsData();
+    }, []);
+
+    const handleCreateTicket = async (ticketData) => {
+        try {
+            const response = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.TICKETS.ADD), ticketData, {
+                headers: getAuthHeaders()
+            });
+            
+            // Refresh tickets list
+            const fetchResponse = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.TICKETS.LIST), {
+                headers: getAuthHeaders()
+            });
+            
+            setTicketsData(fetchResponse.data.tickets || []);
+            setShowNewTicketModal(false);
+            return { success: true, message: 'تم إنشاء التذكرة بنجاح' };
+        } catch (error) {
+            console.error('Error creating ticket:', error);
+            return { success: false, message: 'فشل في إنشاء التذكرة' };
+        }
+    };
+
+    const handleUpdateTicket = async (ticketId, ticketData) => {
+        try {
+            const response = await axios.patch(getApiUrl(API_CONFIG.ENDPOINTS.TICKETS.EDIT(ticketId)), ticketData, {
+                headers: getAuthHeaders()
+            });
+            
+            // Refresh tickets list
+            const fetchResponse = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.TICKETS.LIST), {
+                headers: getAuthHeaders()
+            });
+            
+            setTicketsData(fetchResponse.data.tickets || []);
+            setShowTicketDetailsModal(false);
+            return { success: true, message: 'تم تحديث التذكرة بنجاح' };
+        } catch (error) {
+            console.error('Error updating ticket:', error);
+            return { success: false, message: 'فشل في تحديث التذكرة' };
+        }
+    };
+
+    const handleReplyToTicket = async (ticketId, replyData) => {
+        try {
+            const response = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.TICKETS.REPLY(ticketId)), replyData, {
+                headers: getAuthHeaders()
+            });
+            
+            // Refresh tickets list
+            const fetchResponse = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.TICKETS.LIST), {
+                headers: getAuthHeaders()
+            });
+            
+            setTicketsData(fetchResponse.data.tickets || []);
+            return { success: true, message: 'تم إرسال الرد بنجاح' };
+        } catch (error) {
+            console.error('Error replying to ticket:', error);
+            return { success: false, message: 'فشل في إرسال الرد' };
+        }
+    };
 
     const openTicketDetails = (ticket) => {
         setSelectedTicket(ticket);
         setShowTicketDetailsModal(true);
     };
+
+    if (loading) {
+        return (
+            <div className="bg-gray-100 min-h-screen p-6 font-['Tajawal'] flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">جاري تحميل بيانات التذاكر...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="bg-gray-100 min-h-screen p-6 font-['Tajawal'] flex items-center justify-center">
+                <div className="text-center">
+                    <p className="text-red-600 mb-4">{error}</p>
+                    <button 
+                        onClick={() => window.location.reload()} 
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                    >
+                        إعادة المحاولة
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="rtl:text-right font-sans">

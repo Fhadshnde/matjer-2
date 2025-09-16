@@ -1,0 +1,8 @@
+COMPREHENSIVE ENDPOINTS TEST REPORT
+Generated: Tue Sep 16 22:49:01 +03 2025
+====================================
+Total Tests: 30
+Passed: 0
+Failed: 31
+Success Rate: 0%
+====================================

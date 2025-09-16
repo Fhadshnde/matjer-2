@@ -1,18 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
 
-const baseURL = 'https://products-api.cbc-apps.net';
+const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-white p-4 rounded-lg shadow-md text-right font-sans border-t-4 border-red-500">
+                <p className="font-bold text-gray-800 text-lg mb-2">{label}</p>
+                <div className="flex flex-col space-y-1">
+                    {payload.map((entry, index) => (
+                        <div key={index} className="flex justify-between items-center text-gray-700">
+                            <span style={{ color: entry.color }}>{entry.name}</span>
+                            <span className="font-semibold text-right">{entry.value.toLocaleString('ar-EG')} د.ع</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+    return null;
+};
 
 const PaymentsAndCashbackDashboard = () => {
     const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [isMoreModalOpen, setIsMoreModalOpen] = useState(null);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [selectedOrder, setSelectedOrder] = useState(null);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [statsCards, setStatsCards] = useState([]);
     const [ordersData, setOrdersData] = useState([]);
     const [chartData, setChartData] = useState([]);
+    const [summary, setSummary] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('الكل');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
 
     const handleExportClick = () => {
         setIsExportModalOpen(true);
@@ -30,13 +54,15 @@ const PaymentsAndCashbackDashboard = () => {
         setIsMoreModalOpen(null);
     };
 
-    const handleViewDetails = () => {
+    const handleViewDetails = (order) => {
+        setSelectedOrder(order);
         handleCloseMoreModal();
         setIsDetailsModalOpen(true);
     };
 
     const handleCloseDetailsModal = () => {
         setIsDetailsModalOpen(false);
+        setSelectedOrder(null);
     };
 
     const getStatusColors = (status) => {
@@ -53,9 +79,28 @@ const PaymentsAndCashbackDashboard = () => {
                 return 'bg-green-100 text-green-700';
             case 'معلق':
                 return 'bg-yellow-100 text-yellow-700';
+            case 'CANCELLED':
+                return 'bg-red-100 text-red-700';
+            case 'DELIVERED':
+                return 'bg-green-100 text-green-700';
+            case 'PROCESSING':
+                return 'bg-yellow-100 text-yellow-700';
+            case 'SHIPPED':
+                return 'bg-blue-100 text-blue-700';
             default:
                 return 'bg-gray-100 text-gray-700';
         }
+    };
+
+    const getStatusText = (status) => {
+        const statusMap = {
+            'CANCELLED': 'ملغي',
+            'DELIVERED': 'مستلم',
+            'PROCESSING': 'قيد المعالجة',
+            'SHIPPED': 'مشحون',
+            'PENDING': 'معلق'
+        };
+        return statusMap[status] || status;
     };
 
     useEffect(() => {
@@ -67,58 +112,74 @@ const PaymentsAndCashbackDashboard = () => {
                 return;
             }
 
-            const headers = {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            };
-
             try {
-                const response = await fetch(`${baseURL}/supplier/dues/enhanced`, { headers });
+                const response = await fetch(getApiUrl(API_CONFIG.ENDPOINTS.DUES.ENHANCED), { 
+                    headers: getAuthHeaders() 
+                });
+                
                 if (!response.ok) {
                     throw new Error('Failed to fetch dues data.');
                 }
+                
                 const data = await response.json();
 
+                // Process stats cards
                 const newStatsCards = [
                     {
                         title: data.cards.totalDues.title,
-                        value: data.cards.totalDues.value.toLocaleString('en-US') + ' د.ع',
+                        value: data.cards.totalDues.value.toLocaleString('ar-EG') + ' د.ع',
                         growth: data.cards.totalDues.change,
                         icon: 'total-dues',
-                        trend: data.cards.totalDues.trend
+                        trend: data.cards.totalDues.trend,
+                        description: data.cards.totalDues.description
                     },
                     {
                         title: data.cards.netDues.title,
-                        value: data.cards.netDues.value.toLocaleString('en-US') + ' د.ع',
+                        value: data.cards.netDues.value.toLocaleString('ar-EG') + ' د.ع',
                         growth: data.cards.netDues.change,
                         icon: 'net-dues',
-                        trend: data.cards.netDues.trend
+                        trend: data.cards.netDues.trend,
+                        description: data.cards.netDues.description
                     },
                     {
                         title: data.cards.appCommission.title,
-                        value: data.cards.appCommission.value.toLocaleString('en-US') + ' د.ع',
+                        value: data.cards.appCommission.value.toLocaleString('ar-EG') + ' د.ع',
                         growth: data.cards.appCommission.change,
                         icon: 'app-commission',
-                        trend: data.cards.appCommission.trend
+                        trend: data.cards.appCommission.trend,
+                        description: data.cards.appCommission.description
                     },
                     {
                         title: data.cards.numberOfOrders.title,
-                        value: data.cards.numberOfOrders.value.toLocaleString('en-US') + ' طلب',
+                        value: data.cards.numberOfOrders.value.toLocaleString('ar-EG') + ' طلب',
                         growth: data.cards.numberOfOrders.change,
                         icon: 'number-of-orders',
-                        trend: data.cards.numberOfOrders.trend
+                        trend: data.cards.numberOfOrders.trend,
+                        description: data.cards.numberOfOrders.description
                     },
                 ];
                 setStatsCards(newStatsCards);
 
+                // Process chart data
                 const mappedChartData = data.monthlyBreakdown.map(item => ({
                     name: item.month,
                     'اجمالي المستحقات': item.totalDues,
                     'صافي المستحق': item.netDues,
+                    'عمولة التطبيق': item.appCommission,
+                    'عدد الطلبات': item.ordersCount
                 }));
                 setChartData(mappedChartData);
 
-                setOrdersData(data.ordersTable);
+                // Process orders data
+                const mappedOrdersData = data.ordersTable.map(order => ({
+                    ...order,
+                    status: getStatusText(order.status),
+                    orderDate: new Date(order.orderDate).toLocaleDateString('ar-EG')
+                }));
+                setOrdersData(mappedOrdersData);
+
+                // Set summary
+                setSummary(data.summary);
 
             } catch (err) {
                 setError(err.message);
@@ -130,10 +191,26 @@ const PaymentsAndCashbackDashboard = () => {
         fetchDuesData();
     }, []);
 
+    // Filter orders based on search and status
+    const filteredOrders = ordersData.filter(order => {
+        const matchesSearch = order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = statusFilter === 'الكل' || order.status === statusFilter;
+        return matchesSearch && matchesStatus;
+    });
+
+    // Pagination
+    const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const paginatedOrders = filteredOrders.slice(startIndex, startIndex + itemsPerPage);
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-100">
-                <p>جاري تحميل البيانات...</p>
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
+                    <p className="text-gray-600">جاري تحميل بيانات المستحقات...</p>
+                </div>
             </div>
         );
     }
@@ -141,7 +218,7 @@ const PaymentsAndCashbackDashboard = () => {
     if (error) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-100">
-                <p className="text-red-500">حدث خطأ: {error}</p>
+                <p className="text-red-500">خطأ: {error}</p>
             </div>
         );
     }
@@ -149,71 +226,163 @@ const PaymentsAndCashbackDashboard = () => {
     return (
         <div className="bg-gray-100 p-4 min-h-screen rtl:text-right font-sans">
             <div className="container mx-auto">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                {/* Header */}
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold text-gray-800 mb-2">مستحقاتي</h1>
+                    <p className="text-gray-600">إدارة وتتبع المستحقات والعمولات</p>
+                </div>
+
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     {statsCards.map((card, index) => (
-                        <div key={index} className="bg-white p-6 rounded-lg shadow-md flex flex-col items-end">
+                        <div key={index} className="bg-white p-6 rounded-lg shadow-md flex flex-col items-end hover:shadow-lg transition-shadow">
                             <div className="bg-gray-100 p-3 rounded-full text-red-600 mb-4">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                                 </svg>
                             </div>
-                            <h3 className="text-gray-500 text-sm font-medium">{card.title}</h3>
-                            <p className="text-xl font-bold">{card.value}</p>
-                            <span className={`text-sm ${card.trend === 'up' ? 'text-green-500' : 'text-red-500'}`}>{card.growth}</span>
+                            <h3 className="text-gray-500 text-sm font-medium mb-1">{card.title}</h3>
+                            <p className="text-2xl font-bold text-gray-800 mb-1">{card.value}</p>
+                            <span className={`text-sm ${card.trend === 'up' ? 'text-green-500' : card.trend === 'down' ? 'text-red-500' : 'text-gray-500'}`}>
+                                {card.growth}
+                            </span>
+                            <p className="text-xs text-gray-400 mt-2">{card.description}</p>
                         </div>
                     ))}
                 </div>
 
-                <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-bold">تقرير المدفوعات</h2>
-                        <div className="flex space-x-2">
-                            <button onClick={handleExportClick} className="bg-white text-gray-700 border border-gray-300 rounded-lg py-2 px-4 flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5 ml-2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                                </svg>
-                                تصدير
-                            </button>
-                            <select className="bg-gray-100 rounded-lg py-2 px-4 text-gray-700">
-                                <option>شهري</option>
-                                <option>أسبوعي</option>
-                                <option>يومي</option>
-                            </select>
+                {/* Summary Cards */}
+                {summary && (
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div className="bg-white p-6 rounded-lg shadow-md">
+                            <h3 className="text-lg font-bold text-gray-800 mb-4">ملخص المستحقات</h3>
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-600">معدل العمولة</span>
+                                    <span className="font-bold text-red-600">{summary.commissionRate}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-600">متوسط قيمة الطلب</span>
+                                    <span className="font-bold">{summary.averageOrderValue.toLocaleString('ar-EG')} د.ع</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-600">إجمالي الطلبات</span>
+                                    <span className="font-bold">{summary.totalOrders}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-lg shadow-md">
+                            <h3 className="text-lg font-bold text-gray-800 mb-4">توزيع المبالغ</h3>
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-600">إجمالي المستحقات</span>
+                                    <span className="font-bold text-blue-600">{summary.totalDues.toLocaleString('ar-EG')} د.ع</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-600">صافي المستحق</span>
+                                    <span className="font-bold text-green-600">{summary.netDues.toLocaleString('ar-EG')} د.ع</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-600">عمولة التطبيق</span>
+                                    <span className="font-bold text-red-600">{summary.appCommission.toLocaleString('ar-EG')} د.ع</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-lg shadow-md">
+                            <h3 className="text-lg font-bold text-gray-800 mb-4">نسب التوزيع</h3>
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-600">حصة المورد</span>
+                                    <span className="font-bold text-green-600">95%</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-600">حصة التطبيق</span>
+                                    <span className="font-bold text-red-600">5%</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-600">نسبة النجاح</span>
+                                    <span className="font-bold text-blue-600">100%</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <ResponsiveContainer width="100%" height={400}>
-                        <AreaChart
-                            data={chartData}
-                            margin={{
-                                top: 10,
-                                right: 30,
-                                left: 0,
-                                bottom: 0,
-                            }}
-                        >
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" />
-                            <YAxis />
-                            <Tooltip />
-                            <Area type="monotone" dataKey="اجمالي المستحقات" stackId="1" stroke="#EF4444" fill="#FEE2E2" />
-                            <Area type="monotone" dataKey="صافي المستحق" stackId="1" stroke="#8884d8" fill="#E0E7FF" />
-                        </AreaChart>
-                    </ResponsiveContainer>
+                )}
+
+                {/* Charts Section */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    {/* Monthly Breakdown Chart */}
+                    <div className="bg-white p-6 rounded-lg shadow-md">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-xl font-bold">تقرير المدفوعات الشهري</h2>
+                            <div className="flex space-x-2">
+                                <button onClick={handleExportClick} className="bg-white text-gray-700 border border-gray-300 rounded-lg py-2 px-4 flex items-center hover:bg-gray-50">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5 ml-2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                    </svg>
+                                    تصدير
+                                </button>
+                                <select className="bg-gray-100 rounded-lg py-2 px-4 text-gray-700">
+                                    <option>شهري</option>
+                                    <option>أسبوعي</option>
+                                    <option>يومي</option>
+                                </select>
+                            </div>
+                        </div>
+                        <ResponsiveContainer width="100%" height={400}>
+                            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" />
+                                <YAxis />
+                                <Tooltip content={<CustomTooltip />} />
+                                <Area type="monotone" dataKey="اجمالي المستحقات" stackId="1" stroke="#EF4444" fill="#FEE2E2" />
+                                <Area type="monotone" dataKey="صافي المستحق" stackId="1" stroke="#8884d8" fill="#E0E7FF" />
+                                <Area type="monotone" dataKey="عمولة التطبيق" stackId="1" stroke="#F59E0B" fill="#FEF3C7" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+
+                    {/* Orders Count Chart */}
+                    <div className="bg-white p-6 rounded-lg shadow-md">
+                        <h2 className="text-xl font-bold mb-4">عدد الطلبات الشهري</h2>
+                        <ResponsiveContainer width="100%" height={400}>
+                            <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" />
+                                <YAxis />
+                                <Tooltip />
+                                <Bar dataKey="عدد الطلبات" fill="#10B981" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
 
+                {/* Orders Table */}
                 <div className="bg-white p-6 rounded-lg shadow-md">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-xl font-bold">سجل المدفوعات</h2>
                         <div className="flex items-center space-x-2">
                             <input
                                 type="text"
-                                placeholder="بحث بالمنتج/الحالة"
-                                className="border border-gray-300 rounded-lg py-2 px-4 text-right"
+                                placeholder="بحث بالمنتج/الحالة/رقم الطلب"
+                                className="border border-gray-300 rounded-lg py-2 px-4 text-right w-64"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
                             />
-                            <select className="bg-gray-100 rounded-lg py-2 px-4 text-gray-700">
+                            <select 
+                                className="bg-gray-100 rounded-lg py-2 px-4 text-gray-700"
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                            >
                                 <option>الكل</option>
+                                <option>قيد المعالجة</option>
+                                <option>مشحون</option>
+                                <option>مستلم</option>
+                                <option>ملغي</option>
+                                <option>معلق</option>
                             </select>
-                            <button onClick={handleExportClick} className="bg-white text-gray-700 border border-gray-300 rounded-lg py-2 px-4 flex items-center">
+                            <button onClick={handleExportClick} className="bg-white text-gray-700 border border-gray-300 rounded-lg py-2 px-4 flex items-center hover:bg-gray-50">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5 ml-2">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                                 </svg>
@@ -222,103 +391,129 @@ const PaymentsAndCashbackDashboard = () => {
                         </div>
                     </div>
 
-                    <table className="min-w-full">
-                        <thead>
-                            <tr className="border-b border-gray-200 text-gray-500 text-sm font-medium uppercase">
-                                <th className="py-3 px-4 text-right">الإجراءات</th>
-                                <th className="py-3 px-4 text-right">الحالة</th>
-                                <th className="py-3 px-4 text-right">صافي التاجر</th>
-                                <th className="py-3 px-4 text-right">عمولة التطبيق</th>
-                                <th className="py-3 px-4 text-right">سعر الجملة</th>
-                                <th className="py-3 px-4 text-right">السعر المفرد</th>
-                                <th className="py-3 px-4 text-right">الكمية</th>
-                                <th className="py-3 px-4 text-right">اسم الزبون</th>
-                                <th className="py-3 px-4 text-right">تاريخ الطلب</th>
-                                <th className="py-3 px-4 text-right">رقم الطلب</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {ordersData.map((order, index) => (
-                                <tr key={index} className="border-b last:border-b-0 border-gray-100">
-                                    <td className="py-3 px-4 text-right">
-                                        <button onClick={() => handleMoreClick(index)} className="text-gray-500">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-                                            </svg>
-                                        </button>
-                                        {isMoreModalOpen === index && (
-                                            <div className="absolute bg-white shadow-lg rounded-lg mt-2 p-2 z-10 -mr-20">
-                                                <button onClick={handleViewDetails} className="w-full text-right p-2 hover:bg-gray-100 rounded flex items-center justify-end">
-                                                    عرض التفاصيل
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5 mr-2">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.577 3.01 9.964 7.822.08.361.08.736 0 1.097C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.577-3.01-9.964-7.822z" />
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                    </svg>
-                                                </button>
-                                                <button onClick={handleExportClick} className="w-full text-right p-2 hover:bg-gray-100 rounded flex items-center justify-end">
-                                                    تحميل التقرير
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5 mr-2">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                                                    </svg>
-                                                </button>
-                                                <button onClick={handleCloseMoreModal} className="w-full text-right p-2 hover:bg-gray-100 rounded text-red-500 flex items-center justify-end">
-                                                    اغلاق
-                                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5 mr-2">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        )}
-                                    </td>
-                                    <td className="py-3 px-4 text-right">
-                                        <span className={`py-1 px-3 rounded-full text-xs font-semibold ${getStatusColors(order.status)}`}>
-                                            {order.status}
-                                        </span>
-                                    </td>
-                                    <td className="py-3 px-4 text-right">{order.netMerchant.toLocaleString('en-US') + ' د.ع'}</td>
-                                    <td className="py-3 px-4 text-right">{order.appCommission.toLocaleString('en-US') + ' د.ع'}</td>
-                                    <td className="py-3 px-4 text-right">{order.wholesalePrice.toLocaleString('en-US') + ' د.ع'}</td>
-                                    <td className="py-3 px-4 text-right">{order.retailPrice.toLocaleString('en-US') + ' د.ع'}</td>
-                                    <td className="py-3 px-4 text-right">{order.quantity.toLocaleString('en-US')}</td>
-                                    <td className="py-3 px-4 text-right">{order.customerName}</td>
-                                    <td className="py-3 px-4 text-right">{order.orderDate}</td>
-                                    <td className="py-3 px-4 text-right">{order.orderNumber}</td>
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full">
+                            <thead>
+                                <tr className="border-b border-gray-200 text-gray-500 text-sm font-medium uppercase">
+                                    <th className="py-3 px-4 text-right">الإجراءات</th>
+                                    <th className="py-3 px-4 text-right">الحالة</th>
+                                    <th className="py-3 px-4 text-right">صافي التاجر</th>
+                                    <th className="py-3 px-4 text-right">عمولة التطبيق</th>
+                                    <th className="py-3 px-4 text-right">سعر الجملة</th>
+                                    <th className="py-3 px-4 text-right">السعر المفرد</th>
+                                    <th className="py-3 px-4 text-right">الكمية</th>
+                                    <th className="py-3 px-4 text-right">اسم الزبون</th>
+                                    <th className="py-3 px-4 text-right">تاريخ الطلب</th>
+                                    <th className="py-3 px-4 text-right">رقم الطلب</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {paginatedOrders.map((order, index) => (
+                                    <tr key={index} className="border-b last:border-b-0 border-gray-100 hover:bg-gray-50">
+                                        <td className="py-3 px-4 text-right relative">
+                                            <button onClick={() => handleMoreClick(index)} className="text-gray-500 hover:text-gray-700">
+                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                                                </svg>
+                                            </button>
+                                            {isMoreModalOpen === index && (
+                                                <div className="absolute bg-white shadow-lg rounded-lg mt-2 p-2 z-10 -mr-20 border">
+                                                    <button onClick={() => handleViewDetails(order)} className="w-full text-right p-2 hover:bg-gray-100 rounded flex items-center justify-end">
+                                                        عرض التفاصيل
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5 mr-2">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.577 3.01 9.964 7.822.08.361.08.736 0 1.097C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.577-3.01-9.964-7.822z" />
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                        </svg>
+                                                    </button>
+                                                    <button onClick={handleExportClick} className="w-full text-right p-2 hover:bg-gray-100 rounded flex items-center justify-end">
+                                                        تحميل التقرير
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5 mr-2">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                                                        </svg>
+                                                    </button>
+                                                    <button onClick={handleCloseMoreModal} className="w-full text-right p-2 hover:bg-gray-100 rounded text-red-500 flex items-center justify-end">
+                                                        اغلاق
+                                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5 mr-2">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td className="py-3 px-4 text-right">
+                                            <span className={`py-1 px-3 rounded-full text-xs font-semibold ${getStatusColors(order.status)}`}>
+                                                {order.status}
+                                            </span>
+                                        </td>
+                                        <td className="py-3 px-4 text-right font-bold text-green-600">{order.netMerchant.toLocaleString('ar-EG')} د.ع</td>
+                                        <td className="py-3 px-4 text-right font-bold text-red-600">{order.appCommission.toLocaleString('ar-EG')} د.ع</td>
+                                        <td className="py-3 px-4 text-right">{order.wholesalePrice.toLocaleString('ar-EG')} د.ع</td>
+                                        <td className="py-3 px-4 text-right">{order.retailPrice.toLocaleString('ar-EG')} د.ع</td>
+                                        <td className="py-3 px-4 text-right">{order.quantity.toLocaleString('ar-EG')}</td>
+                                        <td className="py-3 px-4 text-right">{order.customerName}</td>
+                                        <td className="py-3 px-4 text-right">{order.orderDate}</td>
+                                        <td className="py-3 px-4 text-right font-bold">{order.orderNumber}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
 
-                    <div className="flex justify-between items-center mt-4 text-sm text-gray-500">
+                    {/* Pagination */}
+                    <div className="flex justify-between items-center mt-6 text-sm text-gray-500">
                         <div className="flex items-center">
                             <span>عرض في الصفحة</span>
-                            <select className="mx-2 bg-white border border-gray-300 rounded-lg p-1 text-sm">
-                                <option>10</option>
-                                <option>5</option>
-                                <option>20</option>
+                            <select 
+                                className="mx-2 bg-white border border-gray-300 rounded-lg p-1 text-sm"
+                                value={itemsPerPage}
+                                onChange={(e) => setItemsPerPage(Number(e.target.value))}
+                            >
+                                <option value={5}>5</option>
+                                <option value={10}>10</option>
+                                <option value={20}>20</option>
+                                <option value={50}>50</option>
                             </select>
                         </div>
                         <div className="flex items-center space-x-2">
-                            <button className="p-2 rounded-full hover:bg-gray-200">
+                            <button 
+                                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                disabled={currentPage === 1}
+                                className="p-2 rounded-full hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                                 </svg>
                             </button>
-                            <span className="bg-red-500 text-white py-1 px-3 rounded-full">1</span>
-                            <span className="py-1 px-3">2</span>
-                            <span className="py-1 px-3">3</span>
-                            <span className="py-1 px-3">4</span>
-                            <span className="py-1 px-3">5</span>
-                            <button className="p-2 rounded-full hover:bg-gray-200">
+                            <span className="bg-red-500 text-white py-1 px-3 rounded-full">{currentPage}</span>
+                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                                const pageNum = i + 1;
+                                if (pageNum === currentPage) return null;
+                                return (
+                                    <button
+                                        key={pageNum}
+                                        onClick={() => setCurrentPage(pageNum)}
+                                        className="py-1 px-3 hover:bg-gray-200 rounded"
+                                    >
+                                        {pageNum}
+                                    </button>
+                                );
+                            })}
+                            <button 
+                                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                                disabled={currentPage === totalPages}
+                                className="p-2 rounded-full hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                                 </svg>
                             </button>
                         </div>
-                        <span>إجمالي المنتجات: 8764</span>
+                        <span>إجمالي الطلبات: {filteredOrders.length}</span>
                     </div>
                 </div>
             </div>
 
+            {/* Export Modal */}
             {isExportModalOpen && (
                 <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white p-6 rounded-lg shadow-xl w-96 rtl:text-right">
@@ -334,8 +529,9 @@ const PaymentsAndCashbackDashboard = () => {
                             <label className="block text-gray-700 font-bold mb-2">نوع التقرير</label>
                             <div className="flex items-center border border-gray-300 rounded-lg p-2">
                                 <select className="block w-full bg-white pr-8">
-                                    <option>pdf</option>
-                                    <option>csv</option>
+                                    <option>PDF</option>
+                                    <option>Excel</option>
+                                    <option>CSV</option>
                                 </select>
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 transform rotate-180" viewBox="0 0 20 20" fill="currentColor">
                                     <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -343,10 +539,10 @@ const PaymentsAndCashbackDashboard = () => {
                             </div>
                         </div>
                         <div className="flex justify-end space-x-2">
-                            <button onClick={handleCloseExportModal} className="bg-gray-200 text-gray-700 py-2 px-4 rounded-lg">
+                            <button onClick={handleCloseExportModal} className="bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300">
                                 الغاء
                             </button>
-                            <button className="bg-red-500 text-white py-2 px-4 rounded-lg">
+                            <button className="bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600">
                                 تصدير التقرير
                             </button>
                         </div>
@@ -354,11 +550,12 @@ const PaymentsAndCashbackDashboard = () => {
                 </div>
             )}
 
-            {isDetailsModalOpen && (
+            {/* Order Details Modal */}
+            {isDetailsModalOpen && selectedOrder && (
                 <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded-lg shadow-xl w-96 rtl:text-right">
+                    <div className="bg-white p-6 rounded-lg shadow-xl w-96 rtl:text-right max-h-96 overflow-y-auto">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl font-bold">بيانات العملية</h3>
+                            <h3 className="text-xl font-bold">تفاصيل الطلب</h3>
                             <button onClick={handleCloseDetailsModal} className="text-gray-400 hover:text-gray-600">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -368,59 +565,49 @@ const PaymentsAndCashbackDashboard = () => {
                         <div className="space-y-4">
                             <div className="flex justify-between">
                                 <span className="text-gray-500">رقم الطلب</span>
-                                <span className="font-bold">ORD-0321</span>
+                                <span className="font-bold">{selectedOrder.orderNumber}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-gray-500">تاريخ الطلب</span>
-                                <span className="font-bold">2025-08-25، الساعة 10:45 صباحًا</span>
+                                <span className="font-bold">{selectedOrder.orderDate}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-gray-500">اسم الزبون</span>
-                                <span className="font-bold">حسين عدنان</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-gray-500">وسيلة الدفع</span>
-                                <span className="font-bold">visa</span>
+                                <span className="font-bold">{selectedOrder.customerName}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-gray-500">حالة العملية</span>
-                                <span className="font-bold bg-green-100 text-green-700 px-2 py-1 rounded-full">محسوبة</span>
+                                <span className={`font-bold px-2 py-1 rounded-full text-xs ${getStatusColors(selectedOrder.status)}`}>
+                                    {selectedOrder.status}
+                                </span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-gray-500">سعر الجملة</span>
-                                <span className="font-bold">10,000 د.ع</span>
+                                <span className="font-bold">{selectedOrder.wholesalePrice.toLocaleString('ar-EG')} د.ع</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-gray-500">السعر المفرد</span>
-                                <span className="font-bold">12,000 د.ع</span>
+                                <span className="font-bold">{selectedOrder.retailPrice.toLocaleString('ar-EG')} د.ع</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-gray-500">الخصم</span>
-                                <span className="font-bold">10%</span>
+                                <span className="text-gray-500">الكمية</span>
+                                <span className="font-bold">{selectedOrder.quantity.toLocaleString('ar-EG')}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-gray-500">المبلغ بعد الخصم</span>
-                                <span className="font-bold">10,800 د.ع</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-gray-500">نسبة حصة التطبيق</span>
-                                <span className="font-bold">2.5%</span>
+                                <span className="text-gray-500">نسبة عمولة التطبيق</span>
+                                <span className="font-bold text-red-600">5%</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-gray-500">قيمة عمولة التطبيق</span>
-                                <span className="font-bold">1,080 د.ع</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span className="text-gray-500">حصة التاجر</span>
-                                <span className="font-bold">3,400 د.ع</span>
+                                <span className="font-bold text-red-600">{selectedOrder.appCommission.toLocaleString('ar-EG')} د.ع</span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-gray-500">صافي التاجر</span>
-                                <span className="font-bold">9,720 د.ع</span>
+                                <span className="font-bold text-green-600">{selectedOrder.netMerchant.toLocaleString('ar-EG')} د.ع</span>
                             </div>
                         </div>
                         <div className="mt-6 text-center">
-                            <button className="bg-white text-red-500 border border-red-500 py-2 px-4 rounded-lg w-full">
+                            <button className="bg-white text-red-500 border border-red-500 py-2 px-4 rounded-lg w-full hover:bg-red-50">
                                 تحميل إيصال العملية
                             </button>
                         </div>

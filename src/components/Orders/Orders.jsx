@@ -3,36 +3,47 @@ import { FaChevronDown, FaStore, FaChartBar, FaUser, FaBox, FaTruck } from 'reac
 import { RiCloseFill } from 'react-icons/ri';
 import { BsEye } from 'react-icons/bs';
 import axios from 'axios';
-
-const baseURL = 'https://products-api.cbc-apps.net';
+import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
 
 const getStatusClass = (status) => {
   switch (status) {
-    case 'COMPLETED':
     case 'DELIVERED':
-    case 'PAID':
       return 'bg-green-100 text-green-800';
-    case 'PENDING_PAYMENT':
     case 'PROCESSING':
     case 'PENDING':
       return 'bg-yellow-100 text-yellow-800';
+    case 'CANCELLED':
     case 'CANCELED':
     case 'RETURNED':
-    case 'OVERDUE':
       return 'bg-red-100 text-red-800';
     case 'SHIPPED':
+    case 'DELIVERING':
       return 'bg-blue-100 text-blue-800';
     default:
       return 'bg-gray-100 text-gray-800';
   }
 };
 
+const getStatusText = (status) => {
+  const statusMap = {
+    'PROCESSING': 'قيد المعالجة',
+    'SHIPPED': 'تم الشحن',
+    'DELIVERING': 'قيد التوصيل',
+    'DELIVERED': 'تم التسليم',
+    'CANCELLED': 'ملغي',
+    'CANCELED': 'ملغي',
+    'RETURNED': 'مرتجع',
+    'PENDING': 'معلق'
+  };
+  return statusMap[status] || status;
+};
+
 const StatCard = ({ title, value, icon, growth, onClick }) => {
   const icons = {
-    'invoices': <div className="bg-gray-100 p-3 rounded-xl"><FaChartBar className="text-red-500 text-2xl" /></div>,
+    'orders': <div className="bg-gray-100 p-3 rounded-xl"><FaChartBar className="text-red-500 text-2xl" /></div>,
     'sales': <div className="bg-gray-100 p-3 rounded-xl"><FaChartBar className="text-red-500 text-2xl" /></div>,
     'pending': <div className="bg-gray-100 p-3 rounded-xl"><FaBox className="text-red-500 text-2xl" /></div>,
-    'overdue': <div className="bg-gray-100 p-3 rounded-xl"><RiCloseFill className="text-red-500 text-2xl" /></div>,
+    'late': <div className="bg-gray-100 p-3 rounded-xl"><RiCloseFill className="text-red-500 text-2xl" /></div>,
   };
 
   const isPositiveGrowth = growth >= 0;
@@ -96,15 +107,15 @@ const Dropdown = ({ options, selected, onSelect, placeholder, className }) => {
   );
 };
 
-const OrderDetailsModal = ({ isOpen, onClose, invoice, updateInvoiceStatus }) => {
-  if (!isOpen || !invoice) return null;
+const OrderDetailsModal = ({ isOpen, onClose, order, updateOrderStatus }) => {
+  if (!isOpen || !order) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl mx-auto text-right mt-20" dir="rtl">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-bold text-gray-800">
-            تفاصيل الفاتورة #{invoice.id}
+            تفاصيل الطلب #{order.id}
           </h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <RiCloseFill size={24} />
@@ -118,15 +129,15 @@ const OrderDetailsModal = ({ isOpen, onClose, invoice, updateInvoiceStatus }) =>
                 <FaUser className="ml-2" />
                 العميل
               </span>
-              <p className="font-bold text-gray-800">{invoice.customer.name}</p>
-              <p className="text-gray-500">{invoice.customer.phone}</p>
+              <p className="font-bold text-gray-800">{order.user.name}</p>
+              <p className="text-gray-500">{order.user.phone}</p>
             </div>
             <div>
               <span className="text-gray-500 flex items-center">
                 <FaTruck className="ml-2" />
                 عنوان التوصيل
               </span>
-              <p className="font-bold text-gray-800">{invoice.deliveryAddress}</p>
+              <p className="font-bold text-gray-800">{order.shippingAddress}</p>
             </div>
           </div>
 
@@ -138,10 +149,10 @@ const OrderDetailsModal = ({ isOpen, onClose, invoice, updateInvoiceStatus }) =>
                 المنتجات
             </span>
             <ul className="list-none mt-2 space-y-2 max-h-48 overflow-y-auto pr-2">
-              {invoice.items.map((item, index) => (
+              {order.items.map((item, index) => (
                 <li key={index} className="flex items-center text-gray-700">
                   <div className="w-6 h-6 bg-gray-200 rounded-md flex-shrink-0 ml-2"></div>
-                  <span>{item.product.name} ×{item.quantity}</span>
+                  <span>{item.product.name} ×{item.quantity} - {item.price} د.ع</span>
                 </li>
               ))}
             </ul>
@@ -150,14 +161,14 @@ const OrderDetailsModal = ({ isOpen, onClose, invoice, updateInvoiceStatus }) =>
           <hr />
           
           <div className="space-y-4 ml-10">
-            <h4 className="text-base font-bold text-gray-800 mb-2">خط سير الفاتورة</h4>
+            <h4 className="text-base font-bold text-gray-800 mb-2">خط سير الطلب</h4>
             <div className="relative border-r-2 border-gray-200 pr-4 space-y-4 max-h-64 overflow-y-auto">
-              {invoice.statusHistory?.map((step, index) => (
+              {order.statusHistory?.map((step, index) => (
                 <div key={index} className="relative">
                   <span
                     className="absolute top-0 right-[-25px] h-4 w-4 rounded-full bg-red-500 border-2 border-white"
                   ></span>
-                  <p className="font-semibold text-gray-800">{step.status}</p>
+                  <p className="font-semibold text-gray-800">{getStatusText(step.status)}</p>
                   <p className="text-xs text-gray-500">{new Date(step.createdAt).toLocaleString('ar-EG', { dateStyle: 'short', timeStyle: 'short' })}</p>
                 </div>
               ))}
@@ -169,15 +180,15 @@ const OrderDetailsModal = ({ isOpen, onClose, invoice, updateInvoiceStatus }) =>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="col-span-1 md:col-span-2">
               <label className="text-gray-500">ملاحظات</label>
-              <p className="font-bold text-gray-800">{invoice.notes || 'لا يوجد ملاحظات'}</p>
+              <p className="font-bold text-gray-800">{order.notes || 'لا يوجد ملاحظات'}</p>
             </div>
             <div>
               <label className="text-gray-500">الإجمالي</label>
-              <p className="font-bold text-gray-800">{invoice.totalAmount} د.ع</p>
+              <p className="font-bold text-gray-800">{order.totalAmount.toLocaleString()} د.ع</p>
             </div>
             <div>
               <label className="text-gray-500">الحالة</label>
-              <p className="font-bold text-gray-800">{invoice.status}</p>
+              <p className="font-bold text-gray-800">{getStatusText(order.status)}</p>
             </div>
           </div>
 
@@ -185,29 +196,39 @@ const OrderDetailsModal = ({ isOpen, onClose, invoice, updateInvoiceStatus }) =>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="text-gray-500">تاريخ الفاتورة</label>
-              <p className="font-bold text-gray-800">{new Date(invoice.createdAt).toLocaleDateString('ar-EG')}</p>
+              <label className="text-gray-500">تاريخ الطلب</label>
+              <p className="font-bold text-gray-800">{new Date(order.createdAt).toLocaleDateString('ar-EG')}</p>
             </div>
             <div>
               <label className="text-gray-500">تاريخ التحديث</label>
-              <p className="font-bold text-gray-800">{new Date(invoice.updatedAt).toLocaleDateString('ar-EG')}</p>
+              <p className="font-bold text-gray-800">{new Date(order.updatedAt).toLocaleDateString('ar-EG')}</p>
             </div>
           </div>
           <div className="flex justify-end mt-4 space-x-2 rtl:space-x-reverse">
-            {invoice.status === 'PENDING' && (
+            {order.status === 'PROCESSING' && (
               <button
-                onClick={() => updateInvoiceStatus(invoice.id, 'PAID', 'تم الدفع')}
-                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition"
+                onClick={() => updateOrderStatus(order.id, 'SHIPPED')}
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
               >
-                تغيير إلى تم الدفع
+                تغيير إلى تم الشحن
               </button>
             )}
-            <button
-              onClick={() => updateInvoiceStatus(invoice.id, 'CANCELED', 'تم إلغاء الفاتورة')}
-              className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition"
-            >
-              إلغاء الفاتورة
-            </button>
+            {order.status === 'SHIPPED' && (
+              <button
+                onClick={() => updateOrderStatus(order.id, 'DELIVERED')}
+                className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition"
+              >
+                تغيير إلى تم التسليم
+              </button>
+            )}
+            {order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && (
+              <button
+                onClick={() => updateOrderStatus(order.id, 'CANCELLED')}
+                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition"
+              >
+                إلغاء الطلب
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -215,7 +236,7 @@ const OrderDetailsModal = ({ isOpen, onClose, invoice, updateInvoiceStatus }) =>
   );
 };
 
-const TotalOrdersByMerchantModal = ({ isOpen, onClose, title, data }) => {
+const OrdersByStatusModal = ({ isOpen, onClose, title, data }) => {
   if (!isOpen) return null;
 
   return (
@@ -238,7 +259,7 @@ const TotalOrdersByMerchantModal = ({ isOpen, onClose, title, data }) => {
             <tbody className="bg-white divide-y divide-gray-200 text-right">
               {Object.keys(data).map((status, index) => (
                 <tr key={index}>
-                  <Td>{status}</Td>
+                  <Td>{getStatusText(status)}</Td>
                   <Td>{data[status]}</Td>
                 </tr>
               ))}
@@ -251,90 +272,87 @@ const TotalOrdersByMerchantModal = ({ isOpen, onClose, title, data }) => {
 };
 
 const OrdersPage = () => {
-  const [invoices, setInvoices] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState('الكل');
-  const [selectedPayment, setSelectedPayment] = useState('الكل');
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const [modalTitle, setModalTitle] = useState('');
   const [modalData, setModalData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
-
-  const token = localStorage.getItem('token');
+  const [loading, setLoading] = useState(false);
 
   const fetchAnalytics = async () => {
     try {
-      const response = await axios.get(`${baseURL}/supplier/invoices/stats`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      setLoading(true);
+      const response = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.ORDERS.STATS), {
+        headers: getAuthHeaders()
       });
       const data = response.data;
       setAnalytics({
-        totalInvoices: data.totalInvoices,
-        totalAmount: data.totalAmount,
-        paidAmount: data.paidAmount,
-        pendingAmount: data.pendingAmount,
-        overdueAmount: data.overdueAmount,
-        invoicesByStatus: data.invoicesByStatus,
+        totalOrders: data.totalOrders,
+        totalSalesAmount: data.totalSalesAmount,
+        lateOrders: data.lateOrders,
+        ordersGrowth: data.ordersGrowth,
+        salesGrowth: data.salesGrowth,
+        ordersByStatus: data.ordersByStatus,
       });
     } catch (error) {
       console.error('Error fetching analytics:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const fetchInvoices = async () => {
+  const fetchOrders = async () => {
     try {
+      setLoading(true);
       const statusQuery = selectedStatus === 'الكل' ? '' : `&status=${selectedStatus.toUpperCase()}`;
-      // The search term is not supported in the provided API for invoices,
-      // so we will filter on the client side.
-      const response = await axios.get(`${baseURL}/supplier/invoices?page=${currentPage}&limit=20${statusQuery}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const response = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.ORDERS.LIST) + `?page=${currentPage}&limit=20${statusQuery}`, {
+        headers: getAuthHeaders()
       });
       const data = response.data;
-      setInvoices(data.invoices);
+      setOrders(data.orders);
       setTotalPages(data.pagination.pages);
     } catch (error) {
-      console.error('Error fetching invoices:', error);
+      console.error('Error fetching orders:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const fetchInvoiceDetails = async (invoiceId) => {
+  const fetchOrderDetails = async (orderId) => {
     try {
-      const response = await axios.get(`${baseURL}/supplier/invoices/${invoiceId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const response = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.ORDERS.DETAILS(orderId)), {
+        headers: getAuthHeaders()
       });
       const data = response.data;
-      setSelectedInvoice(data);
+      setSelectedOrder(data);
       setIsModalOpen(true);
     } catch (error) {
-      console.error('Error fetching invoice details:', error);
+      console.error('Error fetching order details:', error);
     }
   };
 
-  const updateInvoiceStatus = async (invoiceId, newStatus, notes) => {
+  const updateOrderStatus = async (orderId, newStatus) => {
     try {
-      const response = await axios.patch(`${baseURL}/supplier/invoices/${invoiceId}/status`, {
-        status: newStatus,
-        notes: notes,
-        paidDate: newStatus === 'PAID' ? new Date().toISOString() : undefined,
+      const response = await axios.patch(getApiUrl(API_CONFIG.ENDPOINTS.ORDERS.UPDATE_STATUS(orderId)), {
+        status: newStatus
       }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+        headers: getAuthHeaders()
       });
       if (response.status === 200) {
-        alert('تم تحديث حالة الفاتورة بنجاح!');
-        fetchInvoices();
-        fetchInvoiceDetails(invoiceId);
+        alert('تم تحديث حالة الطلب بنجاح!');
+        fetchOrders();
+        fetchOrderDetails(orderId);
       } else {
-        alert('فشل في تحديث حالة الفاتورة.');
+        alert('فشل في تحديث حالة الطلب.');
       }
     } catch (error) {
-      console.error('Error updating invoice status:', error);
-      alert('حدث خطأ أثناء تحديث حالة الفاتورة.');
+      console.error('Error updating order status:', error);
+      alert('حدث خطأ أثناء تحديث حالة الطلب.');
     }
   };
 
@@ -343,16 +361,16 @@ const OrdersPage = () => {
   }, []);
 
   useEffect(() => {
-    fetchInvoices();
+    fetchOrders();
   }, [selectedStatus, currentPage, searchTerm]);
 
-  const openModal = (invoice) => {
-    fetchInvoiceDetails(invoice.id);
+  const openModal = (order) => {
+    fetchOrderDetails(order.id);
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setSelectedInvoice(null);
+    setSelectedOrder(null);
     setModalData([]);
   };
 
@@ -361,9 +379,9 @@ const OrdersPage = () => {
     let title = '';
     let data = [];
     switch (cardIcon) {
-      case 'invoices':
-        title = 'إجمالي الفواتير حسب الحالة';
-        data = analytics.invoicesByStatus;
+      case 'orders':
+        title = 'إجمالي الطلبات حسب الحالة';
+        data = analytics.ordersByStatus;
         setModalTitle(title);
         setModalData(data);
         setIsModalOpen(true);
@@ -379,39 +397,49 @@ const OrdersPage = () => {
   };
   
   const getModalComponent = () => {
-    if (selectedInvoice) {
-      return <OrderDetailsModal isOpen={isModalOpen} onClose={closeModal} invoice={selectedInvoice} updateInvoiceStatus={updateInvoiceStatus} />;
+    if (selectedOrder) {
+      return <OrderDetailsModal isOpen={isModalOpen} onClose={closeModal} order={selectedOrder} updateOrderStatus={updateOrderStatus} />;
     }
     if (modalData && Object.keys(modalData).length > 0) {
       if (modalTitle.includes('حسب الحالة')) {
-        return <TotalOrdersByMerchantModal isOpen={isModalOpen} onClose={closeModal} title={modalTitle} data={modalData} />;
+        return <OrdersByStatusModal isOpen={isModalOpen} onClose={closeModal} title={modalTitle} data={modalData} />;
       }
       return null;
     }
     return null;
   };
   
-  const statusOptions = ['الكل', 'PENDING', 'PAID', 'OVERDUE'];
-  const paymentOptions = ['مدفوع', 'غير مدفوع'];
+  const statusOptions = ['الكل', 'PROCESSING', 'SHIPPED', 'DELIVERING', 'DELIVERED', 'CANCELLED', 'RETURNED'];
 
   const statsCards = analytics ? [
-    { title: 'إجمالي الفواتير', value: analytics.totalInvoices, icon: 'invoices', growth: null },
-    { title: 'المبلغ الإجمالي', value: `${analytics.totalAmount.toLocaleString()} د.ع`, icon: 'sales', growth: null },
-    { title: 'المبلغ المعلق', value: `${analytics.pendingAmount.toLocaleString()} د.ع`, icon: 'pending', growth: null },
-    { title: 'مبالغ متأخرة', value: `${analytics.overdueAmount.toLocaleString()} د.ع`, icon: 'overdue', growth: null },
+    { title: 'إجمالي الطلبات', value: analytics.totalOrders, icon: 'orders', growth: analytics.ordersGrowth },
+    { title: 'إجمالي المبيعات', value: `${analytics.totalSalesAmount.toLocaleString()} د.ع`, icon: 'sales', growth: analytics.salesGrowth },
+    { title: 'الطلبات المتأخرة', value: analytics.lateOrders, icon: 'late', growth: analytics.lateOrdersGrowth },
+    { title: 'طلبات قيد المعالجة', value: analytics.ordersByStatus?.processing || 0, icon: 'pending', growth: null },
   ] : [];
 
-  const filteredInvoices = searchTerm
-    ? invoices.filter(invoice => 
-        invoice.id.toString().includes(searchTerm) || 
-        invoice.customer.name.includes(searchTerm) ||
-        invoice.items.some(item => item.product.name.includes(searchTerm))
+  const filteredOrders = searchTerm
+    ? orders.filter(order => 
+        order.id.toString().includes(searchTerm) || 
+        order.user.name.includes(searchTerm) ||
+        order.items.some(item => item.product.name.includes(searchTerm))
       )
-    : invoices;
+    : orders;
+
+  if (loading) {
+    return (
+      <div dir="rtl" className="p-6 bg-gray-50 min-h-screen font-sans text-gray-800 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">جاري التحميل...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div dir="rtl" className="p-6 bg-gray-50 min-h-screen font-sans text-gray-800">
-      <h1 className="text-2xl font-bold mb-6 text-right">إدارة الفواتير</h1>
+      <h1 className="text-2xl font-bold mb-6 text-right">إدارة الطلبات</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         {statsCards.map((card, index) => (
           <StatCard key={index} {...card} onClick={() => openStatModal(card.icon)} />
@@ -420,25 +448,18 @@ const OrdersPage = () => {
       <div className="bg-white p-6 rounded-lg shadow-md">
         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 space-y-4 md:space-y-0">
           <div className="flex items-center space-x-2 rtl:space-x-reverse">
-            <h3 className="text-lg font-bold">إدارة الفواتير</h3>
+            <h3 className="text-lg font-bold">إدارة الطلبات</h3>
             <Dropdown
               options={statusOptions}
               selected={selectedStatus}
               onSelect={setSelectedStatus}
               placeholder="الكل"
             />
-            {/* Payment filter is not supported by the provided API */}
-            {/* <Dropdown
-              options={paymentOptions}
-              selected={selectedPayment}
-              onSelect={setSelectedPayment}
-              placeholder="الكل"
-            /> */}
           </div>
           <div className="relative w-full md:w-auto">
             <input
               type="text"
-              placeholder="ابحث برقم الفاتورة / العميل / المنتج"
+              placeholder="ابحث برقم الطلب / العميل / المنتج"
               className="w-full md:w-80 px-4 py-2 text-sm bg-gray-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-500 text-gray-800 placeholder-gray-400"
               value={searchTerm}
               onChange={handleSearchChange}
@@ -452,23 +473,28 @@ const OrdersPage = () => {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50 text-right">
               <tr>
-                <Th>رقم الفاتورة</Th>
+                <Th>رقم الطلب</Th>
                 <Th>العميل</Th>
                 <Th>المنتجات</Th>
                 <Th>الإجمالي</Th>
                 <Th>الحالة</Th>
-                <Th>تاريخ الفاتورة</Th>
+                <Th>تاريخ الطلب</Th>
                 <Th>الإجراءات</Th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200 text-right">
-              {filteredInvoices.map((invoice) => (
-                <tr key={invoice.id}>
-                  <Td>#{invoice.invoiceNumber}</Td>
-                  <Td>{invoice.customer.name}</Td>
+              {filteredOrders.map((order) => (
+                <tr key={order.id}>
+                  <Td>#{order.id}</Td>
+                  <Td>
+                    <div>
+                      <p className="font-semibold">{order.user.name}</p>
+                      <p className="text-gray-500 text-xs">{order.user.phone}</p>
+                    </div>
+                  </Td>
                   <Td>
                     <ul className="list-none space-y-1">
-                      {invoice.items.map((item, index) => (
+                      {order.items.map((item, index) => (
                         <li key={index} className="flex items-center">
                           <div className="w-4 h-4 bg-gray-200 rounded-md flex-shrink-0 ml-1"></div>
                           <span className="text-gray-700">{item.product.name} ×{item.quantity}</span>
@@ -476,15 +502,15 @@ const OrdersPage = () => {
                       ))}
                     </ul>
                   </Td>
-                  <Td>{invoice.totalAmount} د.ع</Td>
+                  <Td>{order.totalAmount.toLocaleString()} د.ع</Td>
                   <Td>
-                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(invoice.status)}`}>
-                      {invoice.status}
+                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(order.status)}`}>
+                      {getStatusText(order.status)}
                     </span>
                   </Td>
-                  <Td>{new Date(invoice.createdAt).toLocaleDateString('ar-EG')}</Td>
+                  <Td>{new Date(order.createdAt).toLocaleDateString('ar-EG')}</Td>
                   <Td>
-                    <button onClick={() => openModal(invoice)} className="text-gray-500 hover:text-gray-700">
+                    <button onClick={() => openModal(order)} className="text-gray-500 hover:text-gray-700">
                       <BsEye className="text-xl" />
                     </button>
                   </Td>
@@ -494,7 +520,7 @@ const OrdersPage = () => {
           </table>
         </div>
         <div className="mt-4 flex justify-between items-center text-sm">
-          <span className="text-gray-700">إجمالي الفواتير: {analytics?.totalInvoices || 0}</span>
+          <span className="text-gray-700">إجمالي الطلبات: {analytics?.totalOrders || 0}</span>
           <div className="flex items-center space-x-2 rtl:space-x-reverse">
             <span className="text-gray-500">صفحة {currentPage} من {totalPages}</span>
             <div className="flex space-x-1 rtl:space-x-reverse">

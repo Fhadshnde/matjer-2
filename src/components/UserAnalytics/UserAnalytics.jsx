@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid, Cell } from 'recharts';
+import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
+import axios from 'axios';
 
 const monthlyData = [
     { month: 'يناير', visits: 8500, sales: 500, purchases: 300, color: '#f56565' },
@@ -94,6 +96,88 @@ const TimelineTooltip = ({ active, payload, label }) => {
 
 const PaymentsAndCashbackDashboard = () => {
     const [activeTab, setActiveTab] = useState('شهر');
+    const [analyticsData, setAnalyticsData] = useState({
+        monthlyData: monthlyData,
+        cityData: cityData,
+        loading: true,
+        error: null
+    });
+
+    useEffect(() => {
+        const fetchAnalyticsData = async () => {
+            try {
+                setAnalyticsData(prev => ({ ...prev, loading: true, error: null }));
+                
+                // Fetch analytics data from API
+                const [enhancedResponse, tablesChartsResponse] = await Promise.all([
+                    axios.get(getApiUrl(API_CONFIG.ENDPOINTS.ANALYTICS.ENHANCED), { headers: getAuthHeaders() }),
+                    axios.get(getApiUrl(API_CONFIG.ENDPOINTS.ANALYTICS.TABLES_CHARTS), { headers: getAuthHeaders() })
+                ]);
+
+                const enhancedData = enhancedResponse.data;
+                const tablesChartsData = tablesChartsResponse.data;
+
+                // Transform API data to match component structure
+                const transformedMonthlyData = enhancedData.monthlyData?.map(item => ({
+                    month: item.month,
+                    visits: item.visits,
+                    sales: item.sales,
+                    purchases: item.purchases,
+                    color: monthlyData[0]?.color || '#f56565'
+                })) || monthlyData;
+
+                const transformedCityData = tablesChartsData.cityData?.map((item, index) => ({
+                    name: item.city,
+                    value: item.value,
+                    color: cityData[index]?.color || '#000000'
+                })) || cityData;
+
+                setAnalyticsData({
+                    monthlyData: transformedMonthlyData,
+                    cityData: transformedCityData,
+                    loading: false,
+                    error: null
+                });
+            } catch (error) {
+                console.error('Error fetching analytics data:', error);
+                setAnalyticsData(prev => ({
+                    ...prev,
+                    loading: false,
+                    error: 'فشل في تحميل بيانات التحليلات'
+                }));
+            }
+        };
+
+        fetchAnalyticsData();
+    }, []);
+
+    if (analyticsData.loading) {
+        return (
+            <div className="bg-gray-100 min-h-screen p-6 font-['Tajawal'] flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">جاري تحميل بيانات التحليلات...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (analyticsData.error) {
+        return (
+            <div className="bg-gray-100 min-h-screen p-6 font-['Tajawal'] flex items-center justify-center">
+                <div className="text-center">
+                    <p className="text-red-600 mb-4">{analyticsData.error}</p>
+                    <button 
+                        onClick={() => window.location.reload()} 
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                    >
+                        إعادة المحاولة
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="bg-gray-100 p-4 min-h-screen rtl:text-right font-sans">
             <div className="container mx-auto">
@@ -145,13 +229,13 @@ const PaymentsAndCashbackDashboard = () => {
                     <div className="bg-white p-6 rounded-lg shadow-md">
                         <h2 className="text-xl font-bold mb-4">نشاط الزبائن حسب المحافظات</h2>
                         <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={cityData}>
+                            <BarChart data={analyticsData.cityData}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="name" />
                                 <YAxis scale="log" domain={[1, 'auto']} ticks={[500, 1500, 5000, 15000, 50000]} />
                                 <Tooltip content={<CustomTooltip />} />
                                 <Bar dataKey="value" name="القيمة" fill="#8884d8">
-                                    {cityData.map((entry, index) => (
+                                    {analyticsData.cityData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={entry.color} />
                                     ))}
                                 </Bar>
@@ -163,7 +247,7 @@ const PaymentsAndCashbackDashboard = () => {
                         <h2 className="text-xl font-bold mb-4">اتجاه التفاعل عبر الزمن</h2>
                         <ResponsiveContainer width="100%" height={300}>
                             <AreaChart
-                                data={monthlyData.reverse()}
+                                data={analyticsData.monthlyData.reverse()}
                                 margin={{
                                     top: 10,
                                     right: 30,

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IoChevronUpOutline, IoChevronDownOutline, IoSearchOutline, IoAdd, IoEllipsisHorizontal, IoEyeOutline, IoPencilOutline, IoTrashOutline } from 'react-icons/io5';
 import axios from 'axios';
+import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -14,9 +15,15 @@ const Dashboard = () => {
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [products, setProducts] = useState([]);
     const [stockToUpdate, setStockToUpdate] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [stats, setStats] = useState({
+        totalProducts: 0,
+        lowStockProducts: 0,
+        outOfStockProducts: 0,
+        abandonedProducts: 0
+    });
 
-    const baseURL = 'https://products-api.cbc-apps.net';
-    const token = localStorage.getItem('token');
 
     const getStatusClass = (status) => {
         switch (status) {
@@ -33,16 +40,33 @@ const Dashboard = () => {
 
     const fetchProducts = async () => {
         try {
-            const response = await axios.get(`${baseURL}/supplier/products`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
+            setLoading(true);
+            const response = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.PRODUCTS.LIST), {
+                headers: getAuthHeaders()
             });
-            setProducts(response.data.products);
+            const data = response.data;
+            setProducts(data.products || []);
+            
+            // Calculate statistics
+            const totalProducts = data.products?.length || 0;
+            const lowStockProducts = data.products?.filter(p => p.stock < 10).length || 0;
+            const outOfStockProducts = data.products?.filter(p => p.stock === 0).length || 0;
+            const abandonedProducts = data.products?.filter(p => p.stock > 0 && p.stock < 5).length || 0;
+            
+            setStats({
+                totalProducts,
+                lowStockProducts,
+                outOfStockProducts,
+                abandonedProducts
+            });
+            
+            setError(null);
         } catch (error) {
             console.error('Error fetching products:', error);
-            alert('فشل جلب المنتجات، يرجى المحاولة لاحقاً.');
+            setError('فشل جلب المنتجات، يرجى المحاولة لاحقاً.');
+            setProducts([]);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -70,14 +94,11 @@ const Dashboard = () => {
     const handleUpdateStock = async () => {
         if (!selectedProduct) return;
         try {
-            await axios.patch(`${baseURL}/supplier/products/${selectedProduct.id}/stock`, {
+            await axios.patch(getApiUrl(API_CONFIG.ENDPOINTS.PRODUCTS.UPDATE_STOCK(selectedProduct.id)), {
                 stock: parseInt(stockToUpdate, 10),
                 reason: "تحديث المخزون"
             }, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
+                headers: getAuthHeaders()
             });
             alert('تم تحديث المخزون بنجاح!');
             fetchProducts();
@@ -87,13 +108,29 @@ const Dashboard = () => {
             alert('فشل تحديث المخزون، يرجى المحاولة لاحقاً.');
         }
     };
+
+    const handleDeleteProduct = async () => {
+        if (!selectedProduct) return;
+        try {
+            await axios.delete(getApiUrl(API_CONFIG.ENDPOINTS.PRODUCTS.DELETE(selectedProduct.id)), {
+                headers: getAuthHeaders()
+            });
+            alert('تم حذف المنتج بنجاح!');
+            fetchProducts();
+            setIsDeleteModalOpen(false);
+        } catch (error) {
+            console.error('Error deleting product:', error);
+            alert('فشل حذف المنتج، يرجى المحاولة لاحقاً.');
+        }
+    };
     
     const handleOpenEditPrice = () => {
         setIsEditPriceModalOpen(true);
         setIsMoreActionsDropdownOpen(false);
     };
 
-    const handleOpenDeleteModal = () => {
+    const handleOpenDeleteModal = (product) => {
+        setSelectedProduct(product);
         setIsDeleteModalOpen(true);
         setIsMoreActionsDropdownOpen(false);
     };
@@ -116,28 +153,28 @@ const Dashboard = () => {
                 <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
                     <div>
                         <h3 className="text-2xl">إجمالي المنتجات</h3>
-                        <p className="text-2xl font-bold mt-1 text-gray-900">820</p>
+                        <p className="text-2xl font-bold mt-1 text-gray-900">{stats.totalProducts}</p>
                     </div>
                     <span className="text-sm font-semibold text-green-500">↑ 8%</span>
                 </div>
                 <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
                     <div>
                         <h3 className="text-2xl">منتجات منخفضة المخزون</h3>
-                        <p className="text-2xl font-bold mt-1 text-gray-900">18</p>
+                        <p className="text-2xl font-bold mt-1 text-gray-900">{stats.lowStockProducts}</p>
                     </div>
                     <span className="text-sm font-semibold text-red-500">↓ 2%</span>
                 </div>
                 <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
                     <div>
                         <h3 className="text-2xl">منتجات غير متوفرة</h3>
-                        <p className="text-2xl font-bold mt-1 text-gray-900">32</p>
+                        <p className="text-2xl font-bold mt-1 text-gray-900">{stats.outOfStockProducts}</p>
                     </div>
                     <span className="text-sm font-semibold text-red-500">↓ 2%</span>
                 </div>
                 <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
                     <div>
                         <h3 className="text-2xl">منتجات مهجورة</h3>
-                        <p className="text-2xl font-bold mt-1 text-gray-900">14</p>
+                        <p className="text-2xl font-bold mt-1 text-gray-900">{stats.abandonedProducts}</p>
                     </div>
                     <span className="text-sm font-semibold text-red-500">↑ 8%</span>
                 </div>
@@ -196,51 +233,78 @@ const Dashboard = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {products.map((product) => (
-                                <tr key={product.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
-                                    <td className="py-3 px-4 relative">
-                                        <button
-                                            className="text-gray-500 hover:text-gray-900"
-                                            onClick={() => setIsMoreActionsDropdownOpen(isMoreActionsDropdownOpen === product.id ? null : product.id)}
-                                        >
-                                            <IoEllipsisHorizontal className="w-5 h-5" />
-                                        </button>
-                                        {isMoreActionsDropdownOpen === product.id && (
-                                            <div className="absolute left-5 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-10 text-sm text-gray-700">
-                                                <button className="flex items-center w-full text-right px-4 py-2 hover:bg-gray-100" onClick={() => handleOpenProductDetails(product)}>
-                                                    <IoEyeOutline className="w-5 h-5 ml-2 text-gray-500" />
-                                                    عرض التفاصيل
-                                                </button>
-                                                <button className="flex items-center w-full text-right px-4 py-2 hover:bg-gray-100" onClick={() => handleOpenEditProduct(product)}>
-                                                    <IoPencilOutline className="w-5 h-5 ml-2 text-gray-500" />
-                                                    تعديل المنتج
-                                                </button>
-                                                <button className="flex items-center w-full text-right px-4 py-2 hover:bg-gray-100" onClick={() => handleOpenEditStock(product)}>
-                                                    <IoPencilOutline className="w-5 h-5 ml-2 text-gray-500" />
-                                                    تعديل المخزون
-                                                </button>
-                                                <button className="flex items-center w-full text-right px-4 py-2 hover:bg-gray-100" onClick={() => handleOpenEditPrice(product)}>
-                                                    <IoPencilOutline className="w-5 h-5 ml-2 text-gray-500" />
-                                                    تعديل السعر
-                                                </button>
-                                                <button className="flex items-center w-full text-right px-4 py-2 text-red-600 hover:bg-red-50" onClick={() => handleOpenDeleteModal(product)}>
-                                                    <IoTrashOutline className="w-5 h-5 ml-2 text-red-600" />
-                                                    حذف المنتج
-                                                </button>
-                                            </div>
-                                        )}
-                                    </td>
-                                    <td className="py-3 px-4 text-sm text-gray-800">{product.category?.name || ''}</td>
-                                    <td className="py-3 px-4 text-sm text-gray-800">{product.section?.name || ''}</td>
-                                    <td className="py-3 px-4 text-sm text-gray-800">{product.stock}</td>
-                                    <td className="py-3 px-4 text-sm text-gray-800">{product.price.toLocaleString()}د.ع</td>
-                                    <td className="py-3 px-4 text-sm text-gray-800">{product.originalPrice ? `${product.originalPrice.toLocaleString()}د.ع` : '-'}</td>
-                                    <td className="py-3 px-4 text-sm text-gray-800">{product.name}</td>
-                                    <td className="py-3 px-4">
-                                        <img src={product.mainImageUrl} alt={product.name} className="w-10 h-10 rounded-md object-cover" />
+                            {loading ? (
+                                <tr>
+                                    <td colSpan="8" className="p-8 text-center">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                                        <p className="text-gray-600">جاري تحميل المنتجات...</p>
                                     </td>
                                 </tr>
-                            ))}
+                            ) : error ? (
+                                <tr>
+                                    <td colSpan="8" className="p-8 text-center">
+                                        <p className="text-red-600 mb-4">{error}</p>
+                                        <button 
+                                            onClick={() => fetchProducts()} 
+                                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                                        >
+                                            إعادة المحاولة
+                                        </button>
+                                    </td>
+                                </tr>
+                            ) : products.length === 0 ? (
+                                <tr>
+                                    <td colSpan="8" className="p-8 text-center text-gray-500">
+                                        لا توجد منتجات
+                                    </td>
+                                </tr>
+                            ) : (
+                                products.map((product) => (
+                                    <tr key={product.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+                                        <td className="py-3 px-4 relative">
+                                            <button
+                                                className="text-gray-500 hover:text-gray-900"
+                                                onClick={() => setIsMoreActionsDropdownOpen(isMoreActionsDropdownOpen === product.id ? null : product.id)}
+                                            >
+                                                <IoEllipsisHorizontal className="w-5 h-5" />
+                                            </button>
+                                            {isMoreActionsDropdownOpen === product.id && (
+                                                <div className="absolute left-5 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-10 text-sm text-gray-700">
+                                                    <button className="flex items-center w-full text-right px-4 py-2 hover:bg-gray-100" onClick={() => handleOpenProductDetails(product)}>
+                                                        <IoEyeOutline className="w-5 h-5 ml-2 text-gray-500" />
+                                                        عرض التفاصيل
+                                                    </button>
+                                                    <button className="flex items-center w-full text-right px-4 py-2 hover:bg-gray-100" onClick={() => handleOpenEditProduct(product)}>
+                                                        <IoPencilOutline className="w-5 h-5 ml-2 text-gray-500" />
+                                                        تعديل المنتج
+                                                    </button>
+                                                    <button className="flex items-center w-full text-right px-4 py-2 hover:bg-gray-100" onClick={() => handleOpenEditStock(product)}>
+                                                        <IoPencilOutline className="w-5 h-5 ml-2 text-gray-500" />
+                                                        تعديل المخزون
+                                                    </button>
+                                                    <button className="flex items-center w-full text-right px-4 py-2 hover:bg-gray-100" onClick={() => handleOpenEditPrice(product)}>
+                                                        <IoPencilOutline className="w-5 h-5 ml-2 text-gray-500" />
+                                                        تعديل السعر
+                                                    </button>
+                                                    <button className="flex items-center w-full text-right px-4 py-2 text-red-600 hover:bg-red-50" onClick={() => handleOpenDeleteModal(product)}>
+                                                        <IoTrashOutline className="w-5 h-5 ml-2 text-red-600" />
+                                                        حذف المنتج
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td className="py-3 px-4 text-sm text-gray-800">{product.category?.name || ''}</td>
+                                        <td className="py-3 px-4 text-sm text-gray-800">{product.section?.name || ''}</td>
+                                        <td className="py-3 px-4 text-sm text-gray-800">{product.stock}</td>
+                                        <td className="py-3 px-4 text-sm text-gray-800">{product.price?.toLocaleString()}د.ع</td>
+                                        <td className="py-3 px-4 text-sm text-gray-800">{product.originalPrice ? `${product.originalPrice.toLocaleString()}د.ع` : '-'}</td>
+                                        <td className="py-3 px-4 text-sm text-gray-800">{product.name}</td>
+                                        <td className="py-3 px-4">
+                                            <img src={product.mainImageUrl} alt={product.name} className="w-10 h-10 rounded-md object-cover" />
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
                 </div>
@@ -356,6 +420,7 @@ const Dashboard = () => {
                             إلغاء
                         </button>
                         <button
+                            onClick={handleDeleteProduct}
                             className="flex-1 bg-red-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-600 transition-colors"
                         >
                             حذف المنتج

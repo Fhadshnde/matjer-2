@@ -1,0 +1,8 @@
+CRUD OPERATIONS TEST REPORT
+Generated: Tue Sep 16 23:38:43 +03 2025
+====================================
+Total Tests: 55
+Passed: 42
+Failed: 15
+Success Rate: 76%
+====================================

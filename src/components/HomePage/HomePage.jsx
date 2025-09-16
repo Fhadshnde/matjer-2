@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, CartesianGrid } from 'recharts';
 import axios from 'axios';
+import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
 
 const SalesChartTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -75,9 +76,10 @@ function HomePage() {
     
     const fetchProducts = async () => {
       try {
-        const response = await axios.get('https://products-api.cbc-apps.net/supplier/dashboard/top-products',
-          { headers: { 'Authorization': `Bearer ${token}` } 
-        });
+        const response = await axios.get(
+          getApiUrl(API_CONFIG.ENDPOINTS.DASHBOARD.TOP_PRODUCTS),
+          { headers: getAuthHeaders() }
+        );
         setProducts(response.data.topSellingProducts);
         setTopCartProducts(response.data.topCartProducts);
         setLowStockProducts(response.data.lowStockProducts);
@@ -97,11 +99,10 @@ function HomePage() {
 
     const fetchChartsData = async () => {
       try {
-        const response = await axios.get('https://products-api.cbc-apps.net/supplier/dashboard/charts', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        const response = await axios.get(
+          getApiUrl(API_CONFIG.ENDPOINTS.DASHBOARD.CHARTS), 
+          { headers: getAuthHeaders() }
+        );
 
         let salesData = [];
         if (chartPeriod === 'monthly') {
@@ -145,11 +146,10 @@ function HomePage() {
     
     const fetchDashboardData = async () => {
       try {
-        const response = await axios.get('https://products-api.cbc-apps.net/supplier/dashboard/overview', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        const response = await axios.get(
+          getApiUrl(API_CONFIG.ENDPOINTS.DASHBOARD.OVERVIEW), 
+          { headers: getAuthHeaders() }
+        );
         setDashboardData(response.data);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);

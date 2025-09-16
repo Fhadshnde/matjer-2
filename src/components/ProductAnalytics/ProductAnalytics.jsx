@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts';
-
-const baseURL = 'https://products-api.cbc-apps.net';
+import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid, PieChart, Pie, LineChart, Line } from 'recharts';
+import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
 
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
         return (
             <div className="bg-black text-white p-3 rounded-lg shadow-md text-right font-sans">
                 <p className="font-bold">{`المنتج : ${label}`}</p>
-                <p className="text-sm">{`مبيعات: ${payload[1].value}`}</p>
-                <p className="text-sm">{`مشاهدة: ${payload[0].value}`}</p>
+                <p className="text-sm">{`مبيعات: ${payload[1]?.value || 0}`}</p>
+                <p className="text-sm">{`مشاهدة: ${payload[0]?.value || 0}`}</p>
             </div>
         );
     }
@@ -63,6 +62,10 @@ const ProductAnalytics = () => {
     const [sessionsData, setSessionsData] = useState([]);
     const [mostVisitedProducts, setMostVisitedProducts] = useState([]);
     const [monthlyData, setMonthlyData] = useState([]);
+    const [salesKpis, setSalesKpis] = useState(null);
+    const [salesByDepartment, setSalesByDepartment] = useState([]);
+    const [salesByCity, setSalesByCity] = useState([]);
+    const [productPerformanceOverTime, setProductPerformanceOverTime] = useState([]);
 
     useEffect(() => {
         const fetchAnalyticsData = async () => {
@@ -73,26 +76,38 @@ const ProductAnalytics = () => {
                 return;
             }
 
-            const headers = {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            };
-
             try {
-                const [tablesChartsRes, enhancedRes, salesOverTimeRes] = await Promise.all([
-                    fetch(`${baseURL}/supplier/analytics/tables-charts`, { headers }),
-                    fetch(`${baseURL}/supplier/analytics/enhanced`, { headers }),
-                    fetch(`${baseURL}/supplier/sales/over-time`, { headers }),
+                const [
+                    enhancedRes,
+                    tablesChartsRes,
+                    salesOverTimeRes,
+                    salesKpisRes,
+                    salesByDeptRes,
+                    salesByCityRes,
+                    productPerfRes
+                ] = await Promise.all([
+                    fetch(getApiUrl(API_CONFIG.ENDPOINTS.ANALYTICS.ENHANCED), { headers: getAuthHeaders() }),
+                    fetch(getApiUrl(API_CONFIG.ENDPOINTS.ANALYTICS.TABLES_CHARTS), { headers: getAuthHeaders() }),
+                    fetch(getApiUrl(API_CONFIG.ENDPOINTS.ANALYTICS.SALES_OVER_TIME), { headers: getAuthHeaders() }),
+                    fetch(getApiUrl('/supplier/sales/kpis'), { headers: getAuthHeaders() }),
+                    fetch(getApiUrl('/supplier/sales/by-department'), { headers: getAuthHeaders() }),
+                    fetch(getApiUrl('/supplier/sales/by-city'), { headers: getAuthHeaders() }),
+                    fetch(getApiUrl('/supplier/product-analytics/performance-over-time'), { headers: getAuthHeaders() })
                 ]);
 
-                if (!tablesChartsRes.ok || !enhancedRes.ok || !salesOverTimeRes.ok) {
+                if (!enhancedRes.ok || !tablesChartsRes.ok || !salesOverTimeRes.ok) {
                     throw new Error('Failed to fetch analytics data.');
                 }
 
-                const tablesCharts = await tablesChartsRes.json();
                 const enhanced = await enhancedRes.json();
+                const tablesCharts = await tablesChartsRes.json();
                 const salesOverTime = await salesOverTimeRes.json();
+                const kpis = await salesKpisRes.json();
+                const byDept = await salesByDeptRes.json();
+                const byCity = await salesByCityRes.json();
+                const productPerf = await productPerfRes.json();
 
+                // Process enhanced analytics cards
                 const newStatsCards = [
                     {
                         title: enhanced.cards.totalViews.title,
@@ -139,6 +154,7 @@ const ProductAnalytics = () => {
                 ];
                 setStatsCards(newStatsCards);
 
+                // Process product performance data
                 const mappedProductPerformance = tablesCharts.charts.productPerformance.data.map(item => ({
                     name: item.productName,
                     views: item.visits,
@@ -146,6 +162,7 @@ const ProductAnalytics = () => {
                 }));
                 setProductPerformanceData(mappedProductPerformance);
 
+                // Process categories data
                 const mappedCategories = tablesCharts.charts.bestSellingCategories.data.map((item, index) => ({
                     name: item.category,
                     value: item.sales,
@@ -153,6 +170,7 @@ const ProductAnalytics = () => {
                 }));
                 setCategoriesData(mappedCategories);
 
+                // Process funnel data
                 const mappedFunnel = tablesCharts.charts.conversionFunnel.data.map(item => ({
                     stage: item.stage,
                     value: item.value,
@@ -168,18 +186,21 @@ const ProductAnalytics = () => {
                 }));
                 setFunnelData(mappedFunnel);
 
+                // Process user registrations
                 const mappedUserRegistrations = tablesCharts.charts.userRegistrations.data.map(item => ({
                     month: item.month,
                     'المستخدمون المسجلون': item.registrations,
                 }));
                 setUserRegistrationData(mappedUserRegistrations);
 
+                // Process sessions data
                 const mappedSessions = tablesCharts.charts.monthlySessions.data.map(item => ({
                     month: item.month,
                     'عدد الجلسات': item.sessions,
                 }));
                 setSessionsData(mappedSessions);
 
+                // Process most visited products
                 const mappedMostVisited = tablesCharts.mostViewedProductsTable.map(item => ({
                     name: item.name,
                     visits: item.views.toLocaleString(),
@@ -190,6 +211,7 @@ const ProductAnalytics = () => {
                 }));
                 setMostVisitedProducts(mappedMostVisited);
 
+                // Process sales over time
                 const mappedSalesOverTime = salesOverTime.map(item => ({
                     month: item.name,
                     sales: item.value,
@@ -197,6 +219,20 @@ const ProductAnalytics = () => {
                     purchases: item.value / 1000,
                 }));
                 setMonthlyData(mappedSalesOverTime);
+
+                // Process sales KPIs
+                setSalesKpis(kpis);
+
+                // Process sales by department
+                setSalesByDepartment(byDept);
+
+                // Process sales by city
+                setSalesByCity(byCity);
+
+                // Process product performance over time
+                if (productPerf.chartData) {
+                    setProductPerformanceOverTime(productPerf.chartData);
+                }
 
             } catch (err) {
                 setError(err.message);
@@ -211,7 +247,10 @@ const ProductAnalytics = () => {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-100">
-                <p>Loading analytics data...</p>
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
+                    <p className="text-gray-600">جاري تحميل بيانات التحليلات...</p>
+                </div>
             </div>
         );
     }
@@ -219,7 +258,7 @@ const ProductAnalytics = () => {
     if (error) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-100">
-                <p className="text-red-500">Error: {error}</p>
+                <p className="text-red-500">خطأ: {error}</p>
             </div>
         );
     }
@@ -227,6 +266,7 @@ const ProductAnalytics = () => {
     return (
         <div className="bg-gray-100 p-4 min-h-screen rtl:text-right font-sans">
             <div className="container mx-auto">
+                {/* Stats Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                     {statsCards.map((card, index) => (
                         <div key={index} className="bg-white p-6 rounded-lg shadow-md flex flex-col items-end">
@@ -237,11 +277,43 @@ const ProductAnalytics = () => {
                             </div>
                             <h3 className="text-gray-500 text-sm font-medium">{card.title}</h3>
                             <p className="text-xl font-bold">{card.value}</p>
-                            <span className={`text-sm ${card.trend === 'up' ? 'text-green-500' : card.trend === 'down' ? 'text-red-500' : 'text-gray-500'}`}>{card.growth}</span>
+                            <span className={`text-sm ${card.trend === 'up' ? 'text-green-500' : card.trend === 'down' ? 'text-red-500' : 'text-gray-500'}`}>
+                                {card.growth}
+                            </span>
                         </div>
                     ))}
                 </div>
 
+                {/* Sales KPIs */}
+                {salesKpis && (
+                    <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+                        <h2 className="text-xl font-bold mb-4">مؤشرات المبيعات الرئيسية</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div className="text-center p-4 bg-blue-50 rounded-lg">
+                                <p className="text-2xl font-bold text-blue-600">{salesKpis.totalSales?.value || '0'}</p>
+                                <p className="text-sm text-gray-600">إجمالي المبيعات</p>
+                                <p className="text-xs text-green-500">{salesKpis.totalSales?.percentage || '0%'}</p>
+                            </div>
+                            <div className="text-center p-4 bg-green-50 rounded-lg">
+                                <p className="text-2xl font-bold text-green-600">{salesKpis.monthlySales?.value || '0'}</p>
+                                <p className="text-sm text-gray-600">مبيعات الشهر</p>
+                                <p className="text-xs text-green-500">{salesKpis.monthlySales?.percentage || '0%'}</p>
+                            </div>
+                            <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                                <p className="text-2xl font-bold text-yellow-600">{salesKpis.weeklySales?.value || '0'}</p>
+                                <p className="text-sm text-gray-600">مبيعات الأسبوع</p>
+                                <p className="text-xs text-green-500">{salesKpis.weeklySales?.percentage || '0%'}</p>
+                            </div>
+                            <div className="text-center p-4 bg-purple-50 rounded-lg">
+                                <p className="text-2xl font-bold text-purple-600">{salesKpis.dailySales?.value || '0'}</p>
+                                <p className="text-sm text-gray-600">مبيعات اليوم</p>
+                                <p className="text-xs text-green-500">{salesKpis.dailySales?.percentage || '0%'}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Charts Row 1 */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                     <div className="bg-white p-6 rounded-lg shadow-md">
                         <div className="flex justify-between items-center mb-4">
@@ -290,6 +362,7 @@ const ProductAnalytics = () => {
                     </div>
                 </div>
 
+                {/* Charts Row 2 */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                     <div className="bg-white p-6 rounded-lg shadow-md">
                         <div className="flex justify-between items-center mb-4">
@@ -331,6 +404,7 @@ const ProductAnalytics = () => {
                     </div>
                 </div>
 
+                {/* Charts Row 3 */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                     <div className="bg-white p-6 rounded-lg shadow-md">
                         <div className="flex justify-between items-center mb-4">
@@ -375,6 +449,66 @@ const ProductAnalytics = () => {
                     </div>
                 </div>
 
+                {/* Sales by Department and City */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <div className="bg-white p-6 rounded-lg shadow-md">
+                        <h2 className="text-xl font-bold mb-4">المبيعات حسب القسم</h2>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <PieChart>
+                                <Pie
+                                    data={salesByDepartment}
+                                    cx="50%"
+                                    cy="50%"
+                                    labelLine={false}
+                                    label={({ name, percentage }) => `${name} (${percentage}%)`}
+                                    outerRadius={80}
+                                    fill="#8884d8"
+                                    dataKey="sales"
+                                >
+                                    {salesByDepartment.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={['#8884d8', '#82ca9d', '#ffc658', '#ff7300'][index % 4]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-lg shadow-md">
+                        <h2 className="text-xl font-bold mb-4">المبيعات حسب المدينة</h2>
+                        <div className="space-y-3">
+                            {salesByCity.map((city, index) => (
+                                <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                    <span className="font-medium">{city.name}</span>
+                                    <div className="text-left">
+                                        <p className="font-bold text-lg">{city.sales.toLocaleString()} د.ع</p>
+                                        <p className="text-sm text-gray-500">{city.percentage}%</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Product Performance Over Time */}
+                {productPerformanceOverTime.length > 0 && (
+                    <div className="bg-white p-6 rounded-lg shadow-md mb-8">
+                        <h2 className="text-xl font-bold mb-4">أداء المنتجات عبر الزمن</h2>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <LineChart data={productPerformanceOverTime} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="month" />
+                                <YAxis />
+                                <Tooltip />
+                                <Line type="monotone" dataKey="products" stroke="#8884d8" strokeWidth={2} />
+                                <Line type="monotone" dataKey="sales" stroke="#82ca9d" strokeWidth={2} />
+                                <Line type="monotone" dataKey="views" stroke="#ffc658" strokeWidth={2} />
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
+                )}
+
+                {/* Most Visited Products Table */}
                 <div className="bg-white p-6 rounded-lg shadow-md">
                     <h2 className="text-xl font-bold mb-4">المنتجات الأكثر مشاهدة</h2>
                     <div className="overflow-x-auto">

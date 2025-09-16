@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
 
 const EditProduct = () => {
     const { id } = useParams();
@@ -7,12 +9,10 @@ const EditProduct = () => {
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [images, setImages] = useState([
-        { name: 'اسم الصورة', size: '145 KB' },
-        { name: 'اسم الصورة', size: '200 KB' },
-        { name: 'اسم الصورة', size: '80 KB' },
-        { name: 'اسم الصورة', size: '300 KB' },
-    ]);
+    const [images, setImages] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [sections, setSections] = useState([]);
+    const [updateLoading, setUpdateLoading] = useState(false);
 
     useEffect(() => {
         if (!id) {
@@ -21,50 +21,86 @@ const EditProduct = () => {
             return;
         }
 
-        const dummyProducts = [
-            {
-                id: '1',
-                name: 'هاتف 1 A15 128GB، سماعات بلوتوت 1x',
-                shortDescription: 'جهاز محمول حديث من سامسونج',
-                category: 'هاتف محمول',
-                price: '154.90د.ع',
-                discountPrice: '130.90د.ع',
-                discountDetails: 'نعم',
-                quantity: 15,
-                availability: 'متوفر',
-            },
-            {
-                id: '2',
-                name: 'هاتف 2 Pro...',
-                shortDescription: 'هاتف ذكي متطور',
-                category: 'هاتف محمول',
-                price: '299.00د.ع',
-                discountPrice: null,
-                discountDetails: 'لا',
-                quantity: 5,
-                availability: 'كمية منخفضة',
-            },
-        ];
+        const fetchProductData = async () => {
+            try {
+                setLoading(true);
+                
+                // Fetch product details
+                const productResponse = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.PRODUCTS.DETAILS(id)), {
+                    headers: getAuthHeaders()
+                });
+                
+                // Fetch categories and sections
+                const [categoriesResponse, sectionsResponse] = await Promise.all([
+                    axios.get(getApiUrl(API_CONFIG.ENDPOINTS.CATEGORIES.LIST), {
+                        headers: getAuthHeaders()
+                    }),
+                    axios.get(getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.LIST), {
+                        headers: getAuthHeaders()
+                    })
+                ]);
 
-        const foundProduct = dummyProducts.find(p => p.id === id);
+                setProduct(productResponse.data);
+                setCategories(categoriesResponse.data.categories || []);
+                setSections(sectionsResponse.data.sections || []);
+                setError(null);
+            } catch (error) {
+                console.error('Error fetching product data:', error);
+                setError('فشل في تحميل بيانات المنتج، يرجى المحاولة لاحقاً.');
+            } finally {
+                setLoading(false);
+            }
+        };
 
-        if (foundProduct) {
-            setProduct(foundProduct);
-            setLoading(false);
-        } else {
-            setError('المنتج غير موجود.');
-            setLoading(false);
-        }
+        fetchProductData();
     }, [id]);
 
-    const handleUpdate = () => {
-        // منطق تحديث المنتج هنا
-        // يمكنك استخدام 'product' و 'images'
-        // لإرسال البيانات إلى قاعدة البيانات أو الخادم
-        console.log("Product to be updated:", product);
-        console.log("Images to be updated:", images);
-        alert('تم تحديث المنتج بنجاح!');
-        navigate('/dashboard');
+    const handleUpdate = async () => {
+        try {
+            setUpdateLoading(true);
+            setError(null);
+            
+            let imageUrl = product.mainImageUrl;
+            
+            // Upload new image if exists
+            if (images.length > 0 && images[0].file) {
+                const formData = new FormData();
+                formData.append('file', images[0].file);
+                
+                const uploadResponse = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.UPLOAD.IMAGE), formData, {
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+                
+                imageUrl = uploadResponse.data.url;
+            }
+            
+            const productData = {
+                name: product.name,
+                description: product.description,
+                categoryId: parseInt(product.categoryId),
+                sectionId: parseInt(product.sectionId),
+                price: parseFloat(product.price),
+                originalPrice: parseFloat(product.originalPrice),
+                stock: parseInt(product.stock),
+                isActive: product.isActive,
+                mainImageUrl: imageUrl
+            };
+
+            await axios.patch(getApiUrl(API_CONFIG.ENDPOINTS.PRODUCTS.UPDATE(id)), productData, {
+                headers: getAuthHeaders()
+            });
+
+            alert('تم تحديث المنتج بنجاح!');
+            navigate('/products');
+        } catch (error) {
+            console.error('Error updating product:', error);
+            setError('فشل في تحديث المنتج، يرجى المحاولة لاحقاً.');
+        } finally {
+            setUpdateLoading(false);
+        }
     };
 
     const handleDeleteImage = (index) => {
@@ -74,9 +110,16 @@ const EditProduct = () => {
     const handleAddImage = (e) => {
         const file = e.target.files[0];
         if (file) {
+            // Check file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('حجم الملف كبير جداً. الحد الأقصى 5 ميجابايت');
+                return;
+            }
+            
             setImages([...images, {
                 name: file.name,
-                size: `${(file.size / 1024).toFixed(0)} KB`
+                size: `${(file.size / 1024).toFixed(0)} KB`,
+                file: file
             }]);
         }
     };
@@ -112,23 +155,25 @@ const EditProduct = () => {
                             />
                         </div>
                         <div className="mb-4">
-                            <label className="block text-gray-700 text-sm font-medium mb-1">وصف مختصر</label>
-                            <input
-                                type="text"
-                                value={product.shortDescription}
-                                onChange={(e) => setProduct({ ...product, shortDescription: e.target.value })}
+                            <label className="block text-gray-700 text-sm font-medium mb-1">وصف المنتج</label>
+                            <textarea
+                                value={product.description}
+                                onChange={(e) => setProduct({ ...product, description: e.target.value })}
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
+                                rows="3"
                             />
                         </div>
                         <div>
                             <label className="block text-gray-700 text-sm font-medium mb-1">التصنيف الرئيسي</label>
                             <select
-                                value={product.category}
-                                onChange={(e) => setProduct({ ...product, category: e.target.value })}
+                                value={product.categoryId}
+                                onChange={(e) => setProduct({ ...product, categoryId: e.target.value })}
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
                             >
-                                <option>هاتف محمول</option>
-                                <option>ملحقات</option>
+                                <option value="">اختر التصنيف</option>
+                                {categories.map(category => (
+                                    <option key={category.id} value={category.id}>{category.name}</option>
+                                ))}
                             </select>
                         </div>
                     </div>
@@ -146,10 +191,14 @@ const EditProduct = () => {
                         <div className="mb-4">
                             <label className="block text-gray-700 text-sm font-medium mb-1">التصنيف الفرعي</label>
                             <select
+                                value={product.sectionId}
+                                onChange={(e) => setProduct({ ...product, sectionId: e.target.value })}
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
                             >
-                                <option>أجهزة</option>
-                                <option>شواحن</option>
+                                <option value="">اختر التصنيف الفرعي</option>
+                                {sections.map(section => (
+                                    <option key={section.id} value={section.id}>{section.name}</option>
+                                ))}
                             </select>
                         </div>
                     </div>
@@ -204,71 +253,70 @@ const EditProduct = () => {
                     {/* Right Column */}
                     <div>
                         <div className="mb-4">
-                            <label className="block text-gray-700 text-sm font-medium mb-1">السعر الأساسي</label>
+                            <label className="block text-gray-700 text-sm font-medium mb-1">سعر البيع</label>
                             <input
-                                type="text"
+                                type="number"
                                 value={product.price}
                                 onChange={(e) => setProduct({ ...product, price: e.target.value })}
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
+                                placeholder="سعر البيع"
                             />
                         </div>
                         <div className="mb-4">
-                            <label className="block text-gray-700 text-sm font-medium mb-1">السعر بعد الخصم</label>
+                            <label className="block text-gray-700 text-sm font-medium mb-1">سعر الجملة</label>
                             <input
-                                type="text"
-                                value={product.discountPrice || ''}
-                                onChange={(e) => setProduct({ ...product, discountPrice: e.target.value })}
+                                type="number"
+                                value={product.originalPrice || ''}
+                                onChange={(e) => setProduct({ ...product, originalPrice: e.target.value })}
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
+                                placeholder="سعر الجملة"
                             />
                         </div>
                         <div>
                             <label className="block text-gray-700 text-sm font-medium mb-1">الكمية</label>
                             <input
                                 type="number"
-                                value={product.quantity}
-                                onChange={(e) => setProduct({ ...product, quantity: e.target.value })}
+                                value={product.stock}
+                                onChange={(e) => setProduct({ ...product, stock: e.target.value })}
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
+                                placeholder="الكمية في المخزون"
                             />
                         </div>
                     </div>
                     {/* Left Column */}
                     <div>
                         <div className="mb-4">
-                            <label className="block text-gray-700 text-sm font-medium mb-1">تفصيل خصم</label>
+                            <label className="block text-gray-700 text-sm font-medium mb-1">حالة المنتج</label>
                             <select
-                                value={product.discountDetails}
-                                onChange={(e) => setProduct({ ...product, discountDetails: e.target.value })}
+                                value={product.isActive}
+                                onChange={(e) => setProduct({ ...product, isActive: e.target.value === 'true' })}
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
                             >
-                                <option>نعم</option>
-                                <option>لا</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-gray-700 text-sm font-medium mb-1">حالة التوفر</label>
-                            <select
-                                value={product.availability}
-                                onChange={(e) => setProduct({ ...product, availability: e.target.value })}
-                                className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
-                            >
-                                <option>متوفر</option>
-                                <option>كمية منخفضة</option>
-                                <option>غير متوفر</option>
+                                <option value={true}>نشط</option>
+                                <option value={false}>غير نشط</option>
                             </select>
                         </div>
                     </div>
                 </div>
 
+                {/* Error Message */}
+                {error && (
+                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                        {error}
+                    </div>
+                )}
+
                 {/* Action Buttons */}
                 <div className="flex justify-start gap-4 mt-8">
                     <button
                         onClick={handleUpdate}
-                        className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-colors"
+                        disabled={updateLoading}
+                        className="bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-colors"
                     >
-                        حفظ
+                        {updateLoading ? 'جاري الحفظ...' : 'حفظ'}
                     </button>
                     <button
-                        onClick={() => navigate('/dashboard')}
+                        onClick={() => navigate('/products')}
                         className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg shadow-md transition-colors"
                     >
                         إلغاء

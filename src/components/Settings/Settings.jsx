@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaChevronDown, FaStore, FaChartBar, FaUserTie, FaUsers, FaUserPlus, FaKey, FaTrash } from 'react-icons/fa';
 import { BsThreeDots, BsEyeSlash, BsEye } from 'react-icons/bs';
 import { RiCloseFill } from 'react-icons/ri';
+import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
+import axios from 'axios';
 
 const statsCards = [
   { title: 'عدد الموظفين', value: '350,000', icon: 'users' },
@@ -187,6 +189,42 @@ const EmployeesPage = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [employeesData, setEmployeesData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [stats, setStats] = useState({
+    totalEmployees: 0,
+    activeEmployees: 0,
+    inactiveEmployees: 0
+  });
+
+  useEffect(() => {
+    const fetchEmployeesData = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.EMPLOYEES.LIST), {
+          headers: getAuthHeaders()
+        });
+        
+        const data = response.data;
+        setEmployeesData(data.employees || []);
+        setStats({
+          totalEmployees: data.pagination?.totalItems || 0,
+          activeEmployees: data.employees?.filter(emp => emp.status === 'active').length || 0,
+          inactiveEmployees: data.employees?.filter(emp => emp.status === 'inactive').length || 0
+        });
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching employees:', err);
+        setError('فشل في تحميل بيانات الموظفين');
+        setEmployeesData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEmployeesData();
+  }, []);
 
   const handleDropdownToggle = (id) => {
     setShowDropdown(showDropdown === id ? null : id);
@@ -218,6 +256,108 @@ const EmployeesPage = () => {
     setIsDeleteModalOpen(false);
   };
 
+  const handleAddEmployee = async (employeeData) => {
+    try {
+      const response = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.EMPLOYEES.ADD), employeeData, {
+        headers: getAuthHeaders()
+      });
+      
+      // Refresh employees list
+      const fetchResponse = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.EMPLOYEES.LIST), {
+        headers: getAuthHeaders()
+      });
+      
+      setEmployeesData(fetchResponse.data.employees || []);
+      setIsAddModalOpen(false);
+      return { success: true, message: 'تم إضافة الموظف بنجاح' };
+    } catch (error) {
+      console.error('Error adding employee:', error);
+      return { success: false, message: 'فشل في إضافة الموظف' };
+    }
+  };
+
+  const handleUpdateEmployee = async (employeeId, employeeData) => {
+    try {
+      const response = await axios.patch(getApiUrl(API_CONFIG.ENDPOINTS.EMPLOYEES.EDIT(employeeId)), employeeData, {
+        headers: getAuthHeaders()
+      });
+      
+      // Refresh employees list
+      const fetchResponse = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.EMPLOYEES.LIST), {
+        headers: getAuthHeaders()
+      });
+      
+      setEmployeesData(fetchResponse.data.employees || []);
+      return { success: true, message: 'تم تحديث الموظف بنجاح' };
+    } catch (error) {
+      console.error('Error updating employee:', error);
+      return { success: false, message: 'فشل في تحديث الموظف' };
+    }
+  };
+
+  const handleDeleteEmployee = async (employeeId) => {
+    try {
+      const response = await axios.delete(getApiUrl(API_CONFIG.ENDPOINTS.EMPLOYEES.DELETE(employeeId)), {
+        headers: getAuthHeaders()
+      });
+      
+      // Refresh employees list
+      const fetchResponse = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.EMPLOYEES.LIST), {
+        headers: getAuthHeaders()
+      });
+      
+      setEmployeesData(fetchResponse.data.employees || []);
+      setIsDeleteModalOpen(false);
+      return { success: true, message: 'تم حذف الموظف بنجاح' };
+    } catch (error) {
+      console.error('Error deleting employee:', error);
+      return { success: false, message: 'فشل في حذف الموظف' };
+    }
+  };
+
+  const handleChangePassword = async (employeeId, newPassword) => {
+    try {
+      const response = await axios.patch(getApiUrl(API_CONFIG.ENDPOINTS.EMPLOYEES.CHANGE_PASSWORD(employeeId)), {
+        password: newPassword
+      }, {
+        headers: getAuthHeaders()
+      });
+      
+      setIsPasswordModalOpen(false);
+      return { success: true, message: 'تم تغيير كلمة المرور بنجاح' };
+    } catch (error) {
+      console.error('Error changing password:', error);
+      return { success: false, message: 'فشل في تغيير كلمة المرور' };
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-gray-100 min-h-screen p-6 font-['Tajawal'] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">جاري تحميل بيانات الموظفين...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-gray-100 min-h-screen p-6 font-['Tajawal'] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          >
+            إعادة المحاولة
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div dir="rtl" className="p-6 bg-gray-50 min-h-screen font-sans">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">لوحة التحكم</h1>
@@ -226,9 +366,10 @@ const EmployeesPage = () => {
       <SettingsNav activePage="employees" />
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        {statsCards.map((card, index) => (
-          <StatCard key={index} {...card} />
-        ))}
+        <StatCard title="عدد الموظفين" value={stats.totalEmployees.toString()} icon="users" />
+        <StatCard title="الموظفين النشطين" value={stats.activeEmployees.toString()} icon="user-tie" />
+        <StatCard title="الموظفين غير النشطين" value={stats.inactiveEmployees.toString()} icon="locked" />
+        <StatCard title="نسبة التطبيق" value="2.5%" icon="percent" />
       </div>
       <div className="bg-white p-6 rounded-lg shadow-md">
         <div className="flex justify-between items-center mb-4">
@@ -254,39 +395,66 @@ const EmployeesPage = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200 text-right">
-              {employeesData.map((employee) => (
-                <tr key={employee.id}>
-                  <Td>{employee.name}</Td>
-                  <Td>{employee.email}</Td>
-                  <Td>{employee.phone}</Td>
-                  <Td>{employee.role}</Td>
-                  <Td>{employee.lastLogin}</Td>
-                  <Td>
-                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${employee.status === 'نشط' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                      {employee.status}
-                    </span>
-                  </Td>
-                  <Td>
-                    <div className="relative inline-block">
-                      <button onClick={() => handleDropdownToggle(employee.id)} className="text-gray-500 hover:text-gray-700">
-                        <BsThreeDots className="text-xl" />
-                      </button>
-                      {showDropdown === employee.id && (
-                        <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 text-right">
-                          <button onClick={openPasswordModal} className="w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center justify-end">
-                            <span>تغيير كلمة المرور</span>
-                            <FaKey className="ml-2" />
-                          </button>
-                          <button onClick={openDeleteModal} className="w-full text-right px-4 py-2 text-sm text-red-600 hover:bg-red-100 flex items-center justify-end">
-                            <span>حذف</span>
-                            <FaTrash className="ml-2" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </Td>
+              {loading ? (
+                <tr>
+                  <td colSpan="7" className="p-8 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">جاري تحميل بيانات الموظفين...</p>
+                  </td>
                 </tr>
-              ))}
+              ) : error ? (
+                <tr>
+                  <td colSpan="7" className="p-8 text-center">
+                    <p className="text-red-600 mb-4">{error}</p>
+                    <button 
+                      onClick={() => window.location.reload()} 
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                    >
+                      إعادة المحاولة
+                    </button>
+                  </td>
+                </tr>
+              ) : employeesData.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="p-8 text-center text-gray-500">
+                    لا توجد بيانات موظفين
+                  </td>
+                </tr>
+              ) : (
+                employeesData.map((employee) => (
+                  <tr key={employee.id}>
+                    <Td>{employee.name}</Td>
+                    <Td>{employee.email || 'غير محدد'}</Td>
+                    <Td>{employee.phone || 'غير محدد'}</Td>
+                    <Td>{employee.role}</Td>
+                    <Td>{employee.lastLogin}</Td>
+                    <Td>
+                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${employee.status === 'نشط' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                        {employee.status}
+                      </span>
+                    </Td>
+                    <Td>
+                      <div className="relative inline-block">
+                        <button onClick={() => handleDropdownToggle(employee.id)} className="text-gray-500 hover:text-gray-700">
+                          <BsThreeDots className="text-xl" />
+                        </button>
+                        {showDropdown === employee.id && (
+                          <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 text-right">
+                            <button onClick={openPasswordModal} className="w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center justify-end">
+                              <span>تغيير كلمة المرور</span>
+                              <FaKey className="ml-2" />
+                            </button>
+                            <button onClick={openDeleteModal} className="w-full text-right px-4 py-2 text-sm text-red-600 hover:bg-red-100 flex items-center justify-end">
+                              <span>حذف</span>
+                              <FaTrash className="ml-2" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </Td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

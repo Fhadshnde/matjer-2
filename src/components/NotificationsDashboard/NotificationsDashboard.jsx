@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BsThreeDots } from 'react-icons/bs';
 import { RiCloseFill } from 'react-icons/ri';
 import { FiEdit2 } from 'react-icons/fi';
 import { FaTrash, FaRegComment, FaEnvelope, FaClipboardCheck, FaBoxOpen, FaRegPauseCircle, FaChartBar, FaCalendarAlt, FaChevronDown, FaRegUser, FaBell } from 'react-icons/fa';
 import { MdInfoOutline } from 'react-icons/md';
 import { FaMagnifyingGlass } from 'react-icons/fa6';
+import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
+import axios from 'axios';
 
 // Dummy Data
 const alertCards = [
@@ -217,6 +219,92 @@ const DeleteAlertModal = ({ onClose }) => (
 
 const AlertsDashboard = () => {
   const [activeModal, setActiveModal] = useState(null);
+  const [notificationsData, setNotificationsData] = useState([]);
+  const [alertsData, setAlertsData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [notificationsResponse, alertsResponse] = await Promise.all([
+          axios.get(getApiUrl(API_CONFIG.ENDPOINTS.NOTIFICATIONS.LIST), { headers: getAuthHeaders() }),
+          axios.get(getApiUrl(API_CONFIG.ENDPOINTS.ALERTS.LIST), { headers: getAuthHeaders() })
+        ]);
+
+        setNotificationsData(notificationsResponse.data.notifications || []);
+        setAlertsData(alertsResponse.data.alerts || []);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError('فشل في تحميل البيانات');
+        setNotificationsData([]);
+        setAlertsData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleMarkAsRead = async (notificationId) => {
+    try {
+      const response = await axios.patch(getApiUrl(API_CONFIG.ENDPOINTS.NOTIFICATIONS.MARK_AS_READ(notificationId)), {}, {
+        headers: getAuthHeaders()
+      });
+      
+      // Refresh notifications list
+      const fetchResponse = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.NOTIFICATIONS.LIST), {
+        headers: getAuthHeaders()
+      });
+      
+      setNotificationsData(fetchResponse.data.notifications || []);
+      return { success: true, message: 'تم تمييز الإشعار كمقروء' };
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      return { success: false, message: 'فشل في تمييز الإشعار كمقروء' };
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      const response = await axios.patch(getApiUrl(API_CONFIG.ENDPOINTS.NOTIFICATIONS.MARK_ALL_AS_READ), {}, {
+        headers: getAuthHeaders()
+      });
+      
+      // Refresh notifications list
+      const fetchResponse = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.NOTIFICATIONS.LIST), {
+        headers: getAuthHeaders()
+      });
+      
+      setNotificationsData(fetchResponse.data.notifications || []);
+      return { success: true, message: 'تم تمييز جميع الإشعارات كمقروءة' };
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      return { success: false, message: 'فشل في تمييز جميع الإشعارات كمقروءة' };
+    }
+  };
+
+  const handleDeleteNotification = async (notificationId) => {
+    try {
+      const response = await axios.delete(getApiUrl(API_CONFIG.ENDPOINTS.NOTIFICATIONS.DELETE(notificationId)), {
+        headers: getAuthHeaders()
+      });
+      
+      // Refresh notifications list
+      const fetchResponse = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.NOTIFICATIONS.LIST), {
+        headers: getAuthHeaders()
+      });
+      
+      setNotificationsData(fetchResponse.data.notifications || []);
+      return { success: true, message: 'تم حذف الإشعار بنجاح' };
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      return { success: false, message: 'فشل في حذف الإشعار' };
+    }
+  };
 
   const handleOpenModal = (modalName) => {
     setActiveModal(modalName);
@@ -225,6 +313,33 @@ const AlertsDashboard = () => {
   const handleCloseModal = () => {
     setActiveModal(null);
   };
+
+  if (loading) {
+    return (
+      <div className="bg-gray-100 min-h-screen p-6 font-['Tajawal'] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">جاري تحميل البيانات...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-gray-100 min-h-screen p-6 font-['Tajawal'] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          >
+            إعادة المحاولة
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div dir="rtl" className="p-6 bg-gray-50 min-h-screen">

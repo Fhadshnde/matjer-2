@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Bell,
   Search,
@@ -20,14 +20,49 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { getApiUrl, getAuthHeaders } from "../../config/api";
 
 const Navbar = ({ setIsLoggedIn }) => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [supplierInfo, setSupplierInfo] = useState({
+    name: 'محمد صالح',
+    storeName: 'متجر نايكي',
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facepad=2&w=256&h=256&q=80'
+  });
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
   const toggleProfileMenu = () => setIsProfileMenuOpen(!isProfileMenuOpen);
   const toggleNotifications = () => setIsNotificationsOpen(!isNotificationsOpen);
+
+  // جلب معلومات المورد
+  const fetchSupplierInfo = async () => {
+    try {
+      const response = await axios.get(getApiUrl('/supplier/profile'), {
+        headers: getAuthHeaders()
+      });
+      
+      console.log('Supplier profile response:', response.data);
+      setSupplierInfo({
+        name: response.data.name || 'محمد صالح',
+        storeName: response.data.storeName || 'متجر نايكي',
+        avatar: response.data.avatar || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facepad=2&w=256&h=256&q=80'
+      });
+    } catch (err) {
+      console.error('Error fetching supplier info:', err);
+    }
+  };
+
+  // البحث
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      // يمكن إضافة منطق البحث هنا
+      console.log('Searching for:', searchQuery);
+    }
+  };
 
   const handleLogout = () => {
     if (window.confirm("هل أنت متأكد من تسجيل الخروج؟")) {
@@ -36,6 +71,10 @@ const Navbar = ({ setIsLoggedIn }) => {
       navigate("/login");
     }
   };
+
+  useEffect(() => {
+    fetchSupplierInfo();
+  }, []);
 
   const menuItems = [
     { path: "/", icon: <LayoutDashboard className="w-4 h-4" />, text: "نظرة عامة" },
@@ -76,24 +115,34 @@ const Navbar = ({ setIsLoggedIn }) => {
             <Plus className="w-4 h-4" />
             <span>إنشاء سريع</span>
           </button>
-          <div className="relative flex-1">
-            <input type="text" placeholder="إبحث عن طلبات، منتجات، تجار، زبائن..." className="w-full pr-10 pl-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" />
+          <form onSubmit={handleSearch} className="relative flex-1">
+            <input 
+              type="text" 
+              placeholder="إبحث عن طلبات، منتجات، تجار، زبائن..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pr-10 pl-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" 
+            />
             <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-          </div>
+          </form>
         </div>
         <div className="flex items-center gap-4">
           <div className="relative">
             <button onClick={toggleProfileMenu} className="flex items-center gap-2 focus:outline-none">
               <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isProfileMenuOpen ? "rotate-180" : "rotate-0"}`} />
               <div className="text-right">
-                <p className="text-sm font-medium text-gray-800">محمد صالح</p>
+                <p className="text-sm font-medium text-gray-800">{supplierInfo.name}</p>
                 <div className="flex items-center gap-1">
                   <span className="text-xs text-yellow-500">👋</span>
-                  <span className="text-xs text-gray-500">أهلاً</span>
+                  <span className="text-xs text-gray-500">{supplierInfo.storeName}</span>
                 </div>
               </div>
               <div className="relative">
-                <img className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover" src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facepad=2&w=256&h=256&q=80" alt="User Avatar" />
+                <img 
+                  className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover" 
+                  src={supplierInfo.avatar} 
+                  alt="User Avatar" 
+                />
                 <span className="absolute -bottom-0.5 -left-0.5 block w-3.5 h-3.5 bg-green-400 rounded-full ring-2 ring-white"></span>
               </div>
             </button>
