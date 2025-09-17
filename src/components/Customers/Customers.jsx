@@ -571,10 +571,37 @@ function Table({ title, columns, tableData, isShippingTable, onPageChange, pagin
     setOpenMenuIndex(openMenuIndex === index ? null : index);
   };
 
-  const handleAction = (action, item) => {
+  const handleAction = async (action, item) => {
     setOpenMenuIndex(null);
     setSelectedItem(item);
-    setModalStates(prev => ({ ...prev, [action]: true }));
+
+    switch (action) {
+      case 'delete':
+      case 'deleteOffer':
+        if (window.confirm('هل أنت متأكد من حذف هذا العنصر؟')) {
+          try {
+            await onAction(action, item);
+            refreshData();
+          } catch (error) {
+            console.error('Failed to delete:', error);
+            alert('فشل في حذف العنصر');
+          }
+        }
+        break;
+      case 'toggleStatus':
+      case 'toggleOfferStatus':
+        try {
+          await onAction(action, item);
+          refreshData();
+        } catch (error) {
+          console.error('Failed to toggle status:', error);
+          alert('فشل في تغيير الحالة');
+        }
+        break;
+      default:
+        setModalStates(prev => ({ ...prev, [action]: true }));
+        break;
+    }
   };
 
   const closeModal = (modalName) => {
@@ -582,47 +609,12 @@ function Table({ title, columns, tableData, isShippingTable, onPageChange, pagin
     setSelectedItem(null);
   };
 
-  const handleDelete = async (item) => {
-    if (window.confirm('هل أنت متأكد من حذف هذا العنصر؟')) {
-      try {
-        if (isShippingTable) {
-          await deleteAPI(`/supplier/shipping/areas/${item.id}`);
-        } else {
-          await deleteAPI(`/supplier/shipping/free-delivery-offers/${item.id}`);
-        }
-        refreshData();
-        closeModal('deleteOffer');
-      } catch (error) {
-        console.error('Failed to delete:', error);
-        alert('فشل في حذف العنصر');
-      }
-    }
-  };
-
-  const handleToggleStatus = async (item) => {
-    try {
-      if (isShippingTable) {
-        await patchAPI(`/supplier/shipping/areas/${item.id}`, {
-          isActive: item.deliveryStatus !== 'نشط'
-        });
-      } else {
-        await patchAPI(`/supplier/shipping/free-delivery-offers/${item.id}`, {
-          isActive: item.status !== 'نشط'
-        });
-      }
-      refreshData();
-    } catch (error) {
-      console.error('Failed to toggle status:', error);
-      alert('فشل في تغيير الحالة');
-    }
-  };
-
   const filteredData = tableData.filter(item => {
     const matchesSearch = isShippingTable 
-      ? item.area.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        item.deliveryValue.toString().includes(searchTerm)
-      : item.offer.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        item.condition.toLowerCase().includes(searchTerm.toLowerCase());
+      ? (item.area || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+        (item.deliveryValue || '').toString().includes(searchTerm)
+      : (item.offer || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+        (item.condition || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'الكل' || 
       (isShippingTable ? item.deliveryStatus === statusFilter : item.status === statusFilter);
@@ -706,7 +698,7 @@ function Table({ title, columns, tableData, isShippingTable, onPageChange, pagin
                     <td className="py-4 px-4">{row.area}</td>
                     <td className="py-4 px-4">
                       <div className="flex items-center">
-                        <IoCash className="w-4 h-4 ml-2 text-green-500" />
+                        {/* <IoCash className="w-4 h-4 ml-2 text-green-500" /> */}
                         {row.deliveryValue} دينار
                       </div>
                     </td>
@@ -827,6 +819,42 @@ function App() {
     }
   };
 
+  const handleDelete = async (item) => {
+    try {
+      if (item.area) {
+        await deleteAPI(`/supplier/shipping/areas/${item.id}`);
+      } else {
+        await deleteAPI(`/supplier/shipping/free-delivery-offers/${item.id}`);
+      }
+    } catch (error) {
+      throw new Error('فشل في حذف العنصر');
+    }
+  };
+
+  const handleToggleStatus = async (item) => {
+    try {
+      if (item.area) {
+        await patchAPI(`/supplier/shipping/areas/${item.id}`, {
+          isActive: item.deliveryStatus !== 'نشط'
+        });
+      } else {
+        await patchAPI(`/supplier/shipping/free-delivery-offers/${item.id}`, {
+          isActive: item.status !== 'نشط'
+        });
+      }
+    } catch (error) {
+      throw new Error('فشل في تغيير الحالة');
+    }
+  };
+
+  const handleTableAction = async (action, item) => {
+    if (action === 'delete' || action === 'deleteOffer') {
+      await handleDelete(item);
+    } else if (action === 'toggleStatus' || action === 'toggleOfferStatus') {
+      await handleToggleStatus(item);
+    }
+  };
+
   useEffect(() => {
     fetchShippingData();
   }, []);
@@ -872,35 +900,35 @@ function App() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card 
-          title={shippingSettings.cards.avgDeliveryTime.title} 
-          value={shippingSettings.cards.avgDeliveryTime.value} 
-          change={shippingSettings.cards.avgDeliveryTime.change}
-          trend={shippingSettings.cards.avgDeliveryTime.trend}
-          details={shippingSettings.cards.avgDeliveryTime.details}
+          title={shippingSettings?.cards?.avgDeliveryTime?.title || 'متوسط وقت التوصيل'} 
+          value={shippingSettings?.cards?.avgDeliveryTime?.value || '0 يوم'} 
+          change={shippingSettings?.cards?.avgDeliveryTime?.change || '+0%'}
+          trend={shippingSettings?.cards?.avgDeliveryTime?.trend || 'up'}
+          details={shippingSettings?.cards?.avgDeliveryTime?.details || 'لا توجد بيانات'}
           icon={<IoTime className="w-6 h-6" />}
         />
         <Card 
-          title={shippingSettings.cards.activeOffers.title} 
-          value={`${shippingSettings.cards.activeOffers.value} عروض`} 
-          change={shippingSettings.cards.activeOffers.change}
-          trend={shippingSettings.cards.activeOffers.trend}
-          details={shippingSettings.cards.activeOffers.details}
+          title={shippingSettings?.cards?.activeOffers?.title || 'العروض النشطة'} 
+          value={`${shippingSettings?.cards?.activeOffers?.value || 0} عروض`} 
+          change={shippingSettings?.cards?.activeOffers?.change || '+0%'}
+          trend={shippingSettings?.cards?.activeOffers?.trend || 'up'}
+          details={shippingSettings?.cards?.activeOffers?.details || 'لا توجد بيانات'}
           icon={<IoCash className="w-6 h-6" />}
         />
         <Card 
-          title={shippingSettings.cards.disabledAreas.title} 
-          value={`${shippingSettings.cards.disabledAreas.value} مناطق`} 
-          change={shippingSettings.cards.disabledAreas.change}
-          trend={shippingSettings.cards.disabledAreas.trend}
-          details={shippingSettings.cards.disabledAreas.details}
+          title={shippingSettings?.cards?.disabledAreas?.title || 'المناطق المعطلة'} 
+          value={`${shippingSettings?.cards?.disabledAreas?.value || 0} مناطق`} 
+          change={shippingSettings?.cards?.disabledAreas?.change || '-0%'}
+          trend={shippingSettings?.cards?.disabledAreas?.trend || 'down'}
+          details={shippingSettings?.cards?.disabledAreas?.details || 'لا توجد بيانات'}
           icon={<IoLocation className="w-6 h-6" />}
         />
         <Card 
-          title={shippingSettings.cards.activeAreas.title} 
-          value={`${shippingSettings.cards.activeAreas.value} منطقة`} 
-          change={shippingSettings.cards.activeAreas.change}
-          trend={shippingSettings.cards.activeAreas.trend}
-          details={shippingSettings.cards.activeAreas.details}
+          title={shippingSettings?.cards?.activeAreas?.title || 'المناطق النشطة'} 
+          value={`${shippingSettings?.cards?.activeAreas?.value || 0} منطقة`} 
+          change={shippingSettings?.cards?.activeAreas?.change || '+0%'}
+          trend={shippingSettings?.cards?.activeAreas?.trend || 'up'}
+          details={shippingSettings?.cards?.activeAreas?.details || 'لا توجد بيانات'}
           icon={<IoCheckmark className="w-6 h-6" />}
         />
       </div>
@@ -914,13 +942,7 @@ function App() {
         onPageChange={(page) => fetchShippingData(page)}
         pagination={shippingPagination}
         refreshData={() => fetchShippingData(shippingPagination?.currentPage || 1)}
-        onAction={(action, item) => {
-          if (action === 'delete') {
-            handleDelete(item);
-          } else if (action === 'toggleStatus') {
-            handleToggleStatus(item);
-          }
-        }}
+        onAction={handleTableAction}
       />
 
       {/* Delivery Offers Table */}
@@ -932,13 +954,7 @@ function App() {
         onPageChange={(page) => fetchShippingData(page)}
         pagination={deliveryPagination}
         refreshData={() => fetchShippingData(deliveryPagination?.currentPage || 1)}
-        onAction={(action, item) => {
-          if (action === 'deleteOffer') {
-            handleDelete(item);
-          } else if (action === 'toggleOfferStatus') {
-            handleToggleStatus(item);
-          }
-        }}
+        onAction={handleTableAction}
       />
     </div>
   );
