@@ -4,6 +4,10 @@ import { RiCloseFill } from 'react-icons/ri';
 import { BsEye } from 'react-icons/bs';
 import axios from 'axios';
 import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const getStatusClass = (status) => {
   switch (status) {
@@ -273,6 +277,7 @@ const OrdersByStatusModal = ({ isOpen, onClose, title, data }) => {
 
 const OrdersPage = () => {
   const [orders, setOrders] = useState([]);
+  const [filteredOrders, setFilteredOrders] = useState([]);
   const [analytics, setAnalytics] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState('الكل');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -281,8 +286,9 @@ const OrdersPage = () => {
   const [modalData, setModalData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [selectedOrders, setSelectedOrders] = useState([]);
 
   const fetchAnalytics = async () => {
     try {
@@ -310,11 +316,13 @@ const OrdersPage = () => {
     try {
       setLoading(true);
       const statusQuery = selectedStatus === 'الكل' ? '' : `&status=${selectedStatus.toUpperCase()}`;
-      const response = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.ORDERS.LIST) + `?page=${currentPage}&limit=20${statusQuery}`, {
+      const apiUrl = getApiUrl(API_CONFIG.ENDPOINTS.ORDERS.LIST) + `?page=${currentPage}&limit=20${statusQuery}`;
+      const response = await axios.get(apiUrl, {
         headers: getAuthHeaders()
       });
       const data = response.data;
       setOrders(data.orders);
+      setFilteredOrders(data.orders); // تحديث القائمة المرشحة بالبيانات الجديدة
       setTotalPages(data.pagination.pages);
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -362,7 +370,23 @@ const OrdersPage = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, [selectedStatus, currentPage, searchTerm]);
+    setSelectedOrders([]);
+  }, [selectedStatus, currentPage]);
+
+  const handleSearchClick = () => {
+    if (!searchQuery) {
+      setFilteredOrders(orders); // إذا كان مربع البحث فارغًا، أظهر جميع الطلبات
+      return;
+    }
+    const lowercasedQuery = searchQuery.toLowerCase();
+    const filtered = orders.filter(order =>
+      String(order.id).toLowerCase().includes(lowercasedQuery) ||
+      order.user.name.toLowerCase().includes(lowercasedQuery) ||
+      order.items.some(item => item.product.name.toLowerCase().includes(lowercasedQuery))
+    );
+    setFilteredOrders(filtered);
+    setCurrentPage(1);
+  };
 
   const openModal = (order) => {
     fetchOrderDetails(order.id);
@@ -391,11 +415,6 @@ const OrdersPage = () => {
     }
   };
 
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-    setCurrentPage(1);
-  };
-  
   const getModalComponent = () => {
     if (selectedOrder) {
       return <OrderDetailsModal isOpen={isModalOpen} onClose={closeModal} order={selectedOrder} updateOrderStatus={updateOrderStatus} />;
@@ -408,7 +427,7 @@ const OrdersPage = () => {
     }
     return null;
   };
-  
+
   const statusOptions = ['الكل', 'PROCESSING', 'SHIPPED', 'DELIVERING', 'DELIVERED', 'CANCELLED', 'RETURNED'];
 
   const statsCards = analytics ? [
@@ -417,14 +436,103 @@ const OrdersPage = () => {
     { title: 'الطلبات المتأخرة', value: analytics.lateOrders, icon: 'late', growth: analytics.lateOrdersGrowth },
     { title: 'طلبات قيد المعالجة', value: analytics.ordersByStatus?.processing || 0, icon: 'pending', growth: null },
   ] : [];
+  
+  const handleSelectOrder = (orderId) => {
+    setSelectedOrders((prevSelected) => {
+      if (prevSelected.includes(orderId)) {
+        return prevSelected.filter((id) => id !== orderId);
+      } else {
+        return [...prevSelected, orderId];
+      }
+    });
+  };
 
-  const filteredOrders = searchTerm
-    ? orders.filter(order => 
-        order.id.toString().includes(searchTerm) || 
-        order.user.name.includes(searchTerm) ||
-        order.items.some(item => item.product.name.includes(searchTerm))
-      )
-    : orders;
+  const handleSelectAllOrders = () => {
+    if (selectedOrders.length === filteredOrders.length) {
+      setSelectedOrders([]);
+    } else {
+      setSelectedOrders(filteredOrders.map(order => order.id));
+    }
+  };
+
+  const handleExportToExcel = () => {
+    const ordersToExport = filteredOrders.filter(order => selectedOrders.includes(order.id));
+    if (ordersToExport.length === 0) {
+      alert('الرجاء تحديد طلب واحد على الأقل للتصدير.');
+      return;
+    }
+    
+    const dataForExport = ordersToExport.map(order => ({
+      'رقم الطلب': order.id,
+      'العميل': order.user.name,
+      'هاتف العميل': order.user.phone,
+      'المنتجات': order.items.map(item => `${item.product.name} ×${item.quantity}`).join(', '),
+      'الإجمالي (د.ع)': order.totalAmount,
+      'الحالة': getStatusText(order.status),
+      'تاريخ الطلب': new Date(order.createdAt).toLocaleDateString('ar-EG'),
+    }));
+  
+    const ws = XLSX.utils.json_to_sheet(dataForExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "الطلبات");
+    
+    const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const data = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
+    saveAs(data, 'orders.xlsx');
+  };
+
+  const handleExportToPdf = () => {
+    const ordersToExport = filteredOrders.filter(order => selectedOrders.includes(order.id));
+    if (ordersToExport.length === 0) {
+      alert('الرجاء تحديد طلب واحد على الأقل للتصدير.');
+      return;
+    }
+
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4'
+    });
+    
+    // إزالة السطر الذي يضيف الخط لأنه يسبب الخطأ
+    // doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
+    // doc.setFont('Amiri');
+    
+    // استخدام خط مدمج مع دعم للعربية لضمان عمل التصدير
+    doc.setFont('helvetica', 'normal');
+    doc.setR2L(true);
+
+    const tableColumn = ["تاريخ الطلب", "الحالة", "الإجمالي (د.ع)", "المنتجات", "العميل", "رقم الطلب"];
+    const tableRows = ordersToExport.map(order => [
+      new Date(order.createdAt).toLocaleDateString('ar-EG'),
+      getStatusText(order.status),
+      order.totalAmount.toLocaleString(),
+      order.items.map(item => `${item.product.name} ×${item.quantity}`).join(', '),
+      order.user.name,
+      `#${order.id}`
+    ]);
+
+    doc.autoTable({
+      head: [tableColumn],
+      body: tableRows,
+      startY: 20,
+      headStyles: {
+        font: 'helvetica',
+        fontStyle: 'normal',
+        fontSize: 10,
+        halign: 'right'
+      },
+      bodyStyles: {
+        font: 'helvetica',
+        fontStyle: 'normal',
+        fontSize: 9,
+        halign: 'right'
+      },
+      theme: 'grid'
+    });
+    
+    doc.save('orders.pdf');
+  };
 
   if (loading) {
     return (
@@ -456,23 +564,53 @@ const OrdersPage = () => {
               placeholder="الكل"
             />
           </div>
-          <div className="relative w-full md:w-auto">
+          <div className="relative w-full md:w-auto flex space-x-2 rtl:space-x-reverse">
             <input
               type="text"
               placeholder="ابحث برقم الطلب / العميل / المنتج"
               className="w-full md:w-80 px-4 py-2 text-sm bg-gray-100 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-500 text-gray-800 placeholder-gray-400"
-              value={searchTerm}
-              onChange={handleSearchChange}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearchClick();
+                }
+              }}
             />
-            <svg className="w-5 h-5 absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
+            <button
+              onClick={handleSearchClick}
+              className="px-4 py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition"
+            >
+              بحث
+            </button>
+            <button
+              onClick={handleExportToExcel}
+              disabled={selectedOrders.length === 0}
+              className="px-4 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              تصدير Excel
+            </button>
+            {/* <button
+              onClick={handleExportToPdf}
+              disabled={selectedOrders.length === 0}
+              className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              تصدير PDF
+            </button> */}
           </div>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50 text-right">
               <tr>
+                <Th className="w-12">
+                  <input
+                    type="checkbox"
+                    className="form-checkbox h-4 w-4 text-red-500 rounded"
+                    onChange={handleSelectAllOrders}
+                    checked={selectedOrders.length === filteredOrders.length && filteredOrders.length > 0}
+                  />
+                </Th>
                 <Th>رقم الطلب</Th>
                 <Th>العميل</Th>
                 <Th>المنتجات</Th>
@@ -485,6 +623,14 @@ const OrdersPage = () => {
             <tbody className="bg-white divide-y divide-gray-200 text-right">
               {filteredOrders.map((order) => (
                 <tr key={order.id}>
+                  <Td>
+                    <input
+                      type="checkbox"
+                      className="form-checkbox h-4 w-4 text-red-500 rounded"
+                      checked={selectedOrders.includes(order.id)}
+                      onChange={() => handleSelectOrder(order.id)}
+                    />
+                  </Td>
                   <Td>#{order.id}</Td>
                   <Td>
                     <div>

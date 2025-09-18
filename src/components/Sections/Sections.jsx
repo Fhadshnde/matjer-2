@@ -17,7 +17,7 @@ const CategoriesPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [searchType, setSearchType] = useState('sections'); // 'sections' or 'categories'
+    const [searchType, setSearchType] = useState('sections');
     const [expandedCategories, setExpandedCategories] = useState(new Set());
     const [uploadingImage, setUploadingImage] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
@@ -47,13 +47,23 @@ const CategoriesPage = () => {
         fetchData();
     }, []);
 
-    const handleAddSection = async (sectionData) => {
+    const handleAddSection = async (sectionData, imageFile) => {
         try {
-            const response = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.ADD), sectionData, {
-                headers: getAuthHeaders()
+            const formData = new FormData();
+            formData.append('name', sectionData.name);
+            formData.append('description', sectionData.description);
+            formData.append('categoryId', sectionData.categoryId);
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
+
+            const response = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.ADD), formData, {
+                headers: {
+                    ...getAuthHeaders(),
+                    'Content-Type': 'multipart/form-data'
+                }
             });
             
-            // Refresh sections list
             const fetchResponse = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.LIST), {
                 headers: getAuthHeaders()
             });
@@ -67,13 +77,21 @@ const CategoriesPage = () => {
         }
     };
 
-    const handleAddCategory = async (categoryData) => {
+    const handleAddCategory = async (categoryData, imageFile) => {
         try {
-            const response = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.CATEGORIES.ADD), categoryData, {
-                headers: getAuthHeaders()
+            const formData = new FormData();
+            formData.append('name', categoryData.name);
+            formData.append('description', categoryData.description);
+            if (imageFile) {
+                formData.append('image', imageFile);
+            }
+            const response = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.CATEGORIES.ADD), formData, {
+                headers: {
+                    ...getAuthHeaders(),
+                    'Content-Type': 'multipart/form-data'
+                }
             });
             
-            // Refresh categories list
             const fetchResponse = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.CATEGORIES.LIST), {
                 headers: getAuthHeaders()
             });
@@ -93,7 +111,6 @@ const CategoriesPage = () => {
                 headers: getAuthHeaders()
             });
             
-            // Refresh sections list
             const fetchResponse = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.LIST), {
                 headers: getAuthHeaders()
             });
@@ -113,7 +130,6 @@ const CategoriesPage = () => {
                 headers: getAuthHeaders()
             });
             
-            // Refresh categories list
             const fetchResponse = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.CATEGORIES.LIST), {
                 headers: getAuthHeaders()
             });
@@ -133,7 +149,6 @@ const CategoriesPage = () => {
                 headers: getAuthHeaders()
             });
             
-            // Refresh sections list
             const fetchResponse = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.LIST), {
                 headers: getAuthHeaders()
             });
@@ -153,7 +168,6 @@ const CategoriesPage = () => {
                 headers: getAuthHeaders()
             });
             
-            // Refresh categories list
             const fetchResponse = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.CATEGORIES.LIST), {
                 headers: getAuthHeaders()
             });
@@ -184,7 +198,6 @@ const CategoriesPage = () => {
                 }
             });
 
-            // Refresh data
             const [sectionsResponse, categoriesResponse] = await Promise.all([
                 axios.get(getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.LIST), { headers: getAuthHeaders() }),
                 axios.get(getApiUrl(API_CONFIG.ENDPOINTS.CATEGORIES.LIST), { headers: getAuthHeaders() })
@@ -205,6 +218,7 @@ const CategoriesPage = () => {
     };
 
     const openAddModal = (type) => {
+        setSelectedCategory(null);
         if (type === 'main') {
             setIsAddMainCategoryModalOpen(true);
         } else {
@@ -256,7 +270,6 @@ const CategoriesPage = () => {
         setExpandedCategories(newExpanded);
     };
 
-    // Filter data based on search term
     const filteredSections = sectionsData.filter(section =>
         section.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         section.categoryName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -283,9 +296,14 @@ const CategoriesPage = () => {
         const [formData, setFormData] = useState({
             name: isEdit ? category?.name || '' : '',
             description: isEdit ? category?.description || '' : '',
-            image: isEdit ? category?.image || '' : '',
             categoryId: isEdit ? category?.categoryId || '' : ''
         });
+        const [selectedFile, setSelectedFile] = useState(null);
+
+        const handleFileChange = (e) => {
+            const file = e.target.files[0];
+            setSelectedFile(file);
+        };
 
         const handleSubmit = async (e) => {
             e.preventDefault();
@@ -294,13 +312,13 @@ const CategoriesPage = () => {
                     if (isEdit) {
                         await handleUpdateCategory(category.id, formData);
                     } else {
-                        await handleAddCategory(formData);
+                        await handleAddCategory(formData, selectedFile);
                     }
                 } else {
                     if (isEdit) {
                         await handleUpdateSection(category.id, formData);
                     } else {
-                        await handleAddSection(formData);
+                        await handleAddSection(formData, selectedFile);
                     }
                 }
                 closeModal();
@@ -338,13 +356,6 @@ const CategoriesPage = () => {
                             ))}
                         </select>
                     )}
-                    <input
-                        type="url"
-                        placeholder="رابط الصورة"
-                        className="bg-gray-100 w-full p-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-800 text-right"
-                        value={formData.image}
-                        onChange={(e) => setFormData({...formData, image: e.target.value})}
-                    />
                     <textarea
                         placeholder="الوصف"
                         className="bg-gray-100 w-full p-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500 text-gray-800 text-right"
@@ -352,6 +363,25 @@ const CategoriesPage = () => {
                         value={formData.description}
                         onChange={(e) => setFormData({...formData, description: e.target.value})}
                     />
+                    
+                    {!isEdit && (
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileChange}
+                                className="hidden"
+                                id="file-input"
+                            />
+                            <label htmlFor="file-input" className="cursor-pointer">
+                                <IoCloudUploadOutline className="w-10 h-10 text-gray-400 mx-auto" />
+                                <p className="text-sm text-gray-500 mt-2">
+                                    {selectedFile ? `تم تحديد: ${selectedFile.name}` : "انقر لاختيار صورة"}
+                                </p>
+                            </label>
+                        </div>
+                    )}
+                    
                     <div className="flex justify-center mt-6 space-x-4 rtl:space-x-reverse">
                         <button
                             type="button"
@@ -508,13 +538,11 @@ const CategoriesPage = () => {
 
     return (
         <div className="bg-gray-100 min-h-screen p-8 text-right font-['Tajawal']" dir="rtl">
-            {/* Header */}
             <div className="mb-8">
                 <h1 className="text-3xl font-bold text-gray-800 mb-2">إدارة الأقسام والفئات</h1>
                 <p className="text-gray-600">تنظيم وإدارة أقسام المنتجات وفئاتها</p>
             </div>
 
-            {/* Search and Filter */}
             <div className="bg-white p-6 rounded-lg shadow-md mb-8">
                 <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
                     <div className="flex items-center space-x-4 rtl:space-x-reverse">
@@ -556,7 +584,6 @@ const CategoriesPage = () => {
                 </div>
             </div>
 
-            {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div className="bg-white p-6 rounded-lg shadow-md">
                     <div className="flex items-center justify-between">
@@ -595,7 +622,6 @@ const CategoriesPage = () => {
                 </div>
             </div>
 
-            {/* Categories List */}
             <div className="bg-white p-6 rounded-lg shadow-md mb-8">
                 <h2 className="text-xl font-bold text-gray-800 mb-6">الفئات الرئيسية</h2>
                 <div className="space-y-4">
@@ -662,7 +688,6 @@ const CategoriesPage = () => {
                                 </div>
                             </div>
                             
-                            {/* Expanded Sections */}
                             {expandedCategories.has(category.id) && category.sections && category.sections.length > 0 && (
                                 <div className="mt-4 border-t border-gray-200 pt-4">
                                     <h4 className="text-sm font-semibold text-gray-600 mb-3">أقسام هذه الفئة:</h4>
@@ -696,7 +721,6 @@ const CategoriesPage = () => {
                 </div>
             </div>
 
-            {/* Sections List */}
             <div className="bg-white p-6 rounded-lg shadow-md">
                 <h2 className="text-xl font-bold text-gray-800 mb-6">جميع الأقسام</h2>
                 <div className="overflow-x-auto">
@@ -763,7 +787,6 @@ const CategoriesPage = () => {
                 </div>
             </div>
 
-            {/* Modals */}
             <Modal isOpen={isAddMainCategoryModalOpen || isEditMainCategoryModalOpen} onClose={closeModal}>
                 <CategoryForm
                     category={selectedCategory}

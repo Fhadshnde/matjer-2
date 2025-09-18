@@ -269,18 +269,47 @@ const ProductAnalytics = () => {
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                     {statsCards.map((card, index) => (
-                        <div key={index} className="bg-white p-6 rounded-lg shadow-md flex flex-col items-end">
-                            <div className="bg-gray-100 p-3 rounded-full text-red-600 mb-4">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                                </svg>
-                            </div>
-                            <h3 className="text-gray-500 text-sm font-medium">{card.title}</h3>
-                            <p className="text-xl font-bold">{card.value}</p>
-                            <span className={`text-sm ${card.trend === 'up' ? 'text-green-500' : card.trend === 'down' ? 'text-red-500' : 'text-gray-500'}`}>
-                                {card.growth}
-                            </span>
-                        </div>
+                        <div
+  key={index}
+  className="bg-white p-6 h-[150px] rounded-3xl shadow-md flex flex-row items-center justify-between gap-4 cursor-pointer hover:shadow-lg transition-shadow"
+>
+  <div className="bg-gray-100 p-3 rounded-xl text-red-600">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="h-6 w-6"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+      />
+    </svg>
+  </div>
+
+  <div className="flex flex-col text-right">
+    <h3 className="text-gray-500 text-sm font-medium">{card.title}</h3>
+    <p className="text-xl font-bold text-gray-800">{card.value}</p>
+    <span
+      className={`text-sm flex items-center ${
+        card.trend === "up"
+          ? "text-green-500"
+          : card.trend === "down"
+          ? "text-red-500"
+          : "text-gray-500"
+      }`}
+    >
+      {card.trend === "up" && <span className="mr-1">▲</span>}
+      {card.trend === "down" && <span className="mr-1">▼</span>}
+      {card.growth}
+      <span className="text-gray-400 mr-1">عن الفترة السابقة</span>
+    </span>
+  </div>
+</div>
+
                     ))}
                 </div>
 
@@ -450,7 +479,7 @@ const ProductAnalytics = () => {
                 </div>
 
                 {/* Sales by Department and City */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                     <div className="bg-white p-6 rounded-lg shadow-md">
                         <h2 className="text-xl font-bold mb-4">المبيعات حسب القسم</h2>
                         <ResponsiveContainer width="100%" height={300}>
@@ -488,7 +517,7 @@ const ProductAnalytics = () => {
                             ))}
                         </div>
                     </div>
-                </div>
+                </div> */}
 
                 {/* Product Performance Over Time */}
                 {productPerformanceOverTime.length > 0 && (

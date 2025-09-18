@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { IoChevronUp, IoChevronDown, IoSearchOutline, IoAdd, IoEllipsisHorizontal, IoEye, IoPencil, IoBarChart, IoPause, IoClose, IoTrash, IoCheckmark, IoLocation, IoTime, IoCash, IoRefresh, IoFilter } from 'react-icons/io5';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from 'chart.js';
-import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
+import { getApiUrl, getAuthHeaders } from '../../config/api';
 import axios from 'axios';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
@@ -55,7 +55,7 @@ const deleteAPI = async (endpoint) => {
 function Card({ title, value, change, icon, trend, details }) {
   const isPositive = typeof change === 'string' && change.startsWith('+');
   const isUp = trend === 'up';
-  
+
   return (
     <div className="flex-1 p-6 bg-white rounded-lg shadow-md flex justify-between items-center text-right hover:shadow-lg transition-shadow">
       <div className="flex flex-col items-end">
@@ -112,25 +112,25 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
   return (
     <div className="flex items-center space-x-2 text-gray-500 text-sm">
-      <button 
-        onClick={() => onPageChange(currentPage - 1)} 
-        disabled={currentPage <= 1} 
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage <= 1}
         className="px-3 py-1 text-gray-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <IoChevronUp className="rotate-90" />
       </button>
       {pages.map(page => (
-        <button 
-          key={page} 
-          onClick={() => onPageChange(page)} 
+        <button
+          key={page}
+          onClick={() => onPageChange(page)}
           className={`px-3 py-1 ${currentPage === page ? 'bg-red-500 text-white' : 'text-gray-700 hover:bg-gray-100'} rounded-md`}
         >
           {page}
         </button>
       ))}
-      <button 
-        onClick={() => onPageChange(currentPage + 1)} 
-        disabled={currentPage >= totalPages} 
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage >= totalPages}
         className="px-3 py-1 text-gray-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <IoChevronUp className="-rotate-90" />
@@ -139,67 +139,67 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
   );
 }
 
-function MoreMenu({ onAction, item }) {
-  return (
-    <div className="absolute right-0 top-6 z-10 w-48 mt-2 origin-top-right bg-white rounded-md shadow-lg border border-gray-200">
-      <div className="py-1">
-        <button onClick={() => onAction('viewDetails', item)} className="flex items-center w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-          <IoEye className="w-4 h-4 ml-3" />
-          عرض التفاصيل
-        </button>
-        <button onClick={() => onAction('editSettings', item)} className="flex items-center w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-          <IoPencil className="w-4 h-4 ml-3" />
-          تعديل الإعدادات
-        </button>
-        <button onClick={() => onAction('showStats', item)} className="flex items-center w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-          <IoBarChart className="w-4 h-4 ml-3" />
-          عرض الإحصائيات
-        </button>
-        <button 
-          onClick={() => onAction('toggleStatus', item)} 
-          className="flex items-center w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-        >
-          {item.deliveryStatus === 'نشط' ? <IoPause className="w-4 h-4 ml-3" /> : <IoCheckmark className="w-4 h-4 ml-3" />}
-          {item.deliveryStatus === 'نشط' ? 'إيقاف التوصيل' : 'تفعيل التوصيل'}
-        </button>
-        <hr className="my-1 border-gray-300" />
-        <button onClick={() => onAction('delete', item)} className="flex items-center w-full text-right px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-          <IoTrash className="w-4 h-4 ml-3" />
-          حذف المنطقة
-        </button>
-      </div>
-    </div>
+function MoreMenu({ onAction, item, isShippingTable }) {
+  const menuOptions = isShippingTable ? (
+    <>
+      <button onClick={() => onAction('viewDetails', item)} className="flex items-center w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+        <IoEye className="w-4 h-4 ml-3" />
+        عرض التفاصيل
+      </button>
+      <button onClick={() => onAction('editSettings', item)} className="flex items-center w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+        <IoPencil className="w-4 h-4 ml-3" />
+        تعديل الإعدادات
+      </button>
+      <button onClick={() => onAction('showStats', item)} className="flex items-center w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+        <IoBarChart className="w-4 h-4 ml-3" />
+        عرض الإحصائيات
+      </button>
+      <button
+        onClick={() => onAction('toggleStatus', item)}
+        className="flex items-center w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+      >
+        {item.deliveryStatus === 'نشط' ? <IoPause className="w-4 h-4 ml-3" /> : <IoCheckmark className="w-4 h-4 ml-3" />}
+        {item.deliveryStatus === 'نشط' ? 'إيقاف التوصيل' : 'تفعيل التوصيل'}
+      </button>
+      <hr className="my-1 border-gray-300" />
+      <button onClick={() => onAction('delete', item)} className="flex items-center w-full text-right px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+        <IoTrash className="w-4 h-4 ml-3" />
+        حذف المنطقة
+      </button>
+    </>
+  ) : (
+    <>
+      <button onClick={() => onAction('viewDetailsOffer', item)} className="flex items-center w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+        <IoEye className="w-4 h-4 ml-3" />
+        عرض التفاصيل
+      </button>
+      <button onClick={() => onAction('editOffer', item)} className="flex items-center w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+        <IoPencil className="w-4 h-4 ml-3" />
+        تعديل العرض
+      </button>
+      <button onClick={() => onAction('duplicateOffer', item)} className="flex items-center w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+        <IoAdd className="w-4 h-4 ml-3" />
+        تكرار العرض
+      </button>
+      <button
+        onClick={() => onAction('toggleOfferStatus', item)}
+        className="flex items-center w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+      >
+        {item.status === 'نشط' ? <IoPause className="w-4 h-4 ml-3" /> : <IoCheckmark className="w-4 h-4 ml-3" />}
+        {item.status === 'نشط' ? 'إيقاف العرض' : 'تفعيل العرض'}
+      </button>
+      <hr className="my-1 border-gray-300" />
+      <button onClick={() => onAction('deleteOffer', item)} className="flex items-center w-full text-right px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+        <IoTrash className="w-4 h-4 ml-3" />
+        حذف العرض
+      </button>
+    </>
   );
-}
 
-function MoreMenuOffers({ onAction, item }) {
   return (
     <div className="absolute right-0 top-6 z-10 w-48 mt-2 origin-top-right bg-white rounded-md shadow-lg border border-gray-200">
       <div className="py-1">
-        <button onClick={() => onAction('viewDetailsOffer', item)} className="flex items-center w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-          <IoEye className="w-4 h-4 ml-3" />
-          عرض التفاصيل
-        </button>
-        <button onClick={() => onAction('editOffer', item)} className="flex items-center w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-          <IoPencil className="w-4 h-4 ml-3" />
-          تعديل العرض
-        </button>
-        <button onClick={() => onAction('duplicateOffer', item)} className="flex items-center w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-          <IoAdd className="w-4 h-4 ml-3" />
-          تكرار العرض
-        </button>
-        <button 
-          onClick={() => onAction('toggleOfferStatus', item)} 
-          className="flex items-center w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-        >
-          {item.status === 'نشط' ? <IoPause className="w-4 h-4 ml-3" /> : <IoCheckmark className="w-4 h-4 ml-3" />}
-          {item.status === 'نشط' ? 'إيقاف العرض' : 'تفعيل العرض'}
-        </button>
-        <hr className="my-1 border-gray-300" />
-        <button onClick={() => onAction('deleteOffer', item)} className="flex items-center w-full text-right px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-          <IoTrash className="w-4 h-4 ml-3" />
-          حذف العرض
-        </button>
+        {menuOptions}
       </div>
     </div>
   );
@@ -309,14 +309,14 @@ function AddNewRegionModal({ isOpen, onClose, onAdd }) {
         </div>
       </div>
       <div className="flex justify-between mt-8 space-x-4">
-        <button 
-          onClick={onClose} 
+        <button
+          onClick={onClose}
           className="flex-1 py-3 text-red-500 border border-red-500 rounded-md font-semibold hover:bg-red-50 transition-colors"
         >
           إلغاء
         </button>
-        <button 
-          onClick={handleAdd} 
+        <button
+          onClick={handleAdd}
           disabled={loading || !formData.name || !formData.deliveryFee}
           className="flex-1 py-3 bg-red-500 text-white rounded-md font-semibold hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
@@ -417,14 +417,14 @@ function AddNewOfferModal({ isOpen, onClose, onAdd }) {
         </div>
       </div>
       <div className="flex justify-between mt-8 space-x-4">
-        <button 
-          onClick={onClose} 
+        <button
+          onClick={onClose}
           className="flex-1 py-3 text-red-500 border border-red-500 rounded-md font-semibold hover:bg-red-50 transition-colors"
         >
           إلغاء
         </button>
-        <button 
-          onClick={handleAdd} 
+        <button
+          onClick={handleAdd}
           disabled={loading || !formData.name || !formData.value}
           className="flex-1 py-3 bg-red-500 text-white rounded-md font-semibold hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
@@ -533,14 +533,14 @@ function EditRegionModal({ isOpen, onClose, onSave, item }) {
         </div>
       </div>
       <div className="flex justify-between mt-8 space-x-4">
-        <button 
-          onClick={onClose} 
+        <button
+          onClick={onClose}
           className="flex-1 py-3 text-red-500 border border-red-500 rounded-md font-semibold hover:bg-red-50 transition-colors"
         >
           إلغاء
         </button>
-        <button 
-          onClick={handleSave} 
+        <button
+          onClick={handleSave}
           disabled={loading || !formData.name || !formData.deliveryFee}
           className="flex-1 py-3 bg-red-500 text-white rounded-md font-semibold hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
@@ -551,18 +551,106 @@ function EditRegionModal({ isOpen, onClose, onSave, item }) {
   );
 }
 
+function ViewRegionModal({ isOpen, onClose, item }) {
+  if (!item) return null;
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="تفاصيل منطقة التوصيل">
+      <div className="space-y-4 text-right">
+        <p><strong>اسم المنطقة:</strong> {item.area}</p>
+        <p><strong>قيمة التوصيل:</strong> {item.deliveryValue} دينار</p>
+        <p><strong>الأيام المتوقعة:</strong> {item.estimatedDays} يوم</p>
+        <p><strong>نوع التوصيل:</strong> {item.shippingType}</p>
+        <p><strong>الحالة:</strong> {item.deliveryStatus}</p>
+      </div>
+    </Modal>
+  );
+}
+
+function ViewOfferModal({ isOpen, onClose, item }) {
+  if (!item) return null;
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="تفاصيل العرض">
+      <div className="space-y-4 text-right">
+        <p><strong>اسم العرض:</strong> {item.offer}</p>
+        <p><strong>المدة:</strong> {item.duration}</p>
+        <p><strong>الشرط:</strong> {item.condition}</p>
+        <p><strong>الحالة:</strong> {item.status}</p>
+      </div>
+    </Modal>
+  );
+}
+
+function ShowStatsModal({ isOpen, onClose, item }) {
+  const data = {
+    labels: ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو'],
+    datasets: [
+      {
+        label: `إحصائيات ${item?.area || item?.offer}`,
+        data: [12, 19, 3, 5, 2, 3],
+        backgroundColor: 'rgba(239, 68, 68, 0.5)',
+        borderColor: 'rgba(239, 68, 68, 1)',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const options = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          font: {
+            family: 'Tajawal',
+          }
+        }
+      },
+      title: {
+        display: true,
+        text: 'إحصائيات وهمية',
+        font: {
+          size: 16,
+          family: 'Tajawal',
+        }
+      },
+    },
+    scales: {
+      x: {
+        ticks: {
+          font: {
+            family: 'Tajawal',
+          }
+        },
+        grid: {
+          display: false,
+        }
+      },
+      y: {
+        ticks: {
+          font: {
+            family: 'Tajawal',
+          }
+        },
+      }
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="إحصائيات المنطقة">
+      <Bar data={data} options={options} />
+      <div className="text-center mt-4">
+        <p className="text-sm text-gray-500">هذه البيانات وهمية لأغراض العرض.</p>
+      </div>
+    </Modal>
+  );
+}
+
 function Table({ title, columns, tableData, isShippingTable, onPageChange, pagination, refreshData, onAction }) {
   const [openMenuIndex, setOpenMenuIndex] = useState(null);
-  const [modalStates, setModalStates] = useState({
-    viewDetails: false,
-    editSettings: false,
-    showStats: false,
-    addNew: false,
-    viewDetailsOffer: false,
-    editOffer: false,
-    deleteOffer: false,
-    duplicateOffer: false,
-  });
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isShowStatsModalOpen, setIsShowStatsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('الكل');
@@ -576,6 +664,17 @@ function Table({ title, columns, tableData, isShippingTable, onPageChange, pagin
     setSelectedItem(item);
 
     switch (action) {
+      case 'viewDetails':
+      case 'viewDetailsOffer':
+        setIsViewModalOpen(true);
+        break;
+      case 'editSettings':
+      case 'editOffer':
+        setIsEditModalOpen(true);
+        break;
+      case 'showStats':
+        setIsShowStatsModalOpen(true);
+        break;
       case 'delete':
       case 'deleteOffer':
         if (window.confirm('هل أنت متأكد من حذف هذا العنصر؟')) {
@@ -599,26 +698,20 @@ function Table({ title, columns, tableData, isShippingTable, onPageChange, pagin
         }
         break;
       default:
-        setModalStates(prev => ({ ...prev, [action]: true }));
         break;
     }
   };
 
-  const closeModal = (modalName) => {
-    setModalStates(prev => ({ ...prev, [modalName]: false }));
-    setSelectedItem(null);
-  };
-
   const filteredData = tableData.filter(item => {
-    const matchesSearch = isShippingTable 
-      ? (item.area || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const matchesSearch = isShippingTable
+      ? (item.area || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (item.deliveryValue || '').toString().includes(searchTerm)
-      : (item.offer || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+      : (item.offer || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
         (item.condition || '').toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'الكل' || 
+
+    const matchesStatus = statusFilter === 'الكل' ||
       (isShippingTable ? item.deliveryStatus === statusFilter : item.status === statusFilter);
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -628,14 +721,14 @@ function Table({ title, columns, tableData, isShippingTable, onPageChange, pagin
     <div className="bg-white p-6 rounded-lg shadow-md mb-8">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center space-x-4">
-          <button 
-            onClick={() => setModalStates(prev => ({ ...prev, addNew: true }))} 
+          <button
+            onClick={() => setIsAddModalOpen(true)}
             className="flex items-center px-4 py-2 text-white text-sm bg-red-500 rounded-lg hover:bg-red-600 transition-colors"
           >
             <IoAdd className="w-5 h-5 ml-2" />
             {isShippingTable ? 'إضافة منطقة جديدة' : 'إضافة عرض جديد'}
           </button>
-          <button 
+          <button
             onClick={refreshData}
             className="flex items-center px-4 py-2 text-gray-600 text-sm bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
           >
@@ -654,9 +747,9 @@ function Table({ title, columns, tableData, isShippingTable, onPageChange, pagin
             />
             <IoSearchOutline className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" />
           </div>
-          <DropdownMenu 
-            options={['الكل', 'نشط', 'معطل']} 
-            selected={statusFilter} 
+          <DropdownMenu
+            options={['الكل', 'نشط', 'معطل']}
+            selected={statusFilter}
             onSelect={setStatusFilter}
             placeholder="فلترة"
           />
@@ -682,12 +775,10 @@ function Table({ title, columns, tableData, isShippingTable, onPageChange, pagin
                     <IoEllipsisHorizontal className="w-5 h-5" />
                   </button>
                   {openMenuIndex === rowIndex && (
-                    isShippingTable ? 
-                    <MoreMenu onAction={handleAction} item={row} /> : 
-                    <MoreMenuOffers onAction={handleAction} item={row} />
+                    <MoreMenu onAction={handleAction} item={row} isShippingTable={isShippingTable} />
                   )}
                 </td>
-                {isShippingTable && (
+                {isShippingTable ? (
                   <>
                     <td className="py-4 px-4">
                       <div className="flex items-center">
@@ -698,23 +789,21 @@ function Table({ title, columns, tableData, isShippingTable, onPageChange, pagin
                     <td className="py-4 px-4">{row.area}</td>
                     <td className="py-4 px-4">
                       <div className="flex items-center">
-                        {/* <IoCash className="w-4 h-4 ml-2 text-green-500" /> */}
                         {row.deliveryValue} دينار
                       </div>
                     </td>
                     <td className="py-4 px-4">{row.shippingType}</td>
                     <td className="py-4 px-4">
                       <span className={`px-3 py-1 rounded-full text-xs ${
-                        row.deliveryStatus === 'نشط' 
-                          ? 'bg-green-100 text-green-700' 
+                        row.deliveryStatus === 'نشط'
+                          ? 'bg-green-100 text-green-700'
                           : 'bg-red-100 text-red-700'
                       }`}>
                         {row.deliveryStatus}
                       </span>
                     </td>
                   </>
-                )}
-                {!isShippingTable && (
+                ) : (
                   <>
                     <td className="py-4 px-4">{row.offer}</td>
                     <td className="py-4 px-4">
@@ -726,8 +815,8 @@ function Table({ title, columns, tableData, isShippingTable, onPageChange, pagin
                     <td className="py-4 px-4">{row.condition}</td>
                     <td className="py-4 px-4">
                       <span className={`px-3 py-1 rounded-full text-xs ${
-                        row.status === 'نشط' 
-                          ? 'bg-green-100 text-green-700' 
+                        row.status === 'نشط'
+                          ? 'bg-green-100 text-green-700'
                           : 'bg-red-100 text-red-700'
                       }`}>
                         {row.status}
@@ -764,24 +853,47 @@ function Table({ title, columns, tableData, isShippingTable, onPageChange, pagin
       {/* Modals */}
       {isShippingTable ? (
         <>
-          <AddNewRegionModal 
-            isOpen={modalStates.addNew} 
-            onClose={() => closeModal('addNew')} 
-            onAdd={refreshData} 
+          <AddNewRegionModal
+            isOpen={isAddModalOpen}
+            onClose={() => setIsAddModalOpen(false)}
+            onAdd={refreshData}
           />
-          <EditRegionModal 
-            isOpen={modalStates.editSettings} 
-            onClose={() => closeModal('editSettings')} 
+          <EditRegionModal
+            isOpen={isEditModalOpen}
+            onClose={() => setIsEditModalOpen(false)}
             onSave={refreshData}
+            item={selectedItem}
+          />
+          <ViewRegionModal
+            isOpen={isViewModalOpen}
+            onClose={() => setIsViewModalOpen(false)}
+            item={selectedItem}
+          />
+          <ShowStatsModal
+            isOpen={isShowStatsModalOpen}
+            onClose={() => setIsShowStatsModalOpen(false)}
             item={selectedItem}
           />
         </>
       ) : (
-        <AddNewOfferModal 
-          isOpen={modalStates.addNew} 
-          onClose={() => closeModal('addNew')} 
-          onAdd={refreshData} 
-        />
+        <>
+          <AddNewOfferModal
+            isOpen={isAddModalOpen}
+            onClose={() => setIsAddModalOpen(false)}
+            onAdd={refreshData}
+          />
+          <EditRegionModal
+            isOpen={isEditModalOpen}
+            onClose={() => setIsEditModalOpen(false)}
+            onSave={refreshData}
+            item={selectedItem}
+          />
+          <ViewOfferModal
+            isOpen={isViewModalOpen}
+            onClose={() => setIsViewModalOpen(false)}
+            item={selectedItem}
+          />
+        </>
       )}
     </div>
   );
@@ -878,8 +990,8 @@ function App() {
       <div className="bg-gray-100 min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 mb-4">{error}</p>
-          <button 
-            onClick={() => fetchShippingData()} 
+          <button
+            onClick={() => fetchShippingData()}
             className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
           >
             إعادة المحاولة
@@ -899,33 +1011,33 @@ function App() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card 
-          title={shippingSettings?.cards?.avgDeliveryTime?.title || 'متوسط وقت التوصيل'} 
-          value={shippingSettings?.cards?.avgDeliveryTime?.value || '0 يوم'} 
+        <Card
+          title={shippingSettings?.cards?.avgDeliveryTime?.title || 'متوسط وقت التوصيل'}
+          value={shippingSettings?.cards?.avgDeliveryTime?.value || '0 يوم'}
           change={shippingSettings?.cards?.avgDeliveryTime?.change || '+0%'}
           trend={shippingSettings?.cards?.avgDeliveryTime?.trend || 'up'}
           details={shippingSettings?.cards?.avgDeliveryTime?.details || 'لا توجد بيانات'}
           icon={<IoTime className="w-6 h-6" />}
         />
-        <Card 
-          title={shippingSettings?.cards?.activeOffers?.title || 'العروض النشطة'} 
-          value={`${shippingSettings?.cards?.activeOffers?.value || 0} عروض`} 
+        <Card
+          title={shippingSettings?.cards?.activeOffers?.title || 'العروض النشطة'}
+          value={`${shippingSettings?.cards?.activeOffers?.value || 0} عروض`}
           change={shippingSettings?.cards?.activeOffers?.change || '+0%'}
           trend={shippingSettings?.cards?.activeOffers?.trend || 'up'}
           details={shippingSettings?.cards?.activeOffers?.details || 'لا توجد بيانات'}
           icon={<IoCash className="w-6 h-6" />}
         />
-        <Card 
-          title={shippingSettings?.cards?.disabledAreas?.title || 'المناطق المعطلة'} 
-          value={`${shippingSettings?.cards?.disabledAreas?.value || 0} مناطق`} 
+        <Card
+          title={shippingSettings?.cards?.disabledAreas?.title || 'المناطق المعطلة'}
+          value={`${shippingSettings?.cards?.disabledAreas?.value || 0} مناطق`}
           change={shippingSettings?.cards?.disabledAreas?.change || '-0%'}
           trend={shippingSettings?.cards?.disabledAreas?.trend || 'down'}
           details={shippingSettings?.cards?.disabledAreas?.details || 'لا توجد بيانات'}
           icon={<IoLocation className="w-6 h-6" />}
         />
-        <Card 
-          title={shippingSettings?.cards?.activeAreas?.title || 'المناطق النشطة'} 
-          value={`${shippingSettings?.cards?.activeAreas?.value || 0} منطقة`} 
+        <Card
+          title={shippingSettings?.cards?.activeAreas?.title || 'المناطق النشطة'}
+          value={`${shippingSettings?.cards?.activeAreas?.value || 0} منطقة`}
           change={shippingSettings?.cards?.activeAreas?.change || '+0%'}
           trend={shippingSettings?.cards?.activeAreas?.trend || 'up'}
           details={shippingSettings?.cards?.activeAreas?.details || 'لا توجد بيانات'}

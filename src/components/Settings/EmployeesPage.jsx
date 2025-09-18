@@ -1,21 +1,11 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useParams } from 'react-router-dom';
+import axios from 'axios';
 
 const tabs = [
     { name: 'بيانات المتجر', path: '/store-info' },
     { name: 'إدارة الفريق', path: '/employees-page' },
     { name: 'الدعم الفني', path: '/tickets' },
-];
-
-const employeesData = [
-    { name: 'محمد صبري', email: 'sabry@gmail.com', phone: '+962312154', role: 'موظف مالي', lastLogin: '2025-08-28', status: 'نشط' },
-    { name: 'محمد صبري', email: 'sabry@gmail.com', phone: '+962312154', role: 'موظف مالي', lastLogin: '2025-08-28', status: 'غير نشط' },
-    { name: 'محمد صبري', email: 'sabry@gmail.com', phone: '+962312154', role: 'موظف مالي', lastLogin: '2025-08-28', status: 'نشط' },
-    { name: 'محمد صبري', email: 'sabry@gmail.com', phone: '+962312154', role: 'موظف مالي', lastLogin: '2025-08-28', status: 'غير نشط' },
-    { name: 'محمد صبري', email: 'sabry@gmail.com', phone: '+962312154', role: 'موظف مالي', lastLogin: '2025-08-28', status: 'نشط' },
-    { name: 'محمد صبري', email: 'sabry@gmail.com', phone: '+962312154', role: 'موظف مالي', lastLogin: '2025-08-28', status: 'غير نشط' },
-    { name: 'محمد صبري', email: 'sabry@gmail.com', phone: '+962312154', role: 'موظف مالي', lastLogin: '2025-08-28', status: 'نشط' },
-    { name: 'محمد صبري', email: 'sabry@gmail.com', phone: '+962312154', role: 'موظف مالي', lastLogin: '2025-08-28', status: 'غير نشط' },
 ];
 
 const getStatusColors = (status) => {
@@ -29,14 +19,58 @@ const getStatusColors = (status) => {
     }
 };
 
-const AddEmployeeModal = ({ show, onClose, onAdd }) => {
+const EmployeeModal = ({ show, onClose, onSave, employeeToEdit }) => {
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        role: '',
+        password: '',
+        confirmPassword: '',
+    });
+
+    useEffect(() => {
+        if (employeeToEdit) {
+            setFormData({
+                name: employeeToEdit.name || '',
+                email: employeeToEdit.email || '',
+                phone: employeeToEdit.phone || '',
+                role: employeeToEdit.role || '',
+                password: '',
+                confirmPassword: '',
+            });
+        } else {
+            setFormData({
+                name: '',
+                email: '',
+                phone: '',
+                role: '',
+                password: '',
+                confirmPassword: '',
+            });
+        }
+    }, [employeeToEdit]);
+
     if (!show) return null;
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prevState => ({
+            ...prevState,
+            [name]: value
+        }));
+    };
+
+    const handleSave = () => {
+        onSave(formData);
+        onClose();
+    };
 
     return (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex justify-center items-center z-50">
             <div className="relative bg-white p-6 rounded-lg shadow-xl w-full max-w-md mx-auto rtl:text-right">
                 <div className="flex justify-between items-center pb-3 border-b border-gray-200 mb-4">
-                    <h3 className="text-xl font-bold">إضافة موظف</h3>
+                    <h3 className="text-xl font-bold">{employeeToEdit ? 'تعديل موظف' : 'إضافة موظف'}</h3>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
@@ -44,58 +78,124 @@ const AddEmployeeModal = ({ show, onClose, onAdd }) => {
                 <div className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">الاسم الكامل</label>
-                        <input type="text" placeholder="محمد أحمد صالح" className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500" />
+                        <input
+                            type="text"
+                            name="name"
+                            value={formData.name}
+                            onChange={handleChange}
+                            placeholder="محمد أحمد صالح"
+                            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                        />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">البريد الإلكتروني</label>
-                        <input type="email" placeholder="msaleh@info.com" className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500" />
+                        <input
+                            type="email"
+                            name="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            placeholder="msaleh@info.com"
+                            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                        />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">رقم الجوال</label>
                         <div className="mt-1 relative flex rounded-md shadow-sm">
-                            <input type="text" placeholder="55543456" className="flex-1 block w-full px-3 py-2 border border-gray-300 rounded-r-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500" />
+                            <input
+                                type="text"
+                                name="phone"
+                                value={formData.phone}
+                                onChange={handleChange}
+                                placeholder="55543456"
+                                className="flex-1 block w-full px-3 py-2 border border-gray-300 rounded-r-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                            />
                             <div className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
-                                <img src="https://flagcdn.com/iq.svg" alt="Iraq flag" className="w-4 h-3 ml-2" />+964 
+                                <img src="https://flagcdn.com/iq.svg" alt="Iraq flag" className="w-4 h-3 ml-2" />+964
                             </div>
                         </div>
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">الدور</label>
-                        <select className="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500">
+                        <select
+                            name="role"
+                            value={formData.role}
+                            onChange={handleChange}
+                            className="block w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                        >
                             <option>مالي</option>
                             <option>إداري</option>
                         </select>
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">كلمة المرور</label>
-                        <div className="relative">
-                            <input type="password" placeholder="********" className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500" />
-                            <button type="button" className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                            </button>
-                        </div>
-                    </div>
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">إعادة كلمة المرور</label>
-                        <div className="relative">
-                            <input type="password" placeholder="********" className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500" />
-                            <button type="button" className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                            </button>
-                        </div>
-                    </div>
+                    {!employeeToEdit && (
+                        <>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">كلمة المرور</label>
+                                <div className="relative">
+                                    <input
+                                        type="password"
+                                        name="password"
+                                        value={formData.password}
+                                        onChange={handleChange}
+                                        placeholder="********"
+                                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                                    />
+                                    <button type="button" className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">إعادة كلمة المرور</label>
+                                <div className="relative">
+                                    <input
+                                        type="password"
+                                        name="confirmPassword"
+                                        value={formData.confirmPassword}
+                                        onChange={handleChange}
+                                        placeholder="********"
+                                        className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                                    />
+                                    <button type="button" className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </div>
                 <div className="mt-6 flex justify-end space-x-2">
                     <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">إلغاء</button>
-                    <button onClick={onAdd} className="px-4 py-2 text-sm font-medium text-white bg-red-500 border border-transparent rounded-md shadow-sm hover:bg-red-600">إضافة</button>
+                    <button onClick={handleSave} className="px-4 py-2 text-sm font-medium text-white bg-red-500 border border-transparent rounded-md shadow-sm hover:bg-red-600">{employeeToEdit ? 'حفظ التعديلات' : 'إضافة'}</button>
                 </div>
             </div>
         </div>
     );
 };
 
-const ChangePasswordModal = ({ show, onClose }) => {
+const ChangePasswordModal = ({ show, onClose, onSave, employeeId }) => {
+    const [passwordData, setPasswordData] = useState({
+        newPassword: '',
+        confirmPassword: '',
+    });
+
     if (!show) return null;
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setPasswordData(prevState => ({
+            ...prevState,
+            [name]: value
+        }));
+    };
+
+    const handleSave = () => {
+        if (passwordData.newPassword === passwordData.confirmPassword) {
+            onSave(employeeId, passwordData.newPassword);
+        } else {
+            alert('Passwords do not match.');
+        }
+        onClose();
+    };
 
     return (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex justify-center items-center z-50">
@@ -110,7 +210,14 @@ const ChangePasswordModal = ({ show, onClose }) => {
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">كلمة المرور الجديدة</label>
                         <div className="relative">
-                            <input type="password" placeholder="********" className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500" />
+                            <input
+                                type="password"
+                                name="newPassword"
+                                value={passwordData.newPassword}
+                                onChange={handleChange}
+                                placeholder="********"
+                                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                            />
                             <button type="button" className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
                                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                             </button>
@@ -119,7 +226,14 @@ const ChangePasswordModal = ({ show, onClose }) => {
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">إعادة كلمة المرور</label>
                         <div className="relative">
-                            <input type="password" placeholder="********" className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500" />
+                            <input
+                                type="password"
+                                name="confirmPassword"
+                                value={passwordData.confirmPassword}
+                                onChange={handleChange}
+                                placeholder="********"
+                                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
+                            />
                             <button type="button" className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
                                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                             </button>
@@ -128,7 +242,7 @@ const ChangePasswordModal = ({ show, onClose }) => {
                 </div>
                 <div className="mt-6 flex justify-end space-x-2">
                     <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50">إلغاء</button>
-                    <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-white bg-red-500 border border-transparent rounded-md shadow-sm hover:bg-red-600">حفظ</button>
+                    <button onClick={handleSave} className="px-4 py-2 text-sm font-medium text-white bg-red-500 border border-transparent rounded-md shadow-sm hover:bg-red-600">حفظ</button>
                 </div>
             </div>
         </div>
@@ -168,27 +282,15 @@ const MoreActionsDropdown = ({ show, onClose, onEdit, onChangePassword, onDelete
     return (
         <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-20">
             <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-                <button
-                    onClick={onEdit}
-                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                    role="menuitem"
-                >
+                <button onClick={onEdit} className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                     تعديل البيانات
                 </button>
-                <button
-                    onClick={onChangePassword}
-                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                    role="menuitem"
-                >
+                <button onClick={onChangePassword} className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900" role="menuitem">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15a3 3 0 100-6 3 3 0 000 6z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2.25c0 1.38-1.12 2.5-2.5 2.5s-2.5-1.12-2.5-2.5V9M12 9V6.75c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5V9M12 15v2.25c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V15M12 15v-2.25c0-1.38-1.12-2.5-2.5-2.5s-2.5 1.12-2.5 2.5V15m0-6h5c1.1 0 2 .9 2 2v10c0 1.1-.9 2-2 2H7c-1.1 0-2-.9-2-2V9c0-1.1.9-2 2-2h5" /></svg>
                     تغيير كلمة المرور
                 </button>
-                <button
-                    onClick={onDelete}
-                    className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700"
-                    role="menuitem"
-                >
+                <button onClick={onDelete} className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700" role="menuitem">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     حذف
                 </button>
@@ -196,7 +298,6 @@ const MoreActionsDropdown = ({ show, onClose, onEdit, onChangePassword, onDelete
         </div>
     );
 };
-
 
 const StatusFilterDropdown = ({ show, onClose, onSelect }) => {
     if (!show) return null;
@@ -221,16 +322,120 @@ const StatusFilterDropdown = ({ show, onClose, onSelect }) => {
 
 const EmployeesPage = () => {
     const location = useLocation();
-    const [showAddModal, setShowAddModal] = useState(false);
+    const [employees, setEmployees] = useState([]);
+    const [showModal, setShowModal] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showMoreDropdown, setShowMoreDropdown] = useState(null);
     const [showFilterDropdown, setShowFilterDropdown] = useState(false);
-    const [employeeStatuses, setEmployeeStatuses] = useState(
-        employeesData.map(employee => employee.status === 'نشط')
-    );
+    const [selectedEmployee, setSelectedEmployee] = useState(null);
+    const [filterStatus, setFilterStatus] = useState('الكل');
 
-    const handleMoreClick = (index) => {
+    const fetchEmployees = async () => {
+        try {
+            const response = await axios.get(
+                'https://products-api.cbc-apps.net/supplier/employees',
+                {
+                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+                }
+            );
+            setEmployees(response.data.employees);
+        } catch (error) {
+            console.error('Error fetching employees:', error.response?.data || error.message);
+        }
+    };
+
+    useEffect(() => {
+        fetchEmployees();
+    }, []);
+
+    const handleSaveEmployee = async (formData) => {
+        try {
+            if (selectedEmployee) {
+                await axios.patch(
+                    `https://products-api.cbc-apps.net/supplier/employees/${selectedEmployee.id}`,
+                    formData,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${localStorage.getItem('token')}`,
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                );
+            } else {
+                await axios.post(
+                    'https://products-api.cbc-apps.net/supplier/employees',
+                    formData,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${localStorage.getItem('token')}`,
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                );
+            }
+            fetchEmployees();
+        } catch (error) {
+            console.error('Error saving employee:', error.response?.data || error.message);
+        }
+    };
+
+    const handleDeleteEmployee = async () => {
+        if (!selectedEmployee) return;
+        try {
+            await axios.delete(
+                `https://products-api.cbc-apps.net/supplier/employees/${selectedEmployee.id}`,
+                {
+                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+                }
+            );
+            fetchEmployees();
+            setShowDeleteModal(false);
+            setSelectedEmployee(null);
+        } catch (error) {
+            console.error('Error deleting employee:', error.response?.data || error.message);
+        }
+    };
+
+    const handleChangePassword = async (employeeId, newPassword) => {
+        try {
+            await axios.patch(
+                `https://products-api.cbc-apps.net/supplier/employees/${employeeId}`,
+                { password: newPassword },
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            alert('Password changed successfully.');
+        } catch (error) {
+            console.error('Error changing password:', error.response?.data || error.message);
+        }
+    };
+
+    const handleToggleStatus = async (employee) => {
+        const newStatus = employee.status === 'نشط' ? 'غير نشط' : 'نشط';
+        try {
+            await axios.patch(
+                `https://products-api.cbc-apps.net/supplier/employees/${employee.id}`,
+                { status: newStatus },
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            fetchEmployees();
+        } catch (error) {
+            console.error('Error updating status:', error.response?.data || error.message);
+        }
+    };
+
+    const handleMoreClick = (employee, index) => {
+        setSelectedEmployee(employee);
         setShowMoreDropdown(showMoreDropdown === index ? null : index);
     };
 
@@ -238,13 +443,14 @@ const EmployeesPage = () => {
         setShowFilterDropdown(!showFilterDropdown);
     };
 
-    const handleToggleStatus = (index) => {
-        setEmployeeStatuses(prevStatuses => {
-            const newStatuses = [...prevStatuses];
-            newStatuses[index] = !newStatuses[index];
-            return newStatuses;
-        });
+    const handleFilterSelect = (status) => {
+        setFilterStatus(status);
+        setShowFilterDropdown(false);
     };
+
+    const filteredEmployees = employees.filter(employee =>
+        filterStatus === 'الكل' || employee.status === filterStatus
+    );
 
     return (
         <div className="rtl:text-right font-sans">
@@ -270,7 +476,13 @@ const EmployeesPage = () => {
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-xl font-bold">الموظفين</h2>
                         <div className="flex items-center space-x-2">
-                            <button onClick={() => setShowAddModal(true)} className="bg-red-500 text-white font-semibold py-2 px-4 rounded-lg flex items-center">
+                            <button
+                                onClick={() => {
+                                    setSelectedEmployee(null);
+                                    setShowModal(true);
+                                }}
+                                className="bg-red-500 text-white font-semibold py-2 px-4 rounded-lg flex items-center"
+                            >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
                                     <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
                                 </svg>
@@ -278,13 +490,13 @@ const EmployeesPage = () => {
                             </button>
                             <div className="relative">
                                 <button onClick={handleFilterClick} className="bg-gray-100 rounded-lg py-2 px-4 text-gray-700 flex items-center">
-                                    الكل
+                                    {filterStatus}
                                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                                 </button>
                                 <StatusFilterDropdown
                                     show={showFilterDropdown}
                                     onClose={() => setShowFilterDropdown(false)}
-                                    onSelect={() => setShowFilterDropdown(false)}
+                                    onSelect={handleFilterSelect}
                                 />
                             </div>
                             <div className="relative">
@@ -310,50 +522,46 @@ const EmployeesPage = () => {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            {employeesData.map((employee, index) => (
-                                <tr key={index}>
-                                    <td className="py-4 px-4 whitespace-nowrap">
-                                        <div className="flex items-center space-x-2 relative">
-                                            <button onClick={() => handleMoreClick(index)} className="text-gray-500 hover:text-red-500">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM12.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM18.75 12a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-                                                </svg>
-                                            </button>
-                                            <MoreActionsDropdown
-                                                show={showMoreDropdown === index}
-                                                onClose={() => setShowMoreDropdown(null)}
-                                                onEdit={() => { setShowAddModal(true); setShowMoreDropdown(null); }}
-                                                onChangePassword={() => { setShowPasswordModal(true); setShowMoreDropdown(null); }}
-                                                onDelete={() => { setShowDeleteModal(true); setShowMoreDropdown(null); }}
-                                            />
-                                            <label className="relative inline-flex items-center cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    className="sr-only peer"
-                                                    checked={employeeStatuses[index]}
-                                                    onChange={() => handleToggleStatus(index)}
-                                                />
-                                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-500"></div>
+                            {filteredEmployees.map((employee, index) => (
+                                <tr key={employee.id}>
+                                    <td className="py-3 px-4 whitespace-nowrap relative">
+                                        <button onClick={() => handleMoreClick(employee, index)} className="text-gray-400 hover:text-gray-600">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                                            </svg>
+                                        </button>
+                                        <MoreActionsDropdown
+                                            show={showMoreDropdown === index}
+                                            onClose={() => setShowMoreDropdown(null)}
+                                            onEdit={() => { setShowModal(true); setShowMoreDropdown(null); }}
+                                            onChangePassword={() => { setShowPasswordModal(true); setShowMoreDropdown(null); }}
+                                            onDelete={() => { setShowDeleteModal(true); setShowMoreDropdown(null); }}
+                                        />
+                                    </td>
+                                    <td className="py-3 px-4 whitespace-nowrap">
+                                        <div className="flex items-center">
+                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColors(employee.status)}`}>
+                                                {employee.status}
+                                            </span>
+                                            <label className="inline-flex relative items-center cursor-pointer ml-4">
+                                                <input type="checkbox" className="sr-only peer" checked={employee.status === 'نشط'} onChange={() => handleToggleStatus(employee)} />
+                                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:bg-red-600 transition-all"></div>
+                                                <span className="ml-3 text-sm font-medium text-gray-900">{employee.status}</span>
                                             </label>
                                         </div>
                                     </td>
-                                    <td className="py-4 px-4 whitespace-nowrap">
-                                        <span className={`py-1 px-3 rounded-full text-xs font-semibold ${getStatusColors(employeeStatuses[index] ? 'نشط' : 'غير نشط')}`}>
-                                            {employeeStatuses[index] ? 'نشط' : 'غير نشط'}
-                                        </span>
-                                    </td>
-                                    <td className="py-4 px-4 whitespace-nowrap">{employee.lastLogin}</td>
-                                    <td className="py-4 px-4 whitespace-nowrap">{employee.role}</td>
-                                    <td className="py-4 px-4 whitespace-nowrap">{employee.phone}</td>
-                                    <td className="py-4 px-4 whitespace-nowrap">{employee.email}</td>
-                                    <td className="py-4 px-4 whitespace-nowrap">{employee.name}</td>
+                                    <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-500">{employee.lastLogin}</td>
+                                    <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-500">{employee.role}</td>
+                                    <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-500">{employee.phone}</td>
+                                    <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-500">{employee.email}</td>
+                                    <td className="py-3 px-4 whitespace-nowrap text-sm font-medium text-gray-900">{employee.name}</td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                     <div className="flex justify-between items-center mt-4 text-sm text-gray-500">
                         <div className="flex items-center">
-                            <span>إجمالي الموظفين: 24</span>
+                            <span>إجمالي الموظفين: {employees.length}</span>
                         </div>
                         <div className="flex items-center space-x-2">
                             <button className="p-2 rounded-full hover:bg-gray-200">
@@ -384,9 +592,23 @@ const EmployeesPage = () => {
                 </div>
             </div>
 
-            <AddEmployeeModal show={showAddModal} onClose={() => setShowAddModal(false)} onAdd={() => setShowAddModal(false)} />
-            <ChangePasswordModal show={showPasswordModal} onClose={() => setShowPasswordModal(false)} />
-            <DeleteConfirmationModal show={showDeleteModal} onClose={() => setShowDeleteModal(false)} onDelete={() => setShowDeleteModal(false)} />
+            <EmployeeModal
+                show={showModal}
+                onClose={() => setShowModal(false)}
+                onSave={handleSaveEmployee}
+                employeeToEdit={selectedEmployee}
+            />
+            <ChangePasswordModal
+                show={showPasswordModal}
+                onClose={() => setShowPasswordModal(false)}
+                onSave={handleChangePassword}
+                employeeId={selectedEmployee?.id}
+            />
+            <DeleteConfirmationModal
+                show={showDeleteModal}
+                onClose={() => setShowDeleteModal(false)}
+                onDelete={handleDeleteEmployee}
+            />
         </div>
     );
 };

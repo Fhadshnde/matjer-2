@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -22,7 +24,6 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 const PaymentsAndCashbackDashboard = () => {
-    const [isExportModalOpen, setIsExportModalOpen] = useState(false);
     const [isMoreModalOpen, setIsMoreModalOpen] = useState(null);
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
@@ -37,14 +38,6 @@ const PaymentsAndCashbackDashboard = () => {
     const [statusFilter, setStatusFilter] = useState('الكل');
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
-
-    const handleExportClick = () => {
-        setIsExportModalOpen(true);
-    };
-
-    const handleCloseExportModal = () => {
-        setIsExportModalOpen(false);
-    };
 
     const handleMoreClick = (orderIndex) => {
         setIsMoreModalOpen(orderIndex);
@@ -101,6 +94,29 @@ const PaymentsAndCashbackDashboard = () => {
             'PENDING': 'معلق'
         };
         return statusMap[status] || status;
+    };
+
+    const handleExportToExcel = () => {
+        const dataForExport = filteredOrders.map(order => ({
+            'رقم الطلب': order.orderNumber,
+            'تاريخ الطلب': order.orderDate,
+            'اسم الزبون': order.customerName,
+            'الكمية': order.quantity,
+            'السعر المفرد': order.retailPrice,
+            'سعر الجملة': order.wholesalePrice,
+            'عمولة التطبيق': order.appCommission,
+            'صافي التاجر': order.netMerchant,
+            'الحالة': order.status
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(dataForExport);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'سجل المدفوعات');
+        
+        const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        const dataBlob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+        
+        saveAs(dataBlob, 'سجل المدفوعات.xlsx');
     };
 
     useEffect(() => {
@@ -233,82 +249,55 @@ const PaymentsAndCashbackDashboard = () => {
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    {statsCards.map((card, index) => (
-                        <div key={index} className="bg-white p-6 rounded-lg shadow-md flex flex-col items-end hover:shadow-lg transition-shadow">
-                            <div className="bg-gray-100 p-3 rounded-full text-red-600 mb-4">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                                </svg>
-                            </div>
-                            <h3 className="text-gray-500 text-sm font-medium mb-1">{card.title}</h3>
-                            <p className="text-2xl font-bold text-gray-800 mb-1">{card.value}</p>
-                            <span className={`text-sm ${card.trend === 'up' ? 'text-green-500' : card.trend === 'down' ? 'text-red-500' : 'text-gray-500'}`}>
-                                {card.growth}
-                            </span>
-                            <p className="text-xs text-gray-400 mt-2">{card.description}</p>
-                        </div>
-                    ))}
-                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+  {statsCards.map((card, index) => (
+    <div
+      key={index}
+      className="bg-white p-8 h-[140px] rounded-lg shadow-md flex flex-row items-center justify-between gap-3 hover:shadow-lg transition-shadow cursor-pointer"
+    >
+      <div className="bg-gray-100 p-5 rounded-lg text-red-600">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-5 w-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+          />
+        </svg>
+      </div>
 
-                {/* Summary Cards */}
-                {summary && (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <div className="bg-white p-6 rounded-lg shadow-md">
-                            <h3 className="text-lg font-bold text-gray-800 mb-4">ملخص المستحقات</h3>
-                            <div className="space-y-3">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-gray-600">معدل العمولة</span>
-                                    <span className="font-bold text-red-600">{summary.commissionRate}</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-gray-600">متوسط قيمة الطلب</span>
-                                    <span className="font-bold">{summary.averageOrderValue.toLocaleString('ar-EG')} د.ع</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-gray-600">إجمالي الطلبات</span>
-                                    <span className="font-bold">{summary.totalOrders}</span>
-                                </div>
-                            </div>
-                        </div>
+      <div className="flex flex-col text-right">
+        <h3 className="text-gray-500 text-xs font-medium mb-0.5">
+          {card.title}
+        </h3>
+        <p className="text-lg font-bold text-gray-800 mb-0.5">
+          {card.value}
+        </p>
+        <span
+          className={`text-xs flex items-center ${
+            card.trend === "up"
+              ? "text-green-500"
+              : card.trend === "down"
+              ? "text-red-500"
+              : "text-gray-500"
+          }`}
+        >
+          {card.trend === "up" && <span className="mr-1">▲</span>}
+          {card.trend === "down" && <span className="mr-1">▼</span>}
+          {card.growth}
+        </span>
+        <p className="text-[10px] text-gray-400 mt-1">{card.description}</p>
+      </div>
+    </div>
+  ))}
+</div>
 
-                        <div className="bg-white p-6 rounded-lg shadow-md">
-                            <h3 className="text-lg font-bold text-gray-800 mb-4">توزيع المبالغ</h3>
-                            <div className="space-y-3">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-gray-600">إجمالي المستحقات</span>
-                                    <span className="font-bold text-blue-600">{summary.totalDues.toLocaleString('ar-EG')} د.ع</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-gray-600">صافي المستحق</span>
-                                    <span className="font-bold text-green-600">{summary.netDues.toLocaleString('ar-EG')} د.ع</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-gray-600">عمولة التطبيق</span>
-                                    <span className="font-bold text-red-600">{summary.appCommission.toLocaleString('ar-EG')} د.ع</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="bg-white p-6 rounded-lg shadow-md">
-                            <h3 className="text-lg font-bold text-gray-800 mb-4">نسب التوزيع</h3>
-                            <div className="space-y-3">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-gray-600">حصة المورد</span>
-                                    <span className="font-bold text-green-600">95%</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-gray-600">حصة التطبيق</span>
-                                    <span className="font-bold text-red-600">5%</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-gray-600">نسبة النجاح</span>
-                                    <span className="font-bold text-blue-600">100%</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
 
                 {/* Charts Section */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
@@ -317,12 +306,12 @@ const PaymentsAndCashbackDashboard = () => {
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-xl font-bold">تقرير المدفوعات الشهري</h2>
                             <div className="flex space-x-2">
-                                <button onClick={handleExportClick} className="bg-white text-gray-700 border border-gray-300 rounded-lg py-2 px-4 flex items-center hover:bg-gray-50">
+                                {/* <button onClick={handleExportToExcel} className="bg-white text-gray-700 border border-gray-300 rounded-lg py-2 px-4 flex items-center hover:bg-gray-50">
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5 ml-2">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                                     </svg>
                                     تصدير
-                                </button>
+                                </button> */}
                                 <select className="bg-gray-100 rounded-lg py-2 px-4 text-gray-700">
                                     <option>شهري</option>
                                     <option>أسبوعي</option>
@@ -382,12 +371,12 @@ const PaymentsAndCashbackDashboard = () => {
                                 <option>ملغي</option>
                                 <option>معلق</option>
                             </select>
-                            <button onClick={handleExportClick} className="bg-white text-gray-700 border border-gray-300 rounded-lg py-2 px-4 flex items-center hover:bg-gray-50">
+                            {/* <button onClick={handleExportToExcel} className="bg-white text-gray-700 border border-gray-300 rounded-lg py-2 px-4 flex items-center hover:bg-gray-50">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5 ml-2">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                                 </svg>
                                 تصدير
-                            </button>
+                            </button> */}
                         </div>
                     </div>
 
@@ -425,7 +414,7 @@ const PaymentsAndCashbackDashboard = () => {
                                                             <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                         </svg>
                                                     </button>
-                                                    <button onClick={handleExportClick} className="w-full text-right p-2 hover:bg-gray-100 rounded flex items-center justify-end">
+                                                    <button onClick={handleExportToExcel} className="w-full text-right p-2 hover:bg-gray-100 rounded flex items-center justify-end">
                                                         تحميل التقرير
                                                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-5 h-5 mr-2">
                                                             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
@@ -512,43 +501,6 @@ const PaymentsAndCashbackDashboard = () => {
                     </div>
                 </div>
             </div>
-
-            {/* Export Modal */}
-            {isExportModalOpen && (
-                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded-lg shadow-xl w-96 rtl:text-right">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-xl font-bold">تصدير التقرير</h3>
-                            <button onClick={handleCloseExportModal} className="text-gray-400 hover:text-gray-600">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="w-6 h-6">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </div>
-                        <div className="mb-4">
-                            <label className="block text-gray-700 font-bold mb-2">نوع التقرير</label>
-                            <div className="flex items-center border border-gray-300 rounded-lg p-2">
-                                <select className="block w-full bg-white pr-8">
-                                    <option>PDF</option>
-                                    <option>Excel</option>
-                                    <option>CSV</option>
-                                </select>
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 transform rotate-180" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
-                            </div>
-                        </div>
-                        <div className="flex justify-end space-x-2">
-                            <button onClick={handleCloseExportModal} className="bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300">
-                                الغاء
-                            </button>
-                            <button className="bg-red-500 text-white py-2 px-4 rounded-lg hover:bg-red-600">
-                                تصدير التقرير
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* Order Details Modal */}
             {isDetailsModalOpen && selectedOrder && (

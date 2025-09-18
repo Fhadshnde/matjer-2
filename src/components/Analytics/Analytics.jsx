@@ -52,7 +52,7 @@ const departmentData = [
 ];
 
 const StatCard = ({ title, value, percentage, icon }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-start justify-between min-h-[140px]">
+  <div className="bg-white p-2 rounded-2xl shadow-sm border border-gray-200 flex flex-col items-start justify-between min-h-[140px]">
     <div className="flex items-center justify-between w-full mb-2">
       <span className="text-gray-500 text-sm">{title}</span>
       {icon}

@@ -23,7 +23,13 @@ const Dashboard = () => {
         outOfStockProducts: 0,
         abandonedProducts: 0
     });
-
+    const [pagination, setPagination] = useState({
+        page: 1,
+        limit: 20,
+        pages: 1,
+        total: 0,
+    });
+    const [searchTerm, setSearchTerm] = useState('');
 
     const getStatusClass = (status) => {
         switch (status) {
@@ -38,28 +44,29 @@ const Dashboard = () => {
         }
     };
 
-    const fetchProducts = async () => {
+    const fetchProducts = async (page = 1, limit = pagination.limit) => {
         try {
             setLoading(true);
-            const response = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.PRODUCTS.LIST), {
+            const response = await axios.get(getApiUrl(`${API_CONFIG.ENDPOINTS.PRODUCTS.LIST}?page=${page}&limit=${limit}`), {
                 headers: getAuthHeaders()
             });
             const data = response.data;
             setProducts(data.products || []);
-            
+            setPagination(data.pagination);
+
             // Calculate statistics
-            const totalProducts = data.products?.length || 0;
+            const totalProducts = data.pagination.total || 0;
             const lowStockProducts = data.products?.filter(p => p.stock < 10).length || 0;
             const outOfStockProducts = data.products?.filter(p => p.stock === 0).length || 0;
             const abandonedProducts = data.products?.filter(p => p.stock > 0 && p.stock < 5).length || 0;
-            
+
             setStats({
                 totalProducts,
                 lowStockProducts,
                 outOfStockProducts,
                 abandonedProducts
             });
-            
+
             setError(null);
         } catch (error) {
             console.error('Error fetching products:', error);
@@ -71,8 +78,18 @@ const Dashboard = () => {
     };
 
     useEffect(() => {
-        fetchProducts();
-    }, []);
+        fetchProducts(pagination.page, pagination.limit);
+    }, [pagination.page, pagination.limit]);
+
+    const handlePageChange = (page) => {
+        if (page > 0 && page <= pagination.pages) {
+            setPagination(prev => ({ ...prev, page }));
+        }
+    };
+
+    const handleLimitChange = (e) => {
+        setPagination(prev => ({ ...prev, limit: parseInt(e.target.value, 10), page: 1 }));
+    };
 
     const handleOpenProductDetails = (product) => {
         setSelectedProduct(product);
@@ -123,7 +140,7 @@ const Dashboard = () => {
             alert('فشل حذف المنتج، يرجى المحاولة لاحقاً.');
         }
     };
-    
+
     const handleOpenEditPrice = () => {
         setIsEditPriceModalOpen(true);
         setIsMoreActionsDropdownOpen(false);
@@ -147,37 +164,112 @@ const Dashboard = () => {
         );
     };
 
+    const renderPaginationButtons = () => {
+        const pages = [];
+        const startPage = Math.max(1, pagination.page - 2);
+        const endPage = Math.min(pagination.pages, pagination.page + 2);
+
+        for (let i = startPage; i <= endPage; i++) {
+            pages.push(
+                <button
+                    key={i}
+                    onClick={() => handlePageChange(i)}
+                    className={`px-3 py-1 rounded-md transition-colors ${
+                        pagination.page === i ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                >
+                    {i}
+                </button>
+            );
+        }
+        return pages;
+    };
+
+    // New stats data for the new design
+    const cardsData = [
+        {
+            title: "إجمالي المنتجات",
+            value: stats.totalProducts,
+            growth: "+8%",
+            trend: "up",
+            icon: (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+            )
+        },
+        {
+            title: "منتجات منخفضة المخزون",
+            value: stats.lowStockProducts,
+            growth: "-2%",
+            trend: "down",
+            icon: (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                </svg>
+            )
+        },
+        {
+            title: "منتجات غير متوفرة",
+            value: stats.outOfStockProducts,
+            growth: "-2%",
+            trend: "down",
+            icon: (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+                </svg>
+            )
+        },
+        {
+            title: "منتجات مهجورة",
+            value: stats.abandonedProducts,
+            growth: "+8%",
+            trend: "up",
+            icon: (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+            )
+        }
+    ];
+
     return (
         <div className="bg-gray-100 min-h-screen p-8 text-right font-['Tajawal']">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
-                    <div>
-                        <h3 className="text-2xl">إجمالي المنتجات</h3>
-                        <p className="text-2xl font-bold mt-1 text-gray-900">{stats.totalProducts}</p>
-                    </div>
-                    <span className="text-sm font-semibold text-green-500">↑ 8%</span>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
-                    <div>
-                        <h3 className="text-2xl">منتجات منخفضة المخزون</h3>
-                        <p className="text-2xl font-bold mt-1 text-gray-900">{stats.lowStockProducts}</p>
-                    </div>
-                    <span className="text-sm font-semibold text-red-500">↓ 2%</span>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
-                    <div>
-                        <h3 className="text-2xl">منتجات غير متوفرة</h3>
-                        <p className="text-2xl font-bold mt-1 text-gray-900">{stats.outOfStockProducts}</p>
-                    </div>
-                    <span className="text-sm font-semibold text-red-500">↓ 2%</span>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow-md flex items-center justify-between">
-                    <div>
-                        <h3 className="text-2xl">منتجات مهجورة</h3>
-                        <p className="text-2xl font-bold mt-1 text-gray-900">{stats.abandonedProducts}</p>
-                    </div>
-                    <span className="text-sm font-semibold text-red-500">↑ 8%</span>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+                {cardsData.map((card, index) => (
+                    <div
+  key={index}
+  className="bg-white p-6 h-[120px] rounded-xl shadow-md flex flex-row items-center justify-between gap-4 cursor-pointer hover:shadow-lg transition-shadow"
+>
+  <div className="bg-gray-100 p-3 rounded-xl text-red-600">
+    {card.icon}
+  </div>
+
+  <div className="flex flex-col text-right">
+    <h3 className="text-gray-500 text-sm font-medium">{card.title}</h3>
+    <p className="text-xl font-bold text-gray-800">{card.value}</p>
+    <span
+      className={`text-sm flex items-center ${
+        card.trend === "up"
+          ? "text-green-500"
+          : card.trend === "down"
+          ? "text-red-500"
+          : "text-gray-500"
+      }`}
+    >
+      {card.trend === "up" && (
+        <span className="mr-1">▲</span>
+      )}
+      {card.trend === "down" && (
+        <span className="mr-1">▼</span>
+      )}
+      {card.growth}
+      <span className="text-gray-400 mr-1">عن الفترة السابقة</span>
+    </span>
+  </div>
+</div>
+
+                ))}
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow-md">
@@ -211,6 +303,8 @@ const Dashboard = () => {
                                 type="text"
                                 placeholder="ابحث باسم المنتج / الحالة"
                                 className="bg-gray-100 text-gray-700 px-4 py-2 pr-10 rounded-lg w-full md:w-auto focus:outline-none focus:ring-2 focus:ring-red-500 text-right"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
                             />
                             <IoSearchOutline className="absolute right-3 text-gray-400" />
                         </div>
@@ -244,9 +338,9 @@ const Dashboard = () => {
                                 <tr>
                                     <td colSpan="8" className="p-8 text-center">
                                         <p className="text-red-600 mb-4">{error}</p>
-                                        <button 
-                                            onClick={() => fetchProducts()} 
-                                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                                        <button
+                                            onClick={() => fetchProducts()}
+                                            className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
                                         >
                                             إعادة المحاولة
                                         </button>
@@ -310,26 +404,34 @@ const Dashboard = () => {
                 </div>
 
                 <div className="flex justify-between items-center mt-4 text-gray-500 text-sm">
-                    <p>إجمالي المنتجات: {products.length}</p>
+                    <p>إجمالي المنتجات: {pagination.total}</p>
                     <div className="flex items-center space-x-2 rtl:space-x-reverse">
-                        <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 transition-colors">
+                        <button
+                            onClick={() => handlePageChange(pagination.page - 1)}
+                            disabled={pagination.page === 1}
+                            className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
                             <IoChevronDownOutline className="w-4 h-4 rotate-90" />
                         </button>
-                        <span className="bg-red-500 text-white px-3 py-1 rounded-md">1</span>
-                        <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 transition-colors">2</button>
-                        <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 transition-colors">3</button>
-                        <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 transition-colors">4</button>
-                        <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 transition-colors">5</button>
-                        <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 transition-colors">
+                        {renderPaginationButtons()}
+                        <button
+                            onClick={() => handlePageChange(pagination.page + 1)}
+                            disabled={pagination.page === pagination.pages}
+                            className="bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
                             <IoChevronUpOutline className="w-4 h-4 rotate-90" />
                         </button>
                     </div>
                     <div className="flex items-center space-x-2 rtl:space-x-reverse">
                         <span className="text-sm">عرض في الصفحة</span>
-                        <select className="bg-gray-100 text-gray-900 rounded-md px-2 py-1 border border-gray-300">
-                            <option>10</option>
-                            <option>20</option>
-                            <option>50</option>
+                        <select
+                            className="bg-gray-100 text-gray-900 rounded-md px-2 py-1 border border-gray-300"
+                            value={pagination.limit}
+                            onChange={handleLimitChange}
+                        >
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
                         </select>
                     </div>
                 </div>
@@ -364,7 +466,7 @@ const Dashboard = () => {
                     </div>
                 </div>
             </Modal>
-            
+
             <Modal isOpen={isEditPriceModalOpen} onClose={() => setIsEditPriceModalOpen(false)}>
                 <div className="text-center">
                     <h2 className="text-xl font-bold mb-4 text-gray-800">تعديل السعر</h2>
