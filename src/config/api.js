@@ -56,7 +56,11 @@ const API_CONFIG = {
     SHIPPING: {
       SETTINGS: '/supplier/shipping/settings',
       AREAS: '/supplier/shipping/areas',
-      FREE_DELIVERY_OFFERS: '/supplier/shipping/free-delivery-offers'
+      AREAS_UPDATE: (id) => `/supplier/shipping/areas/${id}`,
+      AREAS_DELETE: (id) => `/supplier/shipping/areas/${id}`,
+      FREE_DELIVERY_OFFERS: '/supplier/shipping/free-delivery-offers',
+      FREE_DELIVERY_OFFERS_UPDATE: (id) => `/supplier/shipping/free-delivery-offers/${id}`,
+      FREE_DELIVERY_OFFERS_DELETE: (id) => `/supplier/shipping/free-delivery-offers/${id}`
     },
     PROFITS: {
       OVERVIEW: '/supplier/profits/overview',

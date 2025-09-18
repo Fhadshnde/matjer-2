@@ -460,7 +460,7 @@ function EditRegionModal({ isOpen, onClose, onSave, item }) {
   const handleSave = async () => {
     try {
       setLoading(true);
-      await patchAPI(`/supplier/shipping/areas/${item.id}`, {
+      await patchAPI(API_CONFIG.SHIPPING.AREAS_UPDATE(item.id), {
         name: formData.name,
         deliveryFee: Number(formData.deliveryFee),
         estimatedDays: Number(formData.estimatedDays),
@@ -702,6 +702,48 @@ function Table({ title, columns, tableData, isShippingTable, onPageChange, pagin
     }
   };
 
+<<<<<<< HEAD
+=======
+  const closeModal = (modalName) => {
+    setModalStates(prev => ({ ...prev, [modalName]: false }));
+    setSelectedItem(null);
+  };
+
+  const handleDelete = async (item) => {
+    if (window.confirm('هل أنت متأكد من حذف هذا العنصر؟')) {
+      try {
+        if (isShippingTable) {
+          await deleteAPI(API_CONFIG.SHIPPING.AREAS_DELETE(item.id));
+        } else {
+          await deleteAPI(API_CONFIG.SHIPPING.FREE_DELIVERY_OFFERS_DELETE(item.id));
+        }
+        refreshData();
+        closeModal('deleteOffer');
+      } catch (error) {
+        console.error('Failed to delete:', error);
+        alert('فشل في حذف العنصر');
+      }
+    }
+  };
+
+  const handleToggleStatus = async (item) => {
+    try {
+      if (isShippingTable) {
+        await patchAPI(API_CONFIG.SHIPPING.AREAS_UPDATE(item.id), {
+          isActive: item.deliveryStatus !== 'نشط'
+        });
+      } else {
+        await patchAPI(API_CONFIG.SHIPPING.FREE_DELIVERY_OFFERS_UPDATE(item.id), {
+          isActive: item.status !== 'نشط'
+        });
+      }
+      refreshData();
+    } catch (error) {
+      console.error('Failed to toggle status:', error);
+      alert('فشل في تغيير الحالة');
+    }
+  };
+>>>>>>> origin/main
   const filteredData = tableData.filter(item => {
     const matchesSearch = isShippingTable
       ? (item.area || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
