@@ -44,10 +44,10 @@ const Dashboard = () => {
         }
     };
 
-    const fetchProducts = async (page = 1, limit = pagination.limit) => {
+    const fetchProducts = async (page = 1, limit = pagination.limit, search = searchTerm) => {
         try {
             setLoading(true);
-            const response = await axios.get(getApiUrl(`${API_CONFIG.ENDPOINTS.PRODUCTS.LIST}?page=${page}&limit=${limit}`), {
+            const response = await axios.get(getApiUrl(`${API_CONFIG.ENDPOINTS.PRODUCTS.LIST}?page=${page}&limit=${limit}&search=${search}`), {
                 headers: getAuthHeaders()
             });
             const data = response.data;
@@ -78,8 +78,8 @@ const Dashboard = () => {
     };
 
     useEffect(() => {
-        fetchProducts(pagination.page, pagination.limit);
-    }, [pagination.page, pagination.limit]);
+        fetchProducts(pagination.page, pagination.limit, searchTerm);
+    }, [pagination.page, pagination.limit, searchTerm]);
 
     const handlePageChange = (page) => {
         if (page > 0 && page <= pagination.pages) {
@@ -89,6 +89,12 @@ const Dashboard = () => {
 
     const handleLimitChange = (e) => {
         setPagination(prev => ({ ...prev, limit: parseInt(e.target.value, 10), page: 1 }));
+    };
+
+    const handleSearchChange = (e) => {
+        const newSearchTerm = e.target.value;
+        setSearchTerm(newSearchTerm);
+        setPagination(prev => ({ ...prev, page: 1 }));
     };
 
     const handleOpenProductDetails = (product) => {
@@ -118,7 +124,7 @@ const Dashboard = () => {
                 headers: getAuthHeaders()
             });
             alert('تم تحديث المخزون بنجاح!');
-            fetchProducts();
+            fetchProducts(pagination.page, pagination.limit, searchTerm);
             setIsEditStockModalOpen(false);
         } catch (error) {
             console.error('Error updating stock:', error);
@@ -133,7 +139,7 @@ const Dashboard = () => {
                 headers: getAuthHeaders()
             });
             alert('تم حذف المنتج بنجاح!');
-            fetchProducts();
+            fetchProducts(pagination.page, pagination.limit, searchTerm);
             setIsDeleteModalOpen(false);
         } catch (error) {
             console.error('Error deleting product:', error);
@@ -304,7 +310,7 @@ const Dashboard = () => {
                                 placeholder="ابحث باسم المنتج / الحالة"
                                 className="bg-gray-100 text-gray-700 px-4 py-2 pr-10 rounded-lg w-full md:w-auto focus:outline-none focus:ring-2 focus:ring-red-500 text-right"
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onChange={handleSearchChange}
                             />
                             <IoSearchOutline className="absolute right-3 text-gray-400" />
                         </div>
@@ -371,14 +377,6 @@ const Dashboard = () => {
                                                     <button className="flex items-center w-full text-right px-4 py-2 hover:bg-gray-100" onClick={() => handleOpenEditProduct(product)}>
                                                         <IoPencilOutline className="w-5 h-5 ml-2 text-gray-500" />
                                                         تعديل المنتج
-                                                    </button>
-                                                    <button className="flex items-center w-full text-right px-4 py-2 hover:bg-gray-100" onClick={() => handleOpenEditStock(product)}>
-                                                        <IoPencilOutline className="w-5 h-5 ml-2 text-gray-500" />
-                                                        تعديل المخزون
-                                                    </button>
-                                                    <button className="flex items-center w-full text-right px-4 py-2 hover:bg-gray-100" onClick={() => handleOpenEditPrice(product)}>
-                                                        <IoPencilOutline className="w-5 h-5 ml-2 text-gray-500" />
-                                                        تعديل السعر
                                                     </button>
                                                     <button className="flex items-center w-full text-right px-4 py-2 text-red-600 hover:bg-red-50" onClick={() => handleOpenDeleteModal(product)}>
                                                         <IoTrashOutline className="w-5 h-5 ml-2 text-red-600" />

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
@@ -21,6 +21,33 @@ const AddProduct = () => {
     const [categories, setCategories] = useState([]);
     const [sections, setSections] = useState([]);
 
+    // دالة لجلب الفئات والأقسام
+    const fetchCategoriesAndSections = async () => {
+        try {
+            // جلب الفئات والأقسام في نفس الوقت باستخدام Promise.all
+            const [categoriesResponse, sectionsResponse] = await Promise.all([
+                axios.get(getApiUrl(API_CONFIG.ENDPOINTS.CATEGORIES.LIST), {
+                    headers: getAuthHeaders()
+                }),
+                axios.get(getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.LIST), {
+                    headers: getAuthHeaders()
+                })
+            ]);
+            
+            // تحديث حالة الفئات والأقسام بالبيانات التي تم جلبها
+            setCategories(categoriesResponse.data.categories || []);
+            setSections(sectionsResponse.data.sections || []);
+        } catch (error) {
+            console.error('Error fetching categories and sections:', error);
+            setError('فشل في تحميل الفئات والأقسام، يرجى إعادة تحميل الصفحة.');
+        }
+    };
+
+    // استخدام useEffect لجلب البيانات عند تحميل المكون لأول مرة
+    useEffect(() => {
+        fetchCategoriesAndSections();
+    }, []);
+
     const handleAddProduct = async () => {
         try {
             setLoading(true);
@@ -28,7 +55,7 @@ const AddProduct = () => {
             
             let imageUrl = null;
             
-            // Upload image if exists
+            // رفع الصورة إذا كانت موجودة
             if (images.length > 0 && images[0].file) {
                 const formData = new FormData();
                 formData.append('file', images[0].file);
@@ -69,28 +96,6 @@ const AddProduct = () => {
         }
     };
 
-    const fetchCategoriesAndSections = async () => {
-        try {
-            const [categoriesResponse, sectionsResponse] = await Promise.all([
-                axios.get(getApiUrl(API_CONFIG.ENDPOINTS.CATEGORIES.LIST), {
-                    headers: getAuthHeaders()
-                }),
-                axios.get(getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.LIST), {
-                    headers: getAuthHeaders()
-                })
-            ]);
-            
-            setCategories(categoriesResponse.data.categories || []);
-            setSections(sectionsResponse.data.sections || []);
-        } catch (error) {
-            console.error('Error fetching categories and sections:', error);
-        }
-    };
-
-    React.useEffect(() => {
-        fetchCategoriesAndSections();
-    }, []);
-
     const handleDeleteImage = (index) => {
         setImages(images.filter((_, i) => i !== index));
     };
@@ -98,7 +103,7 @@ const AddProduct = () => {
     const handleAddImage = (e) => {
         const file = e.target.files[0];
         if (file) {
-            // Check file size (max 5MB)
+            // التحقق من حجم الملف (الحد الأقصى 5 ميجابايت)
             if (file.size > 5 * 1024 * 1024) {
                 alert('حجم الملف كبير جداً. الحد الأقصى 5 ميجابايت');
                 return;
@@ -111,11 +116,15 @@ const AddProduct = () => {
             }]);
         }
     };
+    
+    // تصفية الأقسام بناءً على الفئة المختارة
+    const filteredSections = sections.filter(section => 
+        section.categoryId === parseInt(product.categoryId)
+    );
 
     return (
         <div className=" p-4 min-h-screen rtl:text-right font-sans">
             <div className="container mx-auto bg-white  p-2 shadow-lg">
-
                 {/* Main Product Info Section */}
                 <h2 className="text-xl font-bold mb-6 pb-2 border-b border-gray-200">معلومات المنتج الأساسية</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 mb-8">
@@ -143,7 +152,7 @@ const AddProduct = () => {
                             <label className="block text-gray-700 text-sm font-medium mb-1">التصنيف الرئيسي</label>
                             <select
                                 value={product.categoryId}
-                                onChange={(e) => setProduct({ ...product, categoryId: e.target.value })}
+                                onChange={(e) => setProduct({ ...product, categoryId: e.target.value, sectionId: '' })} // إعادة تعيين القسم عند تغيير الفئة
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
                             >
                                 <option value="">اختر التصنيف</option>
@@ -170,9 +179,10 @@ const AddProduct = () => {
                                 value={product.sectionId}
                                 onChange={(e) => setProduct({ ...product, sectionId: e.target.value })}
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
+                                disabled={!product.categoryId} // تعطيل القائمة إذا لم يتم اختيار فئة
                             >
                                 <option value="">اختر التصنيف الفرعي</option>
-                                {sections.map(section => (
+                                {filteredSections.map(section => (
                                     <option key={section.id} value={section.id}>{section.name}</option>
                                 ))}
                             </select>
