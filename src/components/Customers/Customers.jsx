@@ -702,8 +702,7 @@ function Table({ title, columns, tableData, isShippingTable, onPageChange, pagin
     }
   };
 
-<<<<<<< HEAD
-=======
+
   const closeModal = (modalName) => {
     setModalStates(prev => ({ ...prev, [modalName]: false }));
     setSelectedItem(null);
@@ -743,7 +742,7 @@ function Table({ title, columns, tableData, isShippingTable, onPageChange, pagin
       alert('فشل في تغيير الحالة');
     }
   };
->>>>>>> origin/main
+
   const filteredData = tableData.filter(item => {
     const matchesSearch = isShippingTable
       ? (item.area || '').toLowerCase().includes(searchTerm.toLowerCase()) ||

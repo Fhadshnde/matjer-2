@@ -3,9 +3,9 @@ import { Link, useLocation, useParams } from 'react-router-dom';
 import axios from 'axios';
 
 const tabs = [
-    { name: 'بيانات المتجر', path: '/store-info' },
-    { name: 'إدارة الفريق', path: '/employees-page' },
     { name: 'الدعم الفني', path: '/tickets' },
+    { name: 'إدارة الفريق', path: '/employees-page' },
+    { name: 'بيانات المتجر', path: '/store-info' },
 ];
 
 const getStatusColors = (status) => {

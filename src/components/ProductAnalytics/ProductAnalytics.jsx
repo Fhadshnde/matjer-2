@@ -418,7 +418,7 @@ const ProductAnalytics = () => {
                     </div>
 
                     <div className="bg-white p-6 rounded-lg shadow-md">
-                        <h2 className="text-xl font-bold mb-8">قمع التحويل (فتح المنتج + شراء)</h2>
+                        <h2 className="text-xl font-bold mb-8"> المنتجات المرغوبة (فتح المنتج + شراء)</h2>
                         <div className="space-y-4">
                             {funnelData.map((item, index) => (
                                 <div key={index} className="flex items-center justify-between">

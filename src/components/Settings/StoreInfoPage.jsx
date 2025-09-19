@@ -4,9 +4,10 @@ import axios from 'axios';
 import { getApiUrl, getAuthHeaders } from '../../config/api';
 
 const tabs = [
-    { name: 'بيانات المتجر', path: '/store-info' },
-    { name: 'إدارة الفريق', path: '/employees-page' },
     { name: 'الدعم الفني', path: '/tickets' },
+    { name: 'إدارة الفريق', path: '/employees-page' },
+    { name: 'بيانات المتجر', path: '/store-info' },
+
 ];
 
 const StoreInfoPage = () => {

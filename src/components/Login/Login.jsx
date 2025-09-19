@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { getApiUrl, API_CONFIG } from '../../config/api';
+import { FaRegEye, FaRegEyeSlash, FaEnvelope, FaLock } from 'react-icons/fa';
+import logo from '../../assets/logo.png';
 
 const Login = ({ setIsLoggedIn }) => {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -42,96 +45,81 @@ const Login = ({ setIsLoggedIn }) => {
     }
   };
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh',
-        backgroundColor: '#f0f2f5',
-      }}
-    >
-      <div
-        style={{
-          padding: '40px',
-          backgroundColor: '#fff',
-          borderRadius: '8px',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-          width: '350px',
-        }}
-      >
-        <h2
-          style={{
-            textAlign: 'center',
-            marginBottom: '20px',
-            color: '#333',
-          }}
-        >
-          تسجيل الدخول
+    <div className="flex justify-center items-center h-screen bg-white text-black font-sans">
+      <div className="p-10 bg-white rounded-lg w-[450px] text-center">
+        <div className="mb-5">
+          {/* هنا يمكنك إضافة شعار التطبيق */}
+          <img src={logo} alt="Logo" className="w-24 mb-5 mx-auto" />
+        </div>
+        <h2 className="text-center mb-2 text-2xl font-bold text-black">
+          👋 أهلاً بك
         </h2>
+        <p className="text-gray-600 mb-10">
+          سجل دخولك لإدارة منتجاتك وطلباتك وأرباحك
+        </p>
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '15px' }}>
-            <label
-              htmlFor="phone"
-              style={{ display: 'block', marginBottom: '5px', color: '#555' }}
-            >
+          <div className="mb-5 relative text-right">
+            <label htmlFor="phone" className="block mb-1 text-black">
               رقم الهاتف
             </label>
-            <input
-              type="text"
-              id="phone"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                boxSizing: 'border-box',
-              }}
-              required
-            />
+            <div className="relative">
+              <input
+                type="text"
+                id="phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="07777777777"
+                className="w-full py-3 px-4 pl-10 border border-gray-300 rounded-lg bg-gray-100 text-black"
+                required
+              />
+              <FaEnvelope className="absolute top-1/2 left-4 transform -translate-y-1/2 text-gray-400" />
+            </div>
           </div>
-          <div style={{ marginBottom: '20px' }}>
-            <label
-              htmlFor="password"
-              style={{ display: 'block', marginBottom: '5px', color: '#555' }}
-            >
+          <div className="mb-5 relative text-right">
+            <label htmlFor="password" className="block mb-1 text-black">
               كلمة المرور
             </label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                boxSizing: 'border-box',
-              }}
-              required
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="********"
+                className="w-full py-3 px-4 pr-12 pl-10 border border-gray-300 rounded-lg bg-gray-100 text-black"
+                required
+              />
+              <FaLock className="absolute top-1/2 left-4 transform -translate-y-1/2 text-gray-400" />
+              <span
+                onClick={togglePasswordVisibility}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 cursor-pointer"
+              >
+                {showPassword ? <FaRegEyeSlash /> : <FaRegEye />}
+              </span>
+            </div>
           </div>
+          {/* <div className="text-right mb-5">
+            <label htmlFor="remember" className="text-sm text-gray-600">
+              تذكرني
+            </label>
+            <input type="checkbox" id="remember" className="align-middle mr-2" />
+          </div> */}
           <button
             type="submit"
-            style={{
-              width: '100%',
-              padding: '10px',
-              backgroundColor: '#007bff',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '16px',
-            }}
+            className="w-full py-4 bg-red-600 text-white border-none rounded-lg cursor-pointer text-lg font-bold hover:bg-red-700 transition-colors duration-200"
             disabled={loading}
           >
-            {loading ? 'جاري الدخول...' : 'دخول'}
+            {loading ? 'جاري الدخول...' : 'تسجيل الدخول'}
           </button>
         </form>
+        {/* <p className="mt-5 text-sm text-gray-600">
+          تاجر جديد؟ <a href="#" className="text-blue-600 no-underline">أنشئ حساب تاجر الآن</a>
+        </p> */}
       </div>
     </div>
   );

@@ -249,7 +249,7 @@ const Dashboard = () => {
     <h3 className="text-gray-500 text-sm font-medium">{card.title}</h3>
     <p className="text-xl font-bold text-gray-800">{card.value}</p>
     <span
-      className={`text-sm flex items-center ${
+      className={`text-lg flex items-center  ${
         card.trend === "up"
           ? "text-green-500"
           : card.trend === "down"
@@ -264,7 +264,7 @@ const Dashboard = () => {
         <span className="mr-1">▼</span>
       )}
       {card.growth}
-      <span className="text-gray-400 mr-1">عن الفترة السابقة</span>
+      <span className="text-gray-400 ml-3">عن الفترة السابقة</span>
     </span>
   </div>
 </div>

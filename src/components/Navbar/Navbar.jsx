@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Bell,
   Search,
@@ -19,9 +19,11 @@ import {
   X,
   CheckCircle,
 } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { getApiUrl, getAuthHeaders } from "../../config/api";
+import { motion } from "framer-motion";
+import logo from '../../assets/logo.png';
 
 const Navbar = ({ setIsLoggedIn }) => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -33,6 +35,11 @@ const Navbar = ({ setIsLoggedIn }) => {
   });
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Create refs for the profile and notifications dropdowns
+  const profileMenuRef = useRef(null);
+  const notificationsRef = useRef(null);
 
   const toggleProfileMenu = () => setIsProfileMenuOpen(!isProfileMenuOpen);
   const toggleNotifications = () => setIsNotificationsOpen(!isNotificationsOpen);
@@ -76,6 +83,27 @@ const Navbar = ({ setIsLoggedIn }) => {
     fetchSupplierInfo();
   }, []);
 
+  // New useEffect hook to handle clicks outside the notifications modal
+  useEffect(() => {
+    function handleClickOutside(event) {
+      // Close notifications if click is outside the notifications dropdown
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setIsNotificationsOpen(false);
+      }
+      // Close profile menu if click is outside the profile menu
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setIsProfileMenuOpen(false);
+      }
+    }
+    
+    // Bind the event listener
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      // Unbind the event listener on component cleanup
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [notificationsRef, profileMenuRef]);
+
   const menuItems = [
     { path: "/", icon: <LayoutDashboard className="w-4 h-4" />, text: "نظرة عامة" },
     { path: "/products", icon: <Package className="w-4 h-4" />, text: "المنتجات" },
@@ -83,7 +111,7 @@ const Navbar = ({ setIsLoggedIn }) => {
     { path: "/product-analytics", icon: <History className="w-4 h-4" />, text: "التحليلات " },
     { path: "/my-dues", icon: <ClipboardList className="w-4 h-4" />, text: "مستحقاتي" },
     { path: "/sections", icon: <Bell className="w-4 h-4" />, text: "الاقسام" },
-    { path: "/customers", icon: <Globe className="w-4 h-4" />, text: "اعدادات التوصيل" },
+    // { path: "/customers", icon: <Globe className="w-4 h-4" />, text: "اعدادات التوصيل" },
     { path: "/profits", icon: <Wallet className="w-4 h-4" />, text: "الارباح" },
     { path: "/offers-dashboard", icon: <Tag className="w-4 h-4" />, text: "العروض والخصومات" },
     { path: "/store-info", icon: <Tag className="w-4 h-4" />, text: "الإعدادات" },
@@ -108,14 +136,10 @@ const Navbar = ({ setIsLoggedIn }) => {
     <div className="bg-white shadow-sm border-b border-gray-200" dir="rtl">
       <div className="flex items-center justify-between px-6 py-3">
         <div>
-          <div className="bg-blue-600 text-white px-4 py-2 rounded-md font-bold text-lg tracking-wider">CBC</div>
+          <img src={logo} alt="Logo" className="w-16" />
         </div>
         <div className="flex items-center gap-4 flex-1 max-w-2xl mx-8">
-          <button className="flex items-center gap-2 bg-red-500 text-white font-medium py-2.5 px-4 rounded-lg shadow-sm hover:bg-red-600 transition-colors whitespace-nowrap">
-            <Plus className="w-4 h-4" />
-            <span>إنشاء سريع</span>
-          </button>
-          <form onSubmit={handleSearch} className="relative flex-1">
+          {/* <form onSubmit={handleSearch} className="relative flex-1">
             <input 
               type="text" 
               placeholder="إبحث عن طلبات، منتجات، تجار، زبائن..." 
@@ -124,10 +148,10 @@ const Navbar = ({ setIsLoggedIn }) => {
               className="w-full pr-10 pl-4 py-2.5 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-sm" 
             />
             <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-          </form>
+          </form> */}
         </div>
         <div className="flex items-center gap-4">
-          <div className="relative">
+          <div className="relative" ref={profileMenuRef}>
             <button onClick={toggleProfileMenu} className="flex items-center gap-2 focus:outline-none">
               <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isProfileMenuOpen ? "rotate-180" : "rotate-0"}`} />
               <div className="text-right">
@@ -155,7 +179,7 @@ const Navbar = ({ setIsLoggedIn }) => {
               </div>
             )}
           </div>
-          <div className="relative">
+          <div className="relative" ref={notificationsRef}>
             <button onClick={toggleNotifications}>
               <Inbox className="w-5 h-5 text-gray-500 cursor-pointer hover:text-gray-700" />
               <span className="absolute -top-1 -right-1 block w-2 h-2 bg-red-500 rounded-full"></span>
@@ -199,13 +223,27 @@ const Navbar = ({ setIsLoggedIn }) => {
           </div>
         </div>
       </div>
-      <div className="flex items-center gap-1 px-6 py-2 overflow-x-auto scrollbar-hide bg-gray-50/50">
-        {menuItems.map((item, index) => (
-          <Link key={index} to={item.path} className="flex items-center gap-2 py-2 px-3 text-gray-600 hover:text-red-500 hover:bg-white rounded-lg transition-all duration-200 whitespace-nowrap text-sm font-medium">
-            {item.icon}
-            <span>{item.text}</span>
-          </Link>
-        ))}
+      <div className="relative flex items-center gap-1 px-6 py-2 overflow-x-auto scrollbar-hide bg-gray-50/50">
+        {menuItems.map((item, index) => {
+          const isActive = location.pathname === item.path;
+          return (
+            <Link key={index} to={item.path} className="relative flex items-center gap-2 py-2 px-3 text-gray-600 hover:text-red-500 hover:bg-white rounded-lg transition-all duration-200 whitespace-nowrap text-sm font-medium">
+              {isActive && (
+                <motion.div
+                  layoutId="underline"
+                  className="absolute inset-0 rounded-lg bg-red-500 z-0"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                />
+              )}
+              <span className={`relative z-10 flex items-center gap-2 ${isActive ? 'text-white' : 'text-gray-600'}`}>
+                {item.icon}
+                <span>{item.text}</span>
+              </span>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

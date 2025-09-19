@@ -666,13 +666,13 @@ const CategoriesPage = () => {
                                     >
                                         <IoPencilOutline className="w-5 h-5" />
                                     </button>
-                                    <button
+                                    {/* <button
                                         className="text-red-500 hover:text-red-700 p-2"
                                         onClick={() => openDeleteModal(category, 'main')}
                                         title="حذف"
                                     >
                                         <IoTrashOutline className="w-5 h-5" />
-                                    </button>
+                                    </button> */}
                                     {category.sectionsCount > 0 && (
                                         <button
                                             className="text-gray-500 hover:text-gray-700 p-2"
@@ -703,13 +703,13 @@ const CategoriesPage = () => {
                                                     >
                                                         <IoPencilOutline className="w-4 h-4" />
                                                     </button>
-                                                    <button
+                                                    {/* <button
                                                         className="text-red-500 hover:text-red-700 p-1"
                                                         onClick={() => openDeleteModal(section, 'sub')}
                                                         title="حذف"
                                                     >
                                                         <IoTrashOutline className="w-4 h-4" />
-                                                    </button>
+                                                    </button> */}
                                                 </div>
                                             </div>
                                         ))}
@@ -753,13 +753,13 @@ const CategoriesPage = () => {
                                             >
                                                 <IoPencilOutline className="w-5 h-5" />
                                             </button>
-                                            <button
+                                            {/* <button
                                                 className="text-red-500 hover:text-red-700 p-1"
                                                 onClick={() => openDeleteModal(section, 'sub')}
                                                 title="حذف"
                                             >
                                                 <IoTrashOutline className="w-5 h-5" />
-                                            </button>
+                                            </button> */}
                                         </div>
                                     </td>
                                     <td className="py-3 px-4">
