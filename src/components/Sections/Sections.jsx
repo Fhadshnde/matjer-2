@@ -762,7 +762,7 @@ const CategoriesPage = () => {
                         <thead>
                             <tr className="border-b border-gray-300">
                                 <th className="py-3 px-4 text-gray-500 font-normal text-sm text-center">الإجراءات</th>
-                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">الصورة</th>
+                                {/* <th className="py-3 px-4 text-gray-500 font-normal text-sm">الصورة</th> */}
                                 <th className="py-3 px-4 text-gray-500 font-normal text-sm">عدد المنتجات</th>
                                 <th className="py-3 px-4 text-gray-500 font-normal text-sm">الفئة</th>
                                 <th className="py-3 px-4 text-gray-500 font-normal text-sm">اسم القسم</th>
@@ -773,13 +773,13 @@ const CategoriesPage = () => {
                                 <tr key={section.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
                                     <td className="py-3 px-4 text-center">
                                         <div className="flex justify-center items-center space-x-2 rtl:space-x-reverse">
-                                            <button
+                                            {/* <button
                                                 className="text-purple-500 hover:text-purple-700 p-1"
                                                 onClick={() => openImageUploadModal(section, 'sub')}
                                                 title="رفع صورة"
                                             >
                                                 <IoImageOutline className="w-5 h-5" />
-                                            </button>
+                                            </button> */}
                                             <button
                                                 className="text-blue-500 hover:text-blue-700 p-1"
                                                 onClick={() => openEditModal(section, 'sub')}
@@ -796,7 +796,7 @@ const CategoriesPage = () => {
                                             </button> */}
                                         </div>
                                     </td>
-                                    <td className="py-3 px-4">
+                                    {/* <td className="py-3 px-4">
                                         <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
                                             {section.image ? (
                                                 <img src={section.image} alt={section.name} className="w-10 h-10 rounded-lg object-cover" />
@@ -806,7 +806,7 @@ const CategoriesPage = () => {
                                                 </span>
                                             )}
                                         </div>
-                                    </td>
+                                    </td> */}
                                     <td className="py-3 px-4 text-sm text-gray-800">
                                         <span className="bg-green-100 text-green-600 px-2 py-1 rounded-full text-xs">
                                             {section.productsCount}
