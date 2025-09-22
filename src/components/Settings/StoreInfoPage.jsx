@@ -33,58 +33,62 @@ const StoreInfoPage = () => {
     const [success, setSuccess] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
 
-    // جلب معلومات المتجر
     const fetchStoreInfo = async () => {
         try {
             setLoading(true);
-            const response = await axios.get(getApiUrl('/supplier/store-info'), {
+            const response = await axios.get(getApiUrl('/supplier/profile'), {
                 headers: getAuthHeaders()
             });
             
-            console.log('Store info response:', response.data);
-            setStoreInfo(response.data);
+            setStoreInfo({
+                storeName: response.data.name || '',
+                storeEmail: response.data.contactInfo || '',
+                storeAddress: response.data.address || '',
+                storePhone: response.data.phone || '',
+                storeLogo: response.data.profileImage ? `https://products-api.cbc-apps.net${response.data.profileImage}` : null,
+                storeDescription: '',
+                storeSector: '',
+                bankingInfo: {
+                    bankName: '',
+                    accountNumber: '',
+                    iban: '',
+                    accountHolderName: ''
+                }
+            });
             setError(null);
         } catch (err) {
-            console.error('Error fetching store info:', err);
             setError('فشل في جلب معلومات المتجر: ' + (err.response?.data?.message || err.message));
         } finally {
             setLoading(false);
         }
     };
 
-    // حفظ معلومات المتجر
     const saveStoreInfo = async () => {
         try {
             setSaving(true);
             setError(null);
             
-            const response = await axios.patch(getApiUrl('/supplier/store-info'), {
-                storeName: storeInfo.storeName,
-                storeDescription: storeInfo.storeDescription,
-                storeAddress: storeInfo.storeAddress,
-                storeEmail: storeInfo.storeEmail,
-                storePhone: storeInfo.storePhone,
-                storeSector: storeInfo.storeSector,
+            const response = await axios.patch(getApiUrl('/supplier/profile'), {
+                name: storeInfo.storeName,
+                contactInfo: storeInfo.storeEmail,
+                address: storeInfo.storeAddress,
+                phone: storeInfo.storePhone,
                 bankingInfo: storeInfo.bankingInfo
             }, {
                 headers: getAuthHeaders()
             });
             
-            console.log('Store info saved:', response.data);
             setSuccess(true);
             setIsEditing(false);
             
-            // إخفاء رسالة النجاح بعد 3 ثوان
             setTimeout(() => setSuccess(false), 3000);
         } catch (err) {
-            console.error('Error saving store info:', err);
             setError('فشل في حفظ معلومات المتجر: ' + (err.response?.data?.message || err.message));
         } finally {
             setSaving(false);
         }
     };
 
-    // تحديث معلومات المتجر
     const handleInputChange = (field, value) => {
         if (field.includes('.')) {
             const [parent, child] = field.split('.');
@@ -103,7 +107,6 @@ const StoreInfoPage = () => {
         }
     };
 
-    // رفع صورة المتجر
     const handleImageUpload = async (event) => {
         const file = event.target.files[0];
         if (!file) return;
@@ -112,19 +115,18 @@ const StoreInfoPage = () => {
             const formData = new FormData();
             formData.append('image', file);
 
-            const response = await axios.post(getApiUrl('/supplier/upload/image'), formData, {
+            const response = await axios.post('https://products-api.cbc-apps.net/supplier/upload/image', formData, {
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`,
                     'Content-Type': 'multipart/form-data'
                 }
             });
-
+            
             setStoreInfo(prev => ({
                 ...prev,
                 storeLogo: response.data.url
             }));
         } catch (err) {
-            console.error('Error uploading image:', err);
             setError('فشل في رفع الصورة: ' + (err.response?.data?.message || err.message));
         }
     };
@@ -135,7 +137,6 @@ const StoreInfoPage = () => {
 
     return (
         <div className="rtl:text-right font-sans bg-gray-100 min-h-screen">
-            {/* Tabs Navigation */}
             <div className="flex justify-end bg-white py-4 px-6 border-b border-gray-200 shadow-sm">
                 <nav className="flex space-x-4">
                     {tabs.map((tab) => (
@@ -154,10 +155,8 @@ const StoreInfoPage = () => {
                 </nav>
             </div>
 
-            {/* Page Content */}
             <div className="p-8 pb-4">
                 <div className="container mx-auto">
-                    {/* رسائل النجاح والخطأ */}
                     {success && (
                         <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
                             تم حفظ معلومات المتجر بنجاح
@@ -169,7 +168,6 @@ const StoreInfoPage = () => {
                         </div>
                     )}
 
-                    {/* معلومات المتجر */}
                     <div className="bg-white p-6 rounded-lg shadow-md mb-6">
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-xl font-bold text-gray-800">معلومات المتجر</h2>
@@ -192,12 +190,12 @@ const StoreInfoPage = () => {
                                     </>
                                 ) : (
                                     <>
-                                        <button 
+                                        {/* <button 
                                             onClick={() => setIsEditing(true)}
                                             className="text-red-500 font-semibold text-sm"
                                         >
                                             تعديل
-                                        </button>
+                                        </button> */}
                                         <input
                                             type="file"
                                             accept="image/*"
@@ -215,7 +213,7 @@ const StoreInfoPage = () => {
                                             <img
                                                 src={storeInfo.storeLogo}
                                                 alt="Store Logo"
-                                                className="w-8 h-8 rounded-full object-cover"
+                                                className="w-24 h-24 rounded-full object-cover"
                                             />
                                         ) : (
                                             <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
@@ -313,7 +311,6 @@ const StoreInfoPage = () => {
                         )}
                     </div>
 
-                    {/* معلومات البنكية */}
                     <div className="bg-white p-6 rounded-lg shadow-md">
                         <h2 className="text-xl font-bold text-gray-800 mb-6 text-right">المعلومات البنكية</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8 text-right">

@@ -1,24 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 
+// بيانات التبويبات
 const tabs = [
     { name: 'الدعم الفني', path: '/tickets' },
     { name: 'إدارة الفريق', path: '/employees-page' },
     { name: 'بيانات المتجر', path: '/store-info' },
 ];
 
+// دالة لتحديد ألوان الحالة
 const getStatusColors = (status) => {
     switch (status) {
         case 'نشط':
-            return 'bg-green-100 text-green-700';
+            return 'bg-green-500 hover:bg-green-600 text-white';
         case 'غير نشط':
-            return 'bg-red-100 text-red-700';
+            return 'bg-red-500 hover:bg-red-600 text-white';
         default:
-            return 'bg-gray-100 text-gray-700';
+            return 'bg-gray-500 hover:bg-gray-600 text-white';
     }
 };
 
+// مكون مودال إضافة/تعديل الموظف
 const EmployeeModal = ({ show, onClose, onSave, employeeToEdit }) => {
     const [formData, setFormData] = useState({
         name: '',
@@ -172,6 +175,7 @@ const EmployeeModal = ({ show, onClose, onSave, employeeToEdit }) => {
     );
 };
 
+// مكون مودال تغيير كلمة المرور
 const ChangePasswordModal = ({ show, onClose, onSave, employeeId }) => {
     const [passwordData, setPasswordData] = useState({
         newPassword: '',
@@ -190,7 +194,7 @@ const ChangePasswordModal = ({ show, onClose, onSave, employeeId }) => {
 
     const handleSave = () => {
         if (passwordData.newPassword === passwordData.confirmPassword) {
-            onSave(employeeId, passwordData.newPassword);
+            onSave(employeeId, passwordData.newPassword, passwordData.confirmPassword);
         } else {
             alert('Passwords do not match.');
         }
@@ -219,7 +223,7 @@ const ChangePasswordModal = ({ show, onClose, onSave, employeeId }) => {
                                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500"
                             />
                             <button type="button" className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 100-6 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                             </button>
                         </div>
                     </div>
@@ -249,6 +253,7 @@ const ChangePasswordModal = ({ show, onClose, onSave, employeeId }) => {
     );
 };
 
+// مكون مودال تأكيد الحذف
 const DeleteConfirmationModal = ({ show, onClose, onDelete }) => {
     if (!show) return null;
 
@@ -276,6 +281,7 @@ const DeleteConfirmationModal = ({ show, onClose, onDelete }) => {
     );
 };
 
+// مكون قائمة الإجراءات الإضافية
 const MoreActionsDropdown = ({ show, onClose, onEdit, onChangePassword, onDelete }) => {
     if (!show) return null;
 
@@ -299,6 +305,7 @@ const MoreActionsDropdown = ({ show, onClose, onEdit, onChangePassword, onDelete
     );
 };
 
+// مكون قائمة تصفية الحالة
 const StatusFilterDropdown = ({ show, onClose, onSelect }) => {
     if (!show) return null;
 
@@ -320,6 +327,7 @@ const StatusFilterDropdown = ({ show, onClose, onSelect }) => {
     );
 };
 
+// المكون الرئيسي EmployeesPage
 const EmployeesPage = () => {
     const location = useLocation();
     const [employees, setEmployees] = useState([]);
@@ -331,6 +339,7 @@ const EmployeesPage = () => {
     const [selectedEmployee, setSelectedEmployee] = useState(null);
     const [filterStatus, setFilterStatus] = useState('الكل');
 
+    // دالة لجلب بيانات الموظفين من API
     const fetchEmployees = async () => {
         try {
             const response = await axios.get(
@@ -349,12 +358,20 @@ const EmployeesPage = () => {
         fetchEmployees();
     }, []);
 
+    // دالة لحفظ (إضافة/تعديل) بيانات الموظف
     const handleSaveEmployee = async (formData) => {
         try {
+            const payload = {
+                name: formData.name,
+                position: formData.role,
+                email: formData.email,
+                phone: formData.phone,
+            };
+
             if (selectedEmployee) {
                 await axios.patch(
                     `https://products-api.cbc-apps.net/supplier/employees/${selectedEmployee.id}`,
-                    formData,
+                    payload,
                     {
                         headers: {
                             Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -365,7 +382,7 @@ const EmployeesPage = () => {
             } else {
                 await axios.post(
                     'https://products-api.cbc-apps.net/supplier/employees',
-                    formData,
+                    payload,
                     {
                         headers: {
                             Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -380,6 +397,7 @@ const EmployeesPage = () => {
         }
     };
 
+    // دالة لحذف موظف
     const handleDeleteEmployee = async () => {
         if (!selectedEmployee) return;
         try {
@@ -397,11 +415,12 @@ const EmployeesPage = () => {
         }
     };
 
-    const handleChangePassword = async (employeeId, newPassword) => {
+    // دالة لتغيير كلمة المرور
+    const handleChangePassword = async (employeeId, newPassword, confirmPassword) => {
         try {
             await axios.patch(
-                `https://products-api.cbc-apps.net/supplier/employees/${employeeId}`,
-                { password: newPassword },
+                `https://products-api.cbc-apps.net/supplier/employees/${employeeId}/password`,
+                { newPassword, confirmPassword },
                 {
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -415,11 +434,12 @@ const EmployeesPage = () => {
         }
     };
 
+    // دالة لتغيير حالة الموظف
     const handleToggleStatus = async (employee) => {
         const newStatus = employee.status === 'نشط' ? 'غير نشط' : 'نشط';
         try {
             await axios.patch(
-                `https://products-api.cbc-apps.net/supplier/employees/${employee.id}`,
+                `https://products-api.cbc-apps.net/supplier/employees/${employee.id}/status`,
                 { status: newStatus },
                 {
                     headers: {
@@ -434,20 +454,24 @@ const EmployeesPage = () => {
         }
     };
 
+    // دالة لعرض قائمة الإجراءات الإضافية
     const handleMoreClick = (employee, index) => {
         setSelectedEmployee(employee);
         setShowMoreDropdown(showMoreDropdown === index ? null : index);
     };
 
+    // دالة لعرض قائمة التصفية
     const handleFilterClick = () => {
         setShowFilterDropdown(!showFilterDropdown);
     };
 
+    // دالة لتحديد حالة التصفية
     const handleFilterSelect = (status) => {
         setFilterStatus(status);
         setShowFilterDropdown(false);
     };
 
+    // تصفية الموظفين بناءً على الحالة
     const filteredEmployees = employees.filter(employee =>
         filterStatus === 'الكل' || employee.status === filterStatus
     );
@@ -518,7 +542,7 @@ const EmployeesPage = () => {
                                 <th className="py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">الدور</th>
                                 <th className="py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">الجوال</th>
                                 <th className="py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">البريد</th>
-                                <th className="py-3 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider">الاسم</th>
+                                <th className="py-3 px-4 text-xs font-medium text-gray-900 uppercase tracking-wider">الاسم</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
@@ -539,16 +563,12 @@ const EmployeesPage = () => {
                                         />
                                     </td>
                                     <td className="py-3 px-4 whitespace-nowrap">
-                                        <div className="flex items-center">
-                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColors(employee.status)}`}>
-                                                {employee.status}
-                                            </span>
-                                            <label className="inline-flex relative items-center cursor-pointer ml-4">
-                                                <input type="checkbox" className="sr-only peer" checked={employee.status === 'نشط'} onChange={() => handleToggleStatus(employee)} />
-                                                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:bg-red-600 transition-all"></div>
-                                                <span className="ml-3 text-sm font-medium text-gray-900">{employee.status}</span>
-                                            </label>
-                                        </div>
+                                        <button
+                                            onClick={() => handleToggleStatus(employee)}
+                                            className={`px-3 py-1 text-sm font-medium rounded-lg transition-colors duration-200 ${getStatusColors(employee.status)}`}
+                                        >
+                                            {employee.status}
+                                        </button>
                                     </td>
                                     <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-500">{employee.lastLogin}</td>
                                     <td className="py-3 px-4 whitespace-nowrap text-sm text-gray-500">{employee.role}</td>

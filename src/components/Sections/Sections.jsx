@@ -21,6 +21,7 @@ const CategoriesPage = () => {
     const [expandedCategories, setExpandedCategories] = useState(new Set());
     const [uploadingImage, setUploadingImage] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
+    const token = localStorage.getItem('token');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -47,20 +48,43 @@ const CategoriesPage = () => {
         fetchData();
     }, []);
 
+    const uploadImage = async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        try {
+            const res = await axios.post(
+                'https://products-api.cbc-apps.net/supplier/upload/image',
+                formData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data'
+                    }
+                }
+            );
+            return res.data.url;
+        } catch (err) {
+            console.error('خطأ رفع الصورة:', err.response || err);
+            return null;
+        }
+    };
+
     const handleAddSection = async (sectionData, imageFile) => {
         try {
-            const formData = new FormData();
-            formData.append('name', sectionData.name);
-            formData.append('description', sectionData.description);
-            formData.append('categoryId', sectionData.categoryId);
+            let imageUrl = '';
             if (imageFile) {
-                formData.append('image', imageFile);
+                imageUrl = await uploadImage(imageFile);
+                if (!imageUrl) {
+                    return { success: false, message: 'فشل في رفع الصورة' };
+                }
             }
-
-            const response = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.ADD), formData, {
+            
+            const payload = { ...sectionData, image: imageUrl };
+            
+            await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.ADD), payload, {
                 headers: {
                     ...getAuthHeaders(),
-                    'Content-Type': 'multipart/form-data'
+                    'Content-Type': 'application/json'
                 }
             });
             
@@ -79,16 +103,20 @@ const CategoriesPage = () => {
 
     const handleAddCategory = async (categoryData, imageFile) => {
         try {
-            const formData = new FormData();
-            formData.append('name', categoryData.name);
-            formData.append('description', categoryData.description);
+            let imageUrl = '';
             if (imageFile) {
-                formData.append('image', imageFile);
+                imageUrl = await uploadImage(imageFile);
+                if (!imageUrl) {
+                    return { success: false, message: 'فشل في رفع الصورة' };
+                }
             }
-            const response = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.CATEGORIES.ADD), formData, {
+
+            const payload = { ...categoryData, image: imageUrl };
+
+            await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.CATEGORIES.ADD), payload, {
                 headers: {
                     ...getAuthHeaders(),
-                    'Content-Type': 'multipart/form-data'
+                    'Content-Type': 'application/json'
                 }
             });
             
@@ -184,18 +212,19 @@ const CategoriesPage = () => {
     const handleImageUpload = async (file, type, id) => {
         try {
             setUploadingImage(true);
-            const formData = new FormData();
-            formData.append('image', file);
+            const imageUrl = await uploadImage(file);
+            if (!imageUrl) {
+                return { success: false, message: 'فشل في رفع الصورة' };
+            }
 
             const endpoint = type === 'category' 
-                ? `categories/${id}/upload-image`
-                : `sections/${id}/upload-image`;
+                ? `categories/${id}`
+                : `sections/${id}`;
 
-            const response = await axios.post(getApiUrl(`/supplier/${endpoint}`), formData, {
-                headers: {
-                    ...getAuthHeaders(),
-                    'Content-Type': 'multipart/form-data'
-                }
+            const payload = { image: imageUrl };
+
+            const response = await axios.patch(getApiUrl(`/supplier/${endpoint}`), payload, {
+                headers: getAuthHeaders()
             });
 
             const [sectionsResponse, categoriesResponse] = await Promise.all([
@@ -318,7 +347,12 @@ const CategoriesPage = () => {
                     if (isEdit) {
                         await handleUpdateSection(category.id, formData);
                     } else {
-                        await handleAddSection(formData, selectedFile);
+                        // التعديل هنا: تحويل categoryId إلى رقم صحيح قبل الإرسال
+                        const dataToSend = {
+                            ...formData,
+                            categoryId: parseInt(formData.categoryId)
+                        };
+                        await handleAddSection(dataToSend, selectedFile);
                     }
                 }
                 closeModal();
