@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
+import { SketchPicker } from 'react-color';
 
 const EditProduct = () => {
     const { id } = useParams();
@@ -470,29 +471,47 @@ const EditProduct = () => {
                     <div className="space-y-4 mb-8">
                         {product.colors.map((color, colorIndex) => (
                             <div key={colorIndex} className="border border-gray-300 p-4 rounded-lg space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <input
-                                        type="text"
-                                        placeholder="اسم اللون"
-                                        value={color.name}
-                                        onChange={(e) => handleColorChange(colorIndex, 'name', e.target.value)}
-                                        className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                                    />
-                                    <input
-                                        type="text"
-                                        placeholder="كود اللون"
-                                        value={color.code}
-                                        onChange={(e) => handleColorChange(colorIndex, 'code', e.target.value)}
-                                        className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                                    />
-                                    <input
-                                        type="number"
-                                        placeholder="المخزون الكلي للون"
-                                        value={color.stock}
-                                        onChange={(e) => handleColorChange(colorIndex, 'stock', Number(e.target.value))}
-                                        className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                                    />
-                                </div>
+<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <input
+    type="text"
+    placeholder="اسم اللون"
+    value={color.name}
+    onChange={(e) => handleColorChange(colorIndex, 'name', e.target.value)}
+    className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+  />
+
+  {/* عارض الـ picker + الكود */}
+  <div className="flex items-center gap-2">
+    <div
+      className="w-10 h-10 border rounded"
+      style={{ backgroundColor: color.code }}
+    />
+    <input
+      type="text"
+      placeholder="كود اللون"
+      value={color.code}
+      onChange={(e) => handleColorChange(colorIndex, 'code', e.target.value)}
+      className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 w-full"
+    />
+  </div>
+
+  <input
+    type="number"
+    placeholder="المخزون الكلي للون"
+    value={color.stock}
+    onChange={(e) => handleColorChange(colorIndex, 'stock', Number(e.target.value))}
+    className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+  />
+</div>
+
+{/* Picker يظهر عند الحاجة */}
+<SketchPicker
+  color={color.code}
+  onChange={(updatedColor) =>
+    handleColorChange(colorIndex, 'code', updatedColor.hex)
+  }
+/>
+
                                 <div className="space-y-2">
                                     <h3 className="font-medium text-gray-700 flex justify-between items-center">
                                         <span>المقاسات</span>

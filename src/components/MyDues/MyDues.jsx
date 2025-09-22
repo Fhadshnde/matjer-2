@@ -558,11 +558,11 @@ const PaymentsAndCashbackDashboard = () => {
                                 <span className="font-bold text-green-600">{selectedOrder.netMerchant.toLocaleString('ar-EG')} د.ع</span>
                             </div>
                         </div>
-                        <div className="mt-6 text-center">
+                        {/* <div className="mt-6 text-center">
                             <button className="bg-white text-red-500 border border-red-500 py-2 px-4 rounded-lg w-full hover:bg-red-50">
                                 تحميل إيصال العملية
                             </button>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
             )}
