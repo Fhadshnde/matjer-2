@@ -219,8 +219,8 @@ function HomePage() {
                   <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="name" axisLine={false} tickLine={false} />
-              <YAxis orientation="right" axisLine={false} tickLine={false} />
+              <XAxis  dataKey="name" axisLine={false} tickLine={false} />
+              <YAxis dx={50} orientation="right" axisLine={false} tickLine={false} />
               <Tooltip content={<SalesChartTooltip />} />
               <Area type="monotone" dataKey="sales" stroke="#ef4444" fillOpacity={1} fill="url(#colorSales)" />
               <CartesianGrid strokeDasharray="3 3" vertical={false} />

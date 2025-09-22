@@ -706,10 +706,10 @@ const OffersDashboard = () => {
                                 <IoStatsChart className="w-4 h-4 ml-2" />
                                 مشاهدة الأداء
                               </button>
-                              <button onClick={() => handleToggleOfferStatus()} className="flex items-center w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                              {/* <button onClick={() => handleToggleOfferStatus()} className="flex items-center w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 {offer.status === 'نشط' ? <IoPause className="w-4 h-4 ml-2" /> : <IoPlay className="w-4 h-4 ml-2" />}
                                 {offer.status === 'نشط' ? 'إيقاف العرض' : 'تفعيل العرض'}
-                              </button>
+                              </button> */}
                               <button onClick={() => openDeleteModal(offer)} className="flex items-center w-full text-right px-4 py-2 text-sm text-red-600 hover:bg-red-50">
                                 <IoTrash className="w-4 h-4 ml-2" />
                                 حذف العرض

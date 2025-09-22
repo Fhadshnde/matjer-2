@@ -14,48 +14,34 @@ const AddProduct = () => {
     stock: '',
     categoryId: '',
     sectionId: '',
-    mainImageUrl: '',
     wholesalePrice: '',
     isActive: true, // حالة المنتج الافتراضية
-    colors: [
-      {
-        name: '',
-        code: '',
-        stock: 0,
-        sizes: [{ size: '', stock: 0 }]
-      }
-    ],
     media: []
   });
 
-  const [mainImageFile, setMainImageFile] = useState(null);
-  const [mediaFiles, setMediaFiles] = useState([]);
+  const [filesToUpload, setFilesToUpload] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [categories, setCategories] = useState([]);
-  const [sections, setSections] = useState([]);
 
-  // جلب الفئات والأقسام
-  const fetchCategoriesAndSections = async () => {
+  // جلب البيانات من API
+  const fetchData = async () => {
     try {
-      const [categoriesResponse, sectionsResponse] = await Promise.all([
-        axios.get(getApiUrl(API_CONFIG.ENDPOINTS.CATEGORIES.LIST), {
-          headers: getAuthHeaders()
-        }),
-        axios.get(getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.LIST), {
-          headers: getAuthHeaders()
-        })
-      ]);
+      setLoading(true);
+      const categoriesResponse = await axios.get('https://products-api.cbc-apps.net/supplier/categories', {
+        headers: getAuthHeaders()
+      });
       setCategories(categoriesResponse.data.categories || []);
-      setSections(sectionsResponse.data.sections || []);
     } catch (error) {
-      console.error('Error fetching categories and sections:', error);
-      setMessage('فشل في تحميل الفئات والأقسام، يرجى المحاولة مرة أخرى.');
+      console.error('Error fetching data:', error);
+      setMessage('فشل في تحميل البيانات، يرجى المحاولة مرة أخرى.');
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCategoriesAndSections();
+    fetchData();
   }, []);
 
   // تحديث حقول المنتج الأساسية
@@ -64,51 +50,14 @@ const AddProduct = () => {
     setProduct(prev => ({ ...prev, [name]: value }));
   };
 
-  // إدارة الألوان والمقاسات
-  const handleColorChange = (index, field, value) => {
-    const newColors = [...product.colors];
-    newColors[index][field] = value;
-    setProduct(prev => ({ ...prev, colors: newColors }));
-  };
-
-  const handleSizeChange = (colorIndex, sizeIndex, field, value) => {
-    const newColors = [...product.colors];
-    newColors[colorIndex].sizes[sizeIndex][field] = field === 'stock' ? Number(value) : value;
-    setProduct(prev => ({ ...prev, colors: newColors }));
-  };
-
-  const addSize = (colorIndex) => {
-    const newColors = [...product.colors];
-    newColors[colorIndex].sizes.push({ size: '', stock: 0 });
-    setProduct(prev => ({ ...prev, colors: newColors }));
-  };
-
-  const addColor = () => {
-    setProduct(prev => ({
-      ...prev,
-      colors: [...prev.colors, { name: '', code: '', stock: 0, sizes: [{ size: '', stock: 0 }] }]
-    }));
-  };
-
   // إدارة الصور
-  const handleMainImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setMainImageFile(file);
-    }
+  const handleFileChange = (e) => {
+    const newFiles = Array.from(e.target.files);
+    setFilesToUpload(prev => [...prev, ...newFiles]);
   };
 
-  const handleMediaChange = (e) => {
-    const files = Array.from(e.target.files);
-    setMediaFiles(prev => [...prev, ...files]);
-  };
-
-  const handleDeleteImage = (fileType, index) => {
-    if (fileType === 'main') {
-      setMainImageFile(null);
-    } else {
-      setMediaFiles(prev => prev.filter((_, i) => i !== index));
-    }
+  const handleDeleteFile = (index) => {
+    setFilesToUpload(prev => prev.filter((_, i) => i !== index));
   };
 
   const uploadImage = async (file) => {
@@ -138,33 +87,35 @@ const AddProduct = () => {
     setMessage('');
 
     try {
-      let mainImageUrl = product.mainImageUrl;
-      if (mainImageFile) {
-        const url = await uploadImage(mainImageFile);
-        if (url) mainImageUrl = url;
+      const uploadedUrls = [];
+      for (const file of filesToUpload) {
+        const url = await uploadImage(file);
+        if (url) {
+          uploadedUrls.push(url);
+        }
       }
 
-      const mediaUrls = [];
-      for (const file of mediaFiles) {
-        const url = await uploadImage(file);
-        if (url) mediaUrls.push({ url, type: 'image', isMain: false });
+      if (uploadedUrls.length === 0) {
+        setMessage('يجب إضافة صورة واحدة على الأقل للمنتج.');
+        setLoading(false);
+        return;
       }
+
+      const mediaPayload = uploadedUrls.map((url, index) => ({
+        url,
+        type: 'image',
+        isMain: index === 0 // أول صورة هي الصورة الرئيسية
+      }));
 
       const payload = {
         ...product,
-        mainImageUrl,
         originalPrice: Number(product.originalPrice),
         price: Number(product.price),
         stock: Number(product.stock),
         categoryId: Number(product.categoryId),
         sectionId: Number(product.sectionId),
         wholesalePrice: Number(product.wholesalePrice),
-        colors: product.colors.map(c => ({
-          ...c,
-          stock: Number(c.stock),
-          sizes: c.sizes.map(s => ({ size: s.size, stock: Number(s.stock) }))
-        })),
-        media: [{ url: mainImageUrl, type: 'image', isMain: true }, ...mediaUrls]
+        media: mediaPayload
       };
 
       const response = await axios.post(
@@ -189,9 +140,9 @@ const AddProduct = () => {
     }
   };
 
-  const filteredSections = sections.filter(section =>
-    section.categoryId === parseInt(product.categoryId)
-  );
+  const filteredSections =
+  categories.find(cat => cat.id === parseInt(product.categoryId))?.sections || [];
+
 
   return (
     <div className="p-4 min-h-screen rtl:text-right font-sans">
@@ -282,27 +233,7 @@ const AddProduct = () => {
             <div className="md:col-span-2">
               {/* قائمة الصور المضافة */}
               <div className="space-y-4">
-                {mainImageFile && (
-                  <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-200">
-                    <div className="flex items-center space-x-3 rtl:space-x-reverse">
-                      <div className="w-8 h-8 flex items-center justify-center text-gray-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="font-medium">الصورة الرئيسية: {mainImageFile.name}</p>
-                        <span className="text-xs text-gray-500">{(mainImageFile.size / 1024).toFixed(1)} KB</span>
-                      </div>
-                    </div>
-                    <button type="button" onClick={() => handleDeleteImage('main')} className="text-red-500 hover:text-red-700 transition-colors">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  </div>
-                )}
-                {mediaFiles.map((file, index) => (
+                {filesToUpload.map((file, index) => (
                   <div key={index} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-200">
                     <div className="flex items-center space-x-3 rtl:space-x-reverse">
                       <div className="w-8 h-8 flex items-center justify-center text-gray-500">
@@ -311,11 +242,11 @@ const AddProduct = () => {
                         </svg>
                       </div>
                       <div>
-                        <p className="font-medium">{file.name}</p>
+                        <p className="font-medium">{file.name} {index === 0 && <span className="text-xs text-red-500">(صورة رئيسية)</span>}</p>
                         <span className="text-xs text-gray-500">{(file.size / 1024).toFixed(1)} KB</span>
                       </div>
                     </div>
-                    <button type="button" onClick={() => handleDeleteImage('media', index)} className="text-red-500 hover:text-red-700 transition-colors">
+                    <button type="button" onClick={() => handleDeleteFile(index)} className="text-red-500 hover:text-red-700 transition-colors">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
@@ -330,29 +261,15 @@ const AddProduct = () => {
                   <input
                     type="file"
                     accept="image/*"
-                    className="hidden"
-                    onChange={handleMainImageChange}
-                  />
-                  <span className="text-red-600 font-bold flex items-center space-x-2 rtl:space-x-reverse">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
-                    </svg>
-                    <span>إضافة صورة رئيسية</span>
-                  </span>
-                </label>
-                <label className="flex items-center justify-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
-                  <input
-                    type="file"
-                    accept="image/*"
                     multiple
                     className="hidden"
-                    onChange={handleMediaChange}
+                    onChange={handleFileChange}
                   />
                   <span className="text-red-600 font-bold flex items-center space-x-2 rtl:space-x-reverse">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
                     </svg>
-                    <span>إضافة صور أخرى</span>
+                    <span>إضافة صور للمنتج</span>
                   </span>
                 </label>
               </div>
@@ -412,65 +329,6 @@ const AddProduct = () => {
                 />
               </div>
             </div>
-          </div>
-
-          {/* الألوان والمقاسات */}
-          <h2 className="text-xl font-bold mb-6 pb-2 border-b border-gray-200">الألوان والمقاسات</h2>
-          <div className="space-y-4 mb-8">
-            {product.colors.map((color, colorIndex) => (
-              <div key={colorIndex} className="border border-gray-300 p-4 rounded-lg space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <input
-                    type="text"
-                    placeholder="اسم اللون"
-                    value={color.name}
-                    onChange={(e) => handleColorChange(colorIndex, 'name', e.target.value)}
-                    className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                  />
-                  <input
-                    type="text"
-                    placeholder="كود اللون"
-                    value={color.code}
-                    onChange={(e) => handleColorChange(colorIndex, 'code', e.target.value)}
-                    className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                  />
-                  <input
-                    type="number"
-                    placeholder="المخزون الكلي للون"
-                    value={color.stock}
-                    onChange={(e) => handleColorChange(colorIndex, 'stock', Number(e.target.value))}
-                    className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="font-medium text-gray-700">المقاسات</h3>
-                  {color.sizes.map((size, sizeIndex) => (
-                    <div key={sizeIndex} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <input
-                        type="text"
-                        placeholder="المقاس (مثل: S, M, L)"
-                        value={size.size}
-                        onChange={(e) => handleSizeChange(colorIndex, sizeIndex, 'size', e.target.value)}
-                        className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                      />
-                      <input
-                        type="number"
-                        placeholder="الكمية في المخزون"
-                        value={size.stock}
-                        onChange={(e) => handleSizeChange(colorIndex, sizeIndex, 'stock', e.target.value)}
-                        className="border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                      />
-                    </div>
-                  ))}
-                  <button type="button" onClick={() => addSize(colorIndex)} className="text-blue-500 hover:text-blue-700 transition-colors">
-                    + إضافة مقاس
-                  </button>
-                </div>
-              </div>
-            ))}
-            <button type="button" onClick={addColor} className="text-red-600 font-bold hover:text-red-800 transition-colors">
-              + إضافة لون
-            </button>
           </div>
 
           {/* رسالة الخطأ أو النجاح */}

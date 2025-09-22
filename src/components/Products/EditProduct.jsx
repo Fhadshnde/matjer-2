@@ -218,7 +218,7 @@ const EditProduct = () => {
                 media: [{ url: finalMainImageUrl, type: 'image', isMain: true }, ...mediaUrls].filter(m => m.url)
             };
 
-            const response = await axios.patch(
+            const response = await axios.put(
                 getApiUrl(API_CONFIG.ENDPOINTS.PRODUCTS.UPDATE(id)),
                 payload,
                 {

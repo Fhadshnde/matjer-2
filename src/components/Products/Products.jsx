@@ -392,7 +392,15 @@ const Dashboard = () => {
                                         <td className="py-3 px-4 text-sm text-gray-800">{product.originalPrice ? `${product.originalPrice.toLocaleString()}د.ع` : '-'}</td>
                                         <td className="py-3 px-4 text-sm text-gray-800">{product.name}</td>
                                         <td className="py-3 px-4">
-                                            <img src={product.mainImageUrl} alt={product.name} className="w-10 h-10 rounded-md object-cover" />
+                                        <img
+  src={
+    product.mainImageUrl && product.mainImageUrl.trim() !== ""
+      ? product.mainImageUrl
+      : product.media?.[0]?.url || "/placeholder.png"
+  }
+  alt={product.name}
+  className="w-10 h-10 rounded-md object-cover"
+/>
                                         </td>
                                     </tr>
                                 ))
