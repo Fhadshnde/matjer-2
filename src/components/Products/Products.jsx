@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { IoChevronUpOutline, IoChevronDownOutline, IoSearchOutline, IoAdd, IoEllipsisHorizontal, IoEyeOutline, IoPencilOutline, IoTrashOutline } from 'react-icons/io5';
 import axios from 'axios';
 import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
+import * as XLSX from 'xlsx'; // Import the xlsx library
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -158,6 +159,25 @@ const Dashboard = () => {
         setIsMoreActionsDropdownOpen(false);
     };
 
+    const handleExportToExcel = () => {
+        // Prepare the data for export
+        const dataToExport = products.map(product => ({
+            'اسم المنتج': product.name,
+            'سعر البيع': product.price,
+            'سعر الجملة': product.originalPrice,
+            'الكمية': product.stock,
+            'الحالة': product.status,
+            'القسم': product.category?.name || '',
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'المنتجات');
+        
+        // Write the workbook and trigger download
+        XLSX.writeFile(workbook, 'products.xlsx');
+    };
+
     const Modal = ({ isOpen, onClose, children }) => {
         if (!isOpen) return null;
         return (
@@ -244,37 +264,36 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
                 {cardsData.map((card, index) => (
                     <div
-  key={index}
-  className="bg-white p-6 h-[120px] rounded-xl shadow-md flex flex-row items-center justify-between gap-4 cursor-pointer hover:shadow-lg transition-shadow"
->
-  <div className="bg-gray-100 p-3 rounded-xl text-red-600">
-    {card.icon}
-  </div>
+                        key={index}
+                        className="bg-white p-6 h-[120px] rounded-xl shadow-md flex flex-row items-center justify-between gap-4 cursor-pointer hover:shadow-lg transition-shadow"
+                    >
+                        <div className="bg-gray-100 p-3 rounded-xl text-red-600">
+                            {card.icon}
+                        </div>
 
-  <div className="flex flex-col text-right">
-    <h3 className="text-gray-500 text-sm font-medium">{card.title}</h3>
-    <p className="text-xl font-bold text-gray-800">{card.value}</p>
-    <span
-      className={`text-lg flex items-center  ${
-        card.trend === "up"
-          ? "text-green-500"
-          : card.trend === "down"
-          ? "text-red-500"
-          : "text-gray-500"
-      }`}
-    >
-      {card.trend === "up" && (
-        <span className="mr-1">▲</span>
-      )}
-      {card.trend === "down" && (
-        <span className="mr-1">▼</span>
-      )}
-      {card.growth}
-      <span className="text-gray-400 ml-3">عن الفترة السابقة</span>
-    </span>
-  </div>
-</div>
-
+                        <div className="flex flex-col text-right">
+                            <h3 className="text-gray-500 text-sm font-medium">{card.title}</h3>
+                            <p className="text-xl font-bold text-gray-800">{card.value}</p>
+                            <span
+                                className={`text-lg flex items-center  ${
+                                    card.trend === "up"
+                                        ? "text-green-500"
+                                        : card.trend === "down"
+                                        ? "text-red-500"
+                                        : "text-gray-500"
+                                }`}
+                            >
+                                {card.trend === "up" && (
+                                    <span className="mr-1">▲</span>
+                                )}
+                                {card.trend === "down" && (
+                                    <span className="mr-1">▼</span>
+                                )}
+                                {card.growth}
+                                <span className="text-gray-400 ml-3">عن الفترة السابقة</span>
+                            </span>
+                        </div>
+                    </div>
                 ))}
             </div>
 
@@ -287,6 +306,12 @@ const Dashboard = () => {
                         >
                             <IoAdd className="w-5 h-5 ml-2" />
                             إضافة منتج
+                        </button>
+                        <button
+                            className="bg-green-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-600 transition-colors flex items-center"
+                            onClick={handleExportToExcel}
+                        >
+                            تصدير إلى إكسل
                         </button>
                         <div className="relative">
                             <button
@@ -392,15 +417,15 @@ const Dashboard = () => {
                                         <td className="py-3 px-4 text-sm text-gray-800">{product.originalPrice ? `${product.originalPrice.toLocaleString()}د.ع` : '-'}</td>
                                         <td className="py-3 px-4 text-sm text-gray-800">{product.name}</td>
                                         <td className="py-3 px-4">
-                                        <img
-  src={
-    product.mainImageUrl && product.mainImageUrl.trim() !== ""
-      ? product.mainImageUrl
-      : product.media?.[0]?.url || "/placeholder.png"
-  }
-  alt={product.name}
-  className="w-10 h-10 rounded-md object-cover"
-/>
+                                            <img
+                                                src={
+                                                    product.mainImageUrl && product.mainImageUrl.trim() !== ""
+                                                        ? product.mainImageUrl
+                                                        : product.media?.[0]?.url || "/placeholder.png"
+                                                }
+                                                alt={product.name}
+                                                className="w-10 h-10 rounded-md object-cover"
+                                            />
                                         </td>
                                     </tr>
                                 ))
