@@ -114,7 +114,7 @@ const Navbar = ({ setIsLoggedIn }) => {
           <img src={logo} alt="Logo" className="w-16" />
           <span className="text-gray-400 font-bold">-</span>
           <img 
-            className="w-10 h-10 rounded-full border-2 border-gray-200 object-cover" 
+            className="w-12 h-12 rounded-xl border-2 border-gray-200 object-cover" 
             src={supplierInfo.avatar} 
             alt="User Avatar" 
           />
