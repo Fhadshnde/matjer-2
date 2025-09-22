@@ -397,7 +397,7 @@ const OffersDashboard = () => {
           categoryId: offer.category?.id || null,
           productIds: offer.products?.map(p => p.id) || [],
           status: offer.isActive ? 'نشط' : (new Date(offer.endDate) < new Date() ? 'منتهي' : 'مجدول'),
-          period: `${new Date(offer.startDate).toLocaleDateString('ar-SA')} - ${new Date(offer.endDate).toLocaleDateString('ar-SA')}`,
+          period: `${new Date(offer.startDate).toLocaleDateString()} - ${new Date(offer.endDate).toLocaleDateString()}`,
           name: offer.title || 'بدون عنوان',
           type: discountType === 'percentage' ? 'نسبة مئوية' : 'قيمة ثابتة',
           scope: productsCount > 0 ? `${productsCount} منتج` : 'كل المنتجات',
