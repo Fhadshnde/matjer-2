@@ -1,10 +1,10 @@
 // API Configuration
 const API_CONFIG = {
   // Use local backend for development
-  BASE_URL: 'http://localhost:4500',
+  // BASE_URL: 'http://localhost:4500',
   
   // Production URL (uncomment for production)
-  // BASE_URL: 'https://products-api.cbc-apps.net',
+  BASE_URL: 'https://products-api.cbc-apps.net',
   
   ENDPOINTS: {
     AUTH: {
