@@ -212,7 +212,8 @@ const ProductAnalytics = () => {
                 setMostVisitedProducts(mappedMostVisited);
 
                 // Process sales over time
-                const mappedSalesOverTime = salesOverTime.map(item => ({
+                const salesDataArray = Array.isArray(salesOverTime) ? salesOverTime : (salesOverTime.monthlyData || []);
+                const mappedSalesOverTime = salesDataArray.map(item => ({
                     month: item.name,
                     sales: item.value,
                     visits: tablesCharts.charts.monthlySessions.data.find(session => session.month === item.name)?.sessions || 0,

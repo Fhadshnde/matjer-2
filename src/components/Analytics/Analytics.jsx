@@ -108,11 +108,12 @@ const SalesDashboard = () => {
         const salesData = salesOverTimeResponse.data;
 
         // Transform API data to match component structure
-        const transformedSalesOverTime = salesData.monthlyData?.map(item => ({
-          name: item.month,
-          value: item.sales,
-          prevValue: item.previousSales || 0
-        })) || salesOverTimeData;
+        const salesDataArray = Array.isArray(salesData) ? salesData : (salesData.monthlyData || []);
+        const transformedSalesOverTime = salesDataArray.length > 0 ? salesDataArray.map(item => ({
+          name: item.month || item.name,
+          value: item.sales || item.value,
+          prevValue: item.previousSales || item.prevValue || 0
+        })) : salesOverTimeData;
 
         const transformedCitySales = tablesChartsData.citySales?.map((item, index) => ({
           name: item.city,
