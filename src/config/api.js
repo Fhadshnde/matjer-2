@@ -22,7 +22,7 @@ const API_CONFIG = {
     },
     PRODUCTS: {
       LIST: '/supplier/products',
-      CREATE: '/supplier/products/new',
+      CREATE: '/supplier/products',
       UPDATE: (id) => `/supplier/products/${id}`,
       DELETE: (id) => `/supplier/products/${id}`,
       UPDATE_STOCK: (id) => `/supplier/products/${id}/stock`,

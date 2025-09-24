@@ -49,19 +49,31 @@ const CategoriesPage = () => {
 
     const handleAddSection = async (sectionData, imageFile) => {
         try {
-            const formData = new FormData();
-            formData.append('name', sectionData.name);
-            formData.append('description', sectionData.description);
-            formData.append('categoryId', sectionData.categoryId);
+            // First, upload image if provided
+            let imageUrl = null;
             if (imageFile) {
-                formData.append('image', imageFile);
+                const formData = new FormData();
+                formData.append('file', imageFile);
+                
+                const uploadResponse = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.UPLOAD.IMAGE), formData, {
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+                imageUrl = uploadResponse.data.url;
             }
 
-            const response = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.ADD), formData, {
-                headers: {
-                    ...getAuthHeaders(),
-                    'Content-Type': 'multipart/form-data'
-                }
+            // Create section with image URL
+            const sectionPayload = {
+                name: sectionData.name,
+                description: sectionData.description,
+                categoryId: sectionData.categoryId,
+                image: imageUrl
+            };
+
+            const response = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.ADD), sectionPayload, {
+                headers: getAuthHeaders()
             });
             
             const fetchResponse = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.LIST), {
@@ -79,17 +91,30 @@ const CategoriesPage = () => {
 
     const handleAddCategory = async (categoryData, imageFile) => {
         try {
-            const formData = new FormData();
-            formData.append('name', categoryData.name);
-            formData.append('description', categoryData.description);
+            // First, upload image if provided
+            let imageUrl = null;
             if (imageFile) {
-                formData.append('image', imageFile);
+                const formData = new FormData();
+                formData.append('file', imageFile);
+                
+                const uploadResponse = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.UPLOAD.IMAGE), formData, {
+                    headers: {
+                        ...getAuthHeaders(),
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+                imageUrl = uploadResponse.data.url;
             }
-            const response = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.CATEGORIES.ADD), formData, {
-                headers: {
-                    ...getAuthHeaders(),
-                    'Content-Type': 'multipart/form-data'
-                }
+
+            // Create category with image URL
+            const categoryPayload = {
+                name: categoryData.name,
+                description: categoryData.description,
+                image: imageUrl
+            };
+
+            const response = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.CATEGORIES.ADD), categoryPayload, {
+                headers: getAuthHeaders()
             });
             
             const fetchResponse = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.CATEGORIES.LIST), {
@@ -143,9 +168,13 @@ const CategoriesPage = () => {
         }
     };
 
-    const handleDeleteSection = async (sectionId) => {
+    const handleDeleteSection = async (sectionId, forceDelete = false) => {
         try {
-            const response = await axios.delete(getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.DELETE(sectionId)), {
+            const url = forceDelete 
+                ? `${getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.DELETE(sectionId))}?force=true`
+                : getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.DELETE(sectionId));
+            
+            const response = await axios.delete(url, {
                 headers: getAuthHeaders()
             });
             
@@ -155,10 +184,16 @@ const CategoriesPage = () => {
             
             setSectionsData(fetchResponse.data.sections || []);
             setIsDeleteModalOpen(false);
-            return { success: true, message: 'تم حذف القسم بنجاح' };
+            
+            const message = forceDelete 
+                ? response.data.message || 'تم حذف القسم مع جميع المنتجات بنجاح'
+                : 'تم حذف القسم بنجاح';
+                
+            return { success: true, message };
         } catch (error) {
             console.error('Error deleting section:', error);
-            return { success: false, message: 'فشل في حذف القسم' };
+            const errorMessage = error.response?.data?.message || 'فشل في حذف القسم';
+            return { success: false, message: errorMessage };
         }
     };
 
@@ -185,17 +220,26 @@ const CategoriesPage = () => {
         try {
             setUploadingImage(true);
             const formData = new FormData();
-            formData.append('image', file);
+            formData.append('file', file);
 
-            const endpoint = type === 'category' 
-                ? `categories/${id}/upload-image`
-                : `sections/${id}/upload-image`;
-
-            const response = await axios.post(getApiUrl(`/supplier/${endpoint}`), formData, {
+            // First upload the image to get the URL
+            const uploadResponse = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.UPLOAD.IMAGE), formData, {
                 headers: {
                     ...getAuthHeaders(),
                     'Content-Type': 'multipart/form-data'
                 }
+            });
+
+            const imageUrl = uploadResponse.data.url;
+
+            // Then update the category/section with the image URL
+            const updatePayload = { image: imageUrl };
+            const endpoint = type === 'category' 
+                ? getApiUrl(API_CONFIG.ENDPOINTS.CATEGORIES.EDIT(id))
+                : getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.EDIT(id));
+
+            await axios.patch(endpoint, updatePayload, {
+                headers: getAuthHeaders()
             });
 
             const [sectionsResponse, categoriesResponse] = await Promise.all([
