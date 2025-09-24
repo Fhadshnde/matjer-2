@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { IoChevronUpOutline, IoChevronDownOutline, IoSearchOutline, IoAdd, IoEllipsisHorizontal, IoEyeOutline, IoPencilOutline, IoTrashOutline } from 'react-icons/io5';
 import axios from 'axios';
 import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
+import * as XLSX from 'xlsx'; // Import the xlsx library
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -43,30 +44,29 @@ const Dashboard = () => {
                 return 'bg-gray-100 text-gray-700';
         }
     };
-
-    const fetchProducts = async (page = 1, limit = pagination.limit) => {
+    const fetchProducts = async (page = 1, limit = pagination.limit, search = searchTerm) => {
         try {
             setLoading(true);
-            const response = await axios.get(getApiUrl(`${API_CONFIG.ENDPOINTS.PRODUCTS.LIST}?page=${page}&limit=${limit}`), {
+            const response = await axios.get(`https://products-api.cbc-apps.net/supplier/products?page=${page}&limit=${limit}&search=${search}`, {
                 headers: getAuthHeaders()
             });
             const data = response.data;
             setProducts(data.products || []);
             setPagination(data.pagination);
-
-            // Calculate statistics
-            const totalProducts = data.pagination.total || 0;
+    
+            // إحصائيات المنتجات
+            const totalProducts = data.pagination?.total || 0;
             const lowStockProducts = data.products?.filter(p => p.stock < 10).length || 0;
             const outOfStockProducts = data.products?.filter(p => p.stock === 0).length || 0;
             const abandonedProducts = data.products?.filter(p => p.stock > 0 && p.stock < 5).length || 0;
-
+    
             setStats({
                 totalProducts,
                 lowStockProducts,
                 outOfStockProducts,
                 abandonedProducts
             });
-
+    
             setError(null);
         } catch (error) {
             console.error('Error fetching products:', error);
@@ -76,10 +76,11 @@ const Dashboard = () => {
             setLoading(false);
         }
     };
+    
 
     useEffect(() => {
-        fetchProducts(pagination.page, pagination.limit);
-    }, [pagination.page, pagination.limit]);
+        fetchProducts(pagination.page, pagination.limit, searchTerm);
+    }, [pagination.page, pagination.limit, searchTerm]);
 
     const handlePageChange = (page) => {
         if (page > 0 && page <= pagination.pages) {
@@ -89,6 +90,12 @@ const Dashboard = () => {
 
     const handleLimitChange = (e) => {
         setPagination(prev => ({ ...prev, limit: parseInt(e.target.value, 10), page: 1 }));
+    };
+
+    const handleSearchChange = (e) => {
+        const newSearchTerm = e.target.value;
+        setSearchTerm(newSearchTerm);
+        setPagination(prev => ({ ...prev, page: 1 }));
     };
 
     const handleOpenProductDetails = (product) => {
@@ -118,7 +125,7 @@ const Dashboard = () => {
                 headers: getAuthHeaders()
             });
             alert('تم تحديث المخزون بنجاح!');
-            fetchProducts();
+            fetchProducts(pagination.page, pagination.limit, searchTerm);
             setIsEditStockModalOpen(false);
         } catch (error) {
             console.error('Error updating stock:', error);
@@ -133,7 +140,7 @@ const Dashboard = () => {
                 headers: getAuthHeaders()
             });
             alert('تم حذف المنتج بنجاح!');
-            fetchProducts();
+            fetchProducts(pagination.page, pagination.limit, searchTerm);
             setIsDeleteModalOpen(false);
         } catch (error) {
             console.error('Error deleting product:', error);
@@ -150,6 +157,25 @@ const Dashboard = () => {
         setSelectedProduct(product);
         setIsDeleteModalOpen(true);
         setIsMoreActionsDropdownOpen(false);
+    };
+
+    const handleExportToExcel = () => {
+        // Prepare the data for export
+        const dataToExport = products.map(product => ({
+            'اسم المنتج': product.name,
+            'سعر البيع': product.price,
+            'سعر الجملة': product.originalPrice,
+            'الكمية': product.stock,
+            'الحالة': product.status,
+            'القسم': product.category?.name || '',
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'المنتجات');
+        
+        // Write the workbook and trigger download
+        XLSX.writeFile(workbook, 'products.xlsx');
     };
 
     const Modal = ({ isOpen, onClose, children }) => {
@@ -238,37 +264,36 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
                 {cardsData.map((card, index) => (
                     <div
-  key={index}
-  className="bg-white p-6 h-[120px] rounded-xl shadow-md flex flex-row items-center justify-between gap-4 cursor-pointer hover:shadow-lg transition-shadow"
->
-  <div className="bg-gray-100 p-3 rounded-xl text-red-600">
-    {card.icon}
-  </div>
+                        key={index}
+                        className="bg-white p-6 h-[120px] rounded-xl shadow-md flex flex-row items-center justify-between gap-4 cursor-pointer hover:shadow-lg transition-shadow"
+                    >
+                        <div className="bg-gray-100 p-3 rounded-xl text-red-600">
+                            {card.icon}
+                        </div>
 
-  <div className="flex flex-col text-right">
-    <h3 className="text-gray-500 text-sm font-medium">{card.title}</h3>
-    <p className="text-xl font-bold text-gray-800">{card.value}</p>
-    <span
-      className={`text-sm flex items-center ${
-        card.trend === "up"
-          ? "text-green-500"
-          : card.trend === "down"
-          ? "text-red-500"
-          : "text-gray-500"
-      }`}
-    >
-      {card.trend === "up" && (
-        <span className="mr-1">▲</span>
-      )}
-      {card.trend === "down" && (
-        <span className="mr-1">▼</span>
-      )}
-      {card.growth}
-      <span className="text-gray-400 mr-1">عن الفترة السابقة</span>
-    </span>
-  </div>
-</div>
-
+                        <div className="flex flex-col text-right">
+                            <h3 className="text-gray-500 text-sm font-medium">{card.title}</h3>
+                            <p className="text-xl font-bold text-gray-800">{card.value}</p>
+                            <span
+                                className={`text-lg flex items-center  ${
+                                    card.trend === "up"
+                                        ? "text-green-500"
+                                        : card.trend === "down"
+                                        ? "text-red-500"
+                                        : "text-gray-500"
+                                }`}
+                            >
+                                {card.trend === "up" && (
+                                    <span className="mr-1">▲</span>
+                                )}
+                                {card.trend === "down" && (
+                                    <span className="mr-1">▼</span>
+                                )}
+                                {card.growth}
+                                <span className="text-gray-400 ml-3">عن الفترة السابقة</span>
+                            </span>
+                        </div>
+                    </div>
                 ))}
             </div>
 
@@ -281,6 +306,12 @@ const Dashboard = () => {
                         >
                             <IoAdd className="w-5 h-5 ml-2" />
                             إضافة منتج
+                        </button>
+                        <button
+                            className="bg-green-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-600 transition-colors flex items-center"
+                            onClick={handleExportToExcel}
+                        >
+                            تصدير إلى إكسل
                         </button>
                         <div className="relative">
                             <button
@@ -304,7 +335,7 @@ const Dashboard = () => {
                                 placeholder="ابحث باسم المنتج / الحالة"
                                 className="bg-gray-100 text-gray-700 px-4 py-2 pr-10 rounded-lg w-full md:w-auto focus:outline-none focus:ring-2 focus:ring-red-500 text-right"
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onChange={handleSearchChange}
                             />
                             <IoSearchOutline className="absolute right-3 text-gray-400" />
                         </div>
@@ -372,14 +403,6 @@ const Dashboard = () => {
                                                         <IoPencilOutline className="w-5 h-5 ml-2 text-gray-500" />
                                                         تعديل المنتج
                                                     </button>
-                                                    <button className="flex items-center w-full text-right px-4 py-2 hover:bg-gray-100" onClick={() => handleOpenEditStock(product)}>
-                                                        <IoPencilOutline className="w-5 h-5 ml-2 text-gray-500" />
-                                                        تعديل المخزون
-                                                    </button>
-                                                    <button className="flex items-center w-full text-right px-4 py-2 hover:bg-gray-100" onClick={() => handleOpenEditPrice(product)}>
-                                                        <IoPencilOutline className="w-5 h-5 ml-2 text-gray-500" />
-                                                        تعديل السعر
-                                                    </button>
                                                     <button className="flex items-center w-full text-right px-4 py-2 text-red-600 hover:bg-red-50" onClick={() => handleOpenDeleteModal(product)}>
                                                         <IoTrashOutline className="w-5 h-5 ml-2 text-red-600" />
                                                         حذف المنتج
@@ -394,7 +417,15 @@ const Dashboard = () => {
                                         <td className="py-3 px-4 text-sm text-gray-800">{product.originalPrice ? `${product.originalPrice.toLocaleString()}د.ع` : '-'}</td>
                                         <td className="py-3 px-4 text-sm text-gray-800">{product.name}</td>
                                         <td className="py-3 px-4">
-                                            <img src={product.mainImageUrl} alt={product.name} className="w-10 h-10 rounded-md object-cover" />
+                                            <img
+                                                src={
+                                                    product.mainImageUrl && product.mainImageUrl.trim() !== ""
+                                                        ? product.mainImageUrl
+                                                        : product.media?.[0]?.url || "/placeholder.png"
+                                                }
+                                                alt={product.name}
+                                                className="w-10 h-10 rounded-md object-cover"
+                                            />
                                         </td>
                                     </tr>
                                 ))

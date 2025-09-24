@@ -700,16 +700,16 @@ const ProfitsPage = () => {
             <p className="text-gray-600">مراقبة وتحليل أداء المبيعات والأرباح</p>
           </div>
           <div className="flex items-center space-x-4 space-x-reverse no-print">
-            <button
+            {/* <button
               onClick={handleRefresh}
               disabled={refreshing}
               className="flex items-center bg-gray-100 text-gray-700 font-semibold py-3 px-4 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
             >
               <IoRefresh className={`h-5 w-5 ml-2 ${refreshing ? 'animate-spin' : ''}`} />
               تحديث
-            </button>
-            <FilterComponent onFilterChange={handleFilterChange} currentFilter={currentFilter} />
-            <ExportComponent onExport={handleExport} isExporting={isExporting} />
+            </button> */}
+            {/* <FilterComponent onFilterChange={handleFilterChange} currentFilter={currentFilter} /> */}
+            {/* <ExportComponent onExport={handleExport} isExporting={isExporting} /> */}
           </div>
         </div>
 

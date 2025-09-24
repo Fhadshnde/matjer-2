@@ -21,6 +21,7 @@ const CategoriesPage = () => {
     const [expandedCategories, setExpandedCategories] = useState(new Set());
     const [uploadingImage, setUploadingImage] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
+    const token = localStorage.getItem('token');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -47,33 +48,44 @@ const CategoriesPage = () => {
         fetchData();
     }, []);
 
-    const handleAddSection = async (sectionData, imageFile) => {
+    const uploadImage = async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
         try {
-            // First, upload image if provided
-            let imageUrl = null;
-            if (imageFile) {
-                const formData = new FormData();
-                formData.append('file', imageFile);
-                
-                const uploadResponse = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.UPLOAD.IMAGE), formData, {
+            const res = await axios.post(
+                'https://products-api.cbc-apps.net/supplier/upload/image',
+                formData,
+                {
                     headers: {
-                        ...getAuthHeaders(),
+                        Authorization: `Bearer ${token}`,
                         'Content-Type': 'multipart/form-data'
                     }
-                });
-                imageUrl = uploadResponse.data.url;
+                }
+            );
+            return res.data.url;
+        } catch (err) {
+            console.error('خطأ رفع الصورة:', err.response || err);
+            return null;
+        }
+    };
+
+    const handleAddSection = async (sectionData, imageFile) => {
+        try {
+            let imageUrl = '';
+            if (imageFile) {
+                imageUrl = await uploadImage(imageFile);
+                if (!imageUrl) {
+                    return { success: false, message: 'فشل في رفع الصورة' };
+                }
             }
-
-            // Create section with image URL
-            const sectionPayload = {
-                name: sectionData.name,
-                description: sectionData.description,
-                categoryId: sectionData.categoryId,
-                image: imageUrl
-            };
-
-            const response = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.ADD), sectionPayload, {
-                headers: getAuthHeaders()
+            
+            const payload = { ...sectionData, image: imageUrl };
+            
+            await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.ADD), payload, {
+                headers: {
+                    ...getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                }
             });
             
             const fetchResponse = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.LIST), {
@@ -91,30 +103,21 @@ const CategoriesPage = () => {
 
     const handleAddCategory = async (categoryData, imageFile) => {
         try {
-            // First, upload image if provided
-            let imageUrl = null;
+            let imageUrl = '';
             if (imageFile) {
-                const formData = new FormData();
-                formData.append('file', imageFile);
-                
-                const uploadResponse = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.UPLOAD.IMAGE), formData, {
-                    headers: {
-                        ...getAuthHeaders(),
-                        'Content-Type': 'multipart/form-data'
-                    }
-                });
-                imageUrl = uploadResponse.data.url;
+                imageUrl = await uploadImage(imageFile);
+                if (!imageUrl) {
+                    return { success: false, message: 'فشل في رفع الصورة' };
+                }
             }
 
-            // Create category with image URL
-            const categoryPayload = {
-                name: categoryData.name,
-                description: categoryData.description,
-                image: imageUrl
-            };
+            const payload = { ...categoryData, image: imageUrl };
 
-            const response = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.CATEGORIES.ADD), categoryPayload, {
-                headers: getAuthHeaders()
+            await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.CATEGORIES.ADD), payload, {
+                headers: {
+                    ...getAuthHeaders(),
+                    'Content-Type': 'application/json'
+                }
             });
             
             const fetchResponse = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.CATEGORIES.LIST), {
@@ -168,13 +171,9 @@ const CategoriesPage = () => {
         }
     };
 
-    const handleDeleteSection = async (sectionId, forceDelete = false) => {
+    const handleDeleteSection = async (sectionId) => {
         try {
-            const url = forceDelete 
-                ? `${getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.DELETE(sectionId))}?force=true`
-                : getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.DELETE(sectionId));
-            
-            const response = await axios.delete(url, {
+            const response = await axios.delete(getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.DELETE(sectionId)), {
                 headers: getAuthHeaders()
             });
             
@@ -184,16 +183,10 @@ const CategoriesPage = () => {
             
             setSectionsData(fetchResponse.data.sections || []);
             setIsDeleteModalOpen(false);
-            
-            const message = forceDelete 
-                ? response.data.message || 'تم حذف القسم مع جميع المنتجات بنجاح'
-                : 'تم حذف القسم بنجاح';
-                
-            return { success: true, message };
+            return { success: true, message: 'تم حذف القسم بنجاح' };
         } catch (error) {
             console.error('Error deleting section:', error);
-            const errorMessage = error.response?.data?.message || 'فشل في حذف القسم';
-            return { success: false, message: errorMessage };
+            return { success: false, message: 'فشل في حذف القسم' };
         }
     };
 
@@ -219,26 +212,18 @@ const CategoriesPage = () => {
     const handleImageUpload = async (file, type, id) => {
         try {
             setUploadingImage(true);
-            const formData = new FormData();
-            formData.append('file', file);
+            const imageUrl = await uploadImage(file);
+            if (!imageUrl) {
+                return { success: false, message: 'فشل في رفع الصورة' };
+            }
 
-            // First upload the image to get the URL
-            const uploadResponse = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.UPLOAD.IMAGE), formData, {
-                headers: {
-                    ...getAuthHeaders(),
-                    'Content-Type': 'multipart/form-data'
-                }
-            });
-
-            const imageUrl = uploadResponse.data.url;
-
-            // Then update the category/section with the image URL
-            const updatePayload = { image: imageUrl };
             const endpoint = type === 'category' 
-                ? getApiUrl(API_CONFIG.ENDPOINTS.CATEGORIES.EDIT(id))
-                : getApiUrl(API_CONFIG.ENDPOINTS.SECTIONS.EDIT(id));
+                ? `categories/${id}`
+                : `sections/${id}`;
 
-            await axios.patch(endpoint, updatePayload, {
+            const payload = { image: imageUrl };
+
+            const response = await axios.patch(getApiUrl(`/supplier/${endpoint}`), payload, {
                 headers: getAuthHeaders()
             });
 
@@ -362,7 +347,12 @@ const CategoriesPage = () => {
                     if (isEdit) {
                         await handleUpdateSection(category.id, formData);
                     } else {
-                        await handleAddSection(formData, selectedFile);
+                        // التعديل هنا: تحويل categoryId إلى رقم صحيح قبل الإرسال
+                        const dataToSend = {
+                            ...formData,
+                            categoryId: parseInt(formData.categoryId)
+                        };
+                        await handleAddSection(dataToSend, selectedFile);
                     }
                 }
                 closeModal();
@@ -710,13 +700,13 @@ const CategoriesPage = () => {
                                     >
                                         <IoPencilOutline className="w-5 h-5" />
                                     </button>
-                                    <button
+                                    {/* <button
                                         className="text-red-500 hover:text-red-700 p-2"
                                         onClick={() => openDeleteModal(category, 'main')}
                                         title="حذف"
                                     >
                                         <IoTrashOutline className="w-5 h-5" />
-                                    </button>
+                                    </button> */}
                                     {category.sectionsCount > 0 && (
                                         <button
                                             className="text-gray-500 hover:text-gray-700 p-2"
@@ -747,13 +737,13 @@ const CategoriesPage = () => {
                                                     >
                                                         <IoPencilOutline className="w-4 h-4" />
                                                     </button>
-                                                    <button
+                                                    {/* <button
                                                         className="text-red-500 hover:text-red-700 p-1"
                                                         onClick={() => openDeleteModal(section, 'sub')}
                                                         title="حذف"
                                                     >
                                                         <IoTrashOutline className="w-4 h-4" />
-                                                    </button>
+                                                    </button> */}
                                                 </div>
                                             </div>
                                         ))}
@@ -772,7 +762,7 @@ const CategoriesPage = () => {
                         <thead>
                             <tr className="border-b border-gray-300">
                                 <th className="py-3 px-4 text-gray-500 font-normal text-sm text-center">الإجراءات</th>
-                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">الصورة</th>
+                                {/* <th className="py-3 px-4 text-gray-500 font-normal text-sm">الصورة</th> */}
                                 <th className="py-3 px-4 text-gray-500 font-normal text-sm">عدد المنتجات</th>
                                 <th className="py-3 px-4 text-gray-500 font-normal text-sm">الفئة</th>
                                 <th className="py-3 px-4 text-gray-500 font-normal text-sm">اسم القسم</th>
@@ -783,13 +773,13 @@ const CategoriesPage = () => {
                                 <tr key={section.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
                                     <td className="py-3 px-4 text-center">
                                         <div className="flex justify-center items-center space-x-2 rtl:space-x-reverse">
-                                            <button
+                                            {/* <button
                                                 className="text-purple-500 hover:text-purple-700 p-1"
                                                 onClick={() => openImageUploadModal(section, 'sub')}
                                                 title="رفع صورة"
                                             >
                                                 <IoImageOutline className="w-5 h-5" />
-                                            </button>
+                                            </button> */}
                                             <button
                                                 className="text-blue-500 hover:text-blue-700 p-1"
                                                 onClick={() => openEditModal(section, 'sub')}
@@ -797,16 +787,16 @@ const CategoriesPage = () => {
                                             >
                                                 <IoPencilOutline className="w-5 h-5" />
                                             </button>
-                                            <button
+                                            {/* <button
                                                 className="text-red-500 hover:text-red-700 p-1"
                                                 onClick={() => openDeleteModal(section, 'sub')}
                                                 title="حذف"
                                             >
                                                 <IoTrashOutline className="w-5 h-5" />
-                                            </button>
+                                            </button> */}
                                         </div>
                                     </td>
-                                    <td className="py-3 px-4">
+                                    {/* <td className="py-3 px-4">
                                         <div className="w-10 h-10 bg-gray-200 rounded-lg flex items-center justify-center">
                                             {section.image ? (
                                                 <img src={section.image} alt={section.name} className="w-10 h-10 rounded-lg object-cover" />
@@ -816,7 +806,7 @@ const CategoriesPage = () => {
                                                 </span>
                                             )}
                                         </div>
-                                    </td>
+                                    </td> */}
                                     <td className="py-3 px-4 text-sm text-gray-800">
                                         <span className="bg-green-100 text-green-600 px-2 py-1 rounded-full text-xs">
                                             {section.productsCount}

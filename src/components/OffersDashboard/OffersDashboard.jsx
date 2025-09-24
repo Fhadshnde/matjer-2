@@ -4,7 +4,6 @@ import { IoAdd, IoEye, IoPencil, IoTrash, IoPause, IoPlay, IoRefresh, IoFilter, 
 import axios from 'axios';
 import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
 
-// Custom Tooltip Components
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
@@ -26,11 +25,9 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-// Stat Card Component
 const StatCard = ({ title, value, change, icon, color, trend, details }) => {
   const isPositive = change >= 0;
   const trendIcon = trend === 'up' ? <IoTrendingUp className="h-4 w-4" /> : <IoTrendingDown className="h-4 w-4" />;
-  
   return (
     <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100">
       <div className="flex items-center justify-between">
@@ -56,7 +53,6 @@ const StatCard = ({ title, value, change, icon, color, trend, details }) => {
   );
 };
 
-// Filter Component
 const FilterComponent = ({ onFilterChange, currentFilter }) => {
   const [isOpen, setIsOpen] = useState(false);
   const filters = [
@@ -65,9 +61,7 @@ const FilterComponent = ({ onFilterChange, currentFilter }) => {
     { value: 'expired', label: 'منتهي', icon: <IoAlertCircle className="w-4 h-4" /> },
     { value: 'scheduled', label: 'مجدول', icon: <IoTime className="w-4 h-4" /> }
   ];
-
   const currentFilterLabel = filters.find(f => f.value === currentFilter)?.label || 'الكل';
-
   return (
     <div className="relative">
       <button
@@ -101,7 +95,6 @@ const FilterComponent = ({ onFilterChange, currentFilter }) => {
   );
 };
 
-// Search Component
 const SearchComponent = ({ onSearchChange, searchTerm }) => {
   return (
     <div className="relative">
@@ -117,17 +110,14 @@ const SearchComponent = ({ onSearchChange, searchTerm }) => {
   );
 };
 
-// Modal Component
 const Modal = ({ isOpen, onClose, children, title, size = "md" }) => {
   if (!isOpen) return null;
-  
   const sizeClasses = {
     sm: "max-w-md",
-    md: "max-w-lg", 
-    lg: "max-w-2xl",
-    xl: "max-w-4xl"
+    md: "max-w-xl",
+    lg: "max-w-4xl",
+    xl: "max-w-6xl"
   };
-
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50" onClick={onClose}>
       <div className={`relative bg-white p-6 rounded-xl shadow-xl w-full ${sizeClasses[size]} mx-auto transform transition-all`} onClick={e => e.stopPropagation()}>
@@ -137,27 +127,35 @@ const Modal = ({ isOpen, onClose, children, title, size = "md" }) => {
             <IoClose className="w-6 h-6" />
           </button>
         </div>
-        {children}
+        <div className="max-h-[80vh] overflow-y-auto">
+          {children}
+        </div>
       </div>
     </div>
   );
 };
 
-// Add/Edit Offer Form Component
-const OfferForm = ({ offer, onSubmit, onClose, isEdit = false }) => {
+const OfferForm = ({ offer, onSubmit, onClose, isEdit = false, categories, products }) => {
   const [formData, setFormData] = useState({
     title: offer?.title || '',
     description: offer?.description || '',
     startDate: offer?.startDate ? new Date(offer.startDate).toISOString().split('T')[0] : '',
     endDate: offer?.endDate ? new Date(offer.endDate).toISOString().split('T')[0] : '',
-    categoryId: offer?.categoryId || 1,
-    productIds: offer?.productIds || [],
+    categoryId: offer?.categoryId || null,
+    productIds: offer?.productIds?.map(id => parseInt(id)) || [],
     discountType: offer?.discountType || 'percentage',
     discountValue: offer?.discountValue || 0,
     isActive: offer?.isActive || false
   });
   const [loading, setLoading] = useState(false);
-
+  const handleProductChange = (productId) => {
+    setFormData(prev => {
+      const newProductIds = prev.productIds.includes(parseInt(productId))
+        ? prev.productIds.filter(id => id !== parseInt(productId))
+        : [...prev.productIds, parseInt(productId)];
+      return { ...prev, productIds: newProductIds };
+    });
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -170,7 +168,6 @@ const OfferForm = ({ offer, onSubmit, onClose, isEdit = false }) => {
       setLoading(false);
     }
   };
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -196,7 +193,6 @@ const OfferForm = ({ offer, onSubmit, onClose, isEdit = false }) => {
           </select>
         </div>
       </div>
-
       <div>
         <label className="block text-gray-700 text-sm font-bold mb-2">الوصف</label>
         <textarea
@@ -206,7 +202,6 @@ const OfferForm = ({ offer, onSubmit, onClose, isEdit = false }) => {
           rows={3}
         />
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-gray-700 text-sm font-bold mb-2">تاريخ البدء</label>
@@ -229,7 +224,70 @@ const OfferForm = ({ offer, onSubmit, onClose, isEdit = false }) => {
           />
         </div>
       </div>
-
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-gray-700 text-sm font-bold mb-2">الفئة</label>
+          <div className="max-h-60 overflow-y-auto p-4 rounded-xl border border-gray-300 bg-white shadow-inner">
+            {categories.length > 0 ? categories.map(category => (
+              <label
+                key={category.id}
+                className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors ${
+                  parseInt(formData.categoryId) === parseInt(category.id) ? 'bg-red-50' : 'hover:bg-gray-100'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="category"
+                  value={category.id}
+                  checked={parseInt(formData.categoryId) === parseInt(category.id)}
+                  onChange={() => setFormData({...formData, categoryId: parseInt(category.id)})}
+                  className="hidden"
+                />
+                <div className={`w-5 h-5 rounded-full border-2 transition-colors duration-200 flex items-center justify-center ml-3 ${
+                  parseInt(formData.categoryId) === parseInt(category.id) ? 'bg-red-500 border-red-500' : 'bg-white border-gray-400'
+                }`}>
+                  {parseInt(formData.categoryId) === parseInt(category.id) && (
+                    <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
+                  )}
+                </div>
+                <span className="text-sm font-medium text-gray-700">{category.name}</span>
+              </label>
+            )) : (
+              <p className="text-sm text-gray-500">لا توجد فئات متاحة.</p>
+            )}
+          </div>
+        </div>
+        <div>
+          <label className="block text-gray-700 text-sm font-bold mb-2">المنتجات</label>
+          <div className="max-h-60 overflow-y-auto p-4 rounded-xl border border-gray-300 bg-white shadow-inner">
+            {products.length > 0 ? products.map(product => (
+              <label
+                key={product.id}
+                className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors ${
+                  formData.productIds.includes(parseInt(product.id)) ? 'bg-red-50' : 'hover:bg-gray-100'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={formData.productIds.includes(parseInt(product.id))}
+                  onChange={() => handleProductChange(product.id)}
+                  className="hidden"
+                />
+                <span className={`w-5 h-5 rounded-md border-2 transition-colors duration-200 flex items-center justify-center ml-3 ${
+                  formData.productIds.includes(parseInt(product.id)) ? 'bg-red-500 border-red-500' : 'bg-white border-gray-400'
+                }`}>
+                  {formData.productIds.includes(parseInt(product.id)) && (
+                    <IoCheckmark className="text-white w-4 h-4" />
+                  )}
+                </span>
+                <span className="text-sm font-medium text-gray-700">{product.name}</span>
+              </label>
+            )) : (
+              <p className="text-sm text-gray-500">لا توجد منتجات متاحة.</p>
+            )}
+          </div>
+        </div>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-gray-700 text-sm font-bold mb-2">قيمة الخصم</label>
@@ -241,28 +299,7 @@ const OfferForm = ({ offer, onSubmit, onClose, isEdit = false }) => {
             required
           />
         </div>
-        <div>
-          <label className="block text-gray-700 text-sm font-bold mb-2">معرف الفئة</label>
-          <input
-            type="number"
-            value={formData.categoryId}
-            onChange={(e) => setFormData({...formData, categoryId: e.target.value})}
-            className="w-full py-3 px-4 bg-gray-100 text-gray-800 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500"
-          />
-        </div>
       </div>
-
-      <div>
-        <label className="block text-gray-700 text-sm font-bold mb-2">معرفات المنتجات (مفصولة بفاصلة)</label>
-        <input
-          type="text"
-          value={formData.productIds.join(',')}
-          onChange={(e) => setFormData({...formData, productIds: e.target.value.split(',').filter(id => id.trim())})}
-          className="w-full py-3 px-4 bg-gray-100 text-gray-800 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500"
-          placeholder="1,2,3,4"
-        />
-      </div>
-
       {isEdit && (
         <div className="flex items-center">
           <input
@@ -274,7 +311,6 @@ const OfferForm = ({ offer, onSubmit, onClose, isEdit = false }) => {
           <label className="text-gray-700 text-sm font-bold mr-2">تفعيل العرض</label>
         </div>
       )}
-
       <div className="flex justify-end space-x-4 space-x-reverse mt-6">
         <button
           type="button"
@@ -295,7 +331,6 @@ const OfferForm = ({ offer, onSubmit, onClose, isEdit = false }) => {
   );
 };
 
-// Performance Chart Component
 const PerformanceChart = ({ data, title }) => {
   return (
     <div className="bg-white p-6 rounded-xl shadow-lg">
@@ -319,72 +354,59 @@ const PerformanceChart = ({ data, title }) => {
 
 const OffersDashboard = () => {
   const [offersData, setOffersData] = useState([]);
-  const [dashboardStats, setDashboardStats] = useState({ 
-    totalOffers: 0, 
-    activeOffers: 0, 
-    expiredOffers: 0, 
-    upcomingOffers: 0 
+  const [dashboardStats, setDashboardStats] = useState({
+    totalOffers: 0,
+    activeOffers: 0,
+    expiredOffers: 0,
+    upcomingOffers: 0
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-  
-  // Modal states
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [loadingDropdownData, setLoadingDropdownData] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isPerformanceModalOpen, setIsPerformanceModalOpen] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState(null);
-  
-  // UI states
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [currentFilter, setCurrentFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [performanceData, setPerformanceData] = useState([]);
-
   const fetchOffers = async () => {
     try {
       setRefreshing(true);
-      
-      // Check if token exists
       const token = localStorage.getItem('token');
       if (!token) {
         setError('لم يتم العثور على رمز المصادقة. يرجى تسجيل الدخول مرة أخرى.');
         return;
       }
-      
-      console.log('Fetching offers with token:', token.substring(0, 20) + '...');
-      console.log('API URL:', getApiUrl(API_CONFIG.ENDPOINTS.OFFERS.LIST));
-      
-      const response = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.OFFERS.LIST), { 
-        headers: getAuthHeaders() 
+      const response = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.OFFERS.LIST), {
+        headers: getAuthHeaders()
       });
-      
-      console.log('Offers response:', response.data);
-      
       const { offers, totalOffers, activeOffers, expiredOffers, upcomingOffers } = response.data;
-      
       const processedOffers = offers.map(offer => {
-        // معالجة البيانات الافتراضية
         const discountType = offer.discountType || 'percentage';
         const discountValue = offer.discountValue || 0;
         const productsCount = offer.productsCount || 0;
-        
         return {
           ...offer,
+          categoryId: offer.category?.id || null,
+          productIds: offer.products?.map(p => p.id) || [],
           status: offer.isActive ? 'نشط' : (new Date(offer.endDate) < new Date() ? 'منتهي' : 'مجدول'),
-          period: `${new Date(offer.startDate).toLocaleDateString('ar-SA')} - ${new Date(offer.endDate).toLocaleDateString('ar-SA')}`,
+          period: `${new Date(offer.startDate).toLocaleDateString()} - ${new Date(offer.endDate).toLocaleDateString()}`,
           name: offer.title || 'بدون عنوان',
           type: discountType === 'percentage' ? 'نسبة مئوية' : 'قيمة ثابتة',
           scope: productsCount > 0 ? `${productsCount} منتج` : 'كل المنتجات',
-          value: discountType === 'percentage' ? 
-            `${discountValue}%` : 
+          value: discountType === 'percentage' ?
+            `${discountValue}%` :
             `${discountValue} د.ع`,
           daysLeft: Math.ceil((new Date(offer.endDate) - new Date()) / (1000 * 60 * 60 * 24))
         };
       });
-      
       setOffersData(processedOffers);
       setDashboardStats({ totalOffers, activeOffers, expiredOffers, upcomingOffers });
       setError(null);
@@ -398,10 +420,23 @@ const OffersDashboard = () => {
     }
   };
 
+  const fetchDropdownData = async () => {
+    try {
+      const headers = getAuthHeaders();
+      const categoriesRes = await axios.get(getApiUrl('/supplier/categories'), { headers });
+      const productsRes = await axios.get(getApiUrl('/supplier/products?sortBy=createdAt&sortOrder=desc'), { headers });
+      setCategories(categoriesRes.data.categories);
+      setProducts(productsRes.data.products);
+      setLoadingDropdownData(false);
+    } catch (err) {
+      console.error("Failed to fetch categories/products:", err);
+      setLoadingDropdownData(false);
+    }
+  };
   useEffect(() => {
     fetchOffers();
+    fetchDropdownData();
   }, []);
-
   const handleAddOffer = async (formData) => {
     try {
       const newOfferBody = {
@@ -410,21 +445,14 @@ const OffersDashboard = () => {
         startDate: formData.startDate,
         endDate: formData.endDate,
         categoryId: formData.categoryId,
-        sectionId: formData.sectionId,
-        productIds: formData.productIds.map(id => parseInt(id, 10)),
+        sectionId: 0,
+        productIds: formData.productIds,
         discountType: formData.discountType,
         discountValue: parseFloat(formData.discountValue)
       };
-      
-      console.log('Creating offer with data:', newOfferBody);
-      console.log('API URL:', getApiUrl(API_CONFIG.ENDPOINTS.OFFERS.ADD));
-      console.log('Headers:', getAuthHeaders());
-      
-      const response = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.OFFERS.ADD), newOfferBody, { 
-        headers: getAuthHeaders() 
+      const response = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.OFFERS.ADD), newOfferBody, {
+        headers: getAuthHeaders()
       });
-      
-      console.log('Offer created successfully:', response.data);
       fetchOffers();
     } catch (err) {
       console.error('Error creating offer:', err);
@@ -432,7 +460,6 @@ const OffersDashboard = () => {
       throw new Error('فشل في إنشاء العرض: ' + (err.response?.data?.message || err.message));
     }
   };
-
   const handleEditOffer = async (formData) => {
     try {
       const updatedOfferBody = {
@@ -440,17 +467,13 @@ const OffersDashboard = () => {
         description: formData.description,
         isActive: formData.isActive,
         discountType: formData.discountType,
-        discountValue: parseFloat(formData.discountValue)
+        discountValue: parseFloat(formData.discountValue),
+        categoryId: formData.categoryId,
+        productIds: formData.productIds
       };
-      
-      console.log('Updating offer with data:', updatedOfferBody);
-      console.log('API URL:', getApiUrl(API_CONFIG.ENDPOINTS.OFFERS.EDIT(selectedOffer.id)));
-      
-      await axios.patch(getApiUrl(API_CONFIG.ENDPOINTS.OFFERS.EDIT(selectedOffer.id)), updatedOfferBody, { 
-        headers: getAuthHeaders() 
+      await axios.patch(getApiUrl(API_CONFIG.ENDPOINTS.OFFERS.EDIT(selectedOffer.id)), updatedOfferBody, {
+        headers: getAuthHeaders()
       });
-      
-      console.log('Offer updated successfully');
       fetchOffers();
     } catch (err) {
       console.error('Error updating offer:', err);
@@ -458,33 +481,30 @@ const OffersDashboard = () => {
       throw new Error('فشل في تعديل العرض: ' + (err.response?.data?.message || err.message));
     }
   };
-
   const handleDeleteOffer = async () => {
     try {
-      await axios.delete(getApiUrl(API_CONFIG.ENDPOINTS.OFFERS.DELETE(selectedOffer.id)), { 
-        headers: getAuthHeaders() 
+      await axios.delete(getApiUrl(API_CONFIG.ENDPOINTS.OFFERS.DELETE(selectedOffer.id)), {
+        headers: getAuthHeaders()
       });
       fetchOffers();
     } catch (err) {
       throw new Error('فشل في حذف العرض');
     }
   };
-
   const handleToggleOfferStatus = async () => {
     try {
-      await axios.patch(getApiUrl(API_CONFIG.ENDPOINTS.OFFERS.TOGGLE_STATUS(selectedOffer.id)), null, { 
-        headers: getAuthHeaders() 
+      await axios.patch(getApiUrl(API_CONFIG.ENDPOINTS.OFFERS.TOGGLE_STATUS(selectedOffer.id)), null, {
+        headers: getAuthHeaders()
       });
       fetchOffers();
     } catch (err) {
       throw new Error('فشل في تغيير حالة العرض');
     }
   };
-
   const fetchOfferPerformance = async (offerId) => {
     try {
-      const response = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.OFFERS.PERFORMANCE(offerId)), { 
-        headers: getAuthHeaders() 
+      const response = await axios.get(getApiUrl(API_CONFIG.ENDPOINTS.OFFERS.PERFORMANCE(offerId)), {
+        headers: getAuthHeaders()
       });
       const { performance } = response.data;
       setPerformanceData([
@@ -498,32 +518,27 @@ const OffersDashboard = () => {
     }
   };
 
-  // Modal handlers
   const openDetailsModal = (offer) => {
     setSelectedOffer(offer);
     setIsDetailsModalOpen(true);
     setActiveDropdown(null);
   };
-
   const openEditModal = (offer) => {
     setSelectedOffer(offer);
     setIsEditModalOpen(true);
     setActiveDropdown(null);
   };
-
   const openDeleteModal = (offer) => {
     setSelectedOffer(offer);
     setIsDeleteModalOpen(true);
     setActiveDropdown(null);
   };
-
   const openPerformanceModal = (offer) => {
     setSelectedOffer(offer);
     fetchOfferPerformance(offer.id);
     setIsPerformanceModalOpen(true);
     setActiveDropdown(null);
   };
-
   const closeModal = () => {
     setIsAddModalOpen(false);
     setIsEditModalOpen(false);
@@ -533,30 +548,26 @@ const OffersDashboard = () => {
     setSelectedOffer(null);
     setPerformanceData([]);
   };
-
   const toggleDropdown = (index) => {
     setActiveDropdown(activeDropdown === index ? null : index);
   };
 
-  // Filter and search
   const filteredOffers = offersData.filter(offer => {
-    const matchesFilter = currentFilter === 'all' || 
+    const matchesFilter = currentFilter === 'all' ||
       (currentFilter === 'active' && offer.status === 'نشط') ||
       (currentFilter === 'expired' && offer.status === 'منتهي') ||
       (currentFilter === 'scheduled' && offer.status === 'مجدول');
-    
     const matchesSearch = offer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       offer.description.toLowerCase().includes(searchTerm.toLowerCase());
-    
     return matchesFilter && matchesSearch;
   });
 
-  if (loading) {
+  if (loading || loadingDropdownData) {
     return (
       <div className="bg-gray-100 min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">جاري تحميل العروض...</p>
+          <p className="text-gray-600 text-lg">جاري تحميل البيانات...</p>
         </div>
       </div>
     );
@@ -569,7 +580,7 @@ const OffersDashboard = () => {
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
           <p className="text-red-600 text-xl mb-4">حدث خطأ في تحميل البيانات</p>
           <p className="text-gray-600 mb-6">{error}</p>
-          <button 
+          <button
             onClick={fetchOffers}
             className="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors"
           >
@@ -583,7 +594,6 @@ const OffersDashboard = () => {
   return (
     <div className="rtl:text-right font-sans bg-gray-100 min-h-screen p-6">
       <div className="container mx-auto max-w-7xl">
-        {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">لوحة العروض</h1>
@@ -607,8 +617,6 @@ const OffersDashboard = () => {
             </button>
           </div>
         </div>
-
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
             title="إجمالي العروض"
@@ -647,8 +655,6 @@ const OffersDashboard = () => {
             details="عروض قادمة"
           />
         </div>
-
-        {/* Filters and Search */}
         <div className="bg-white p-6 rounded-xl shadow-lg mb-8">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
             <div className="flex flex-col md:flex-row gap-4 items-center">
@@ -660,8 +666,6 @@ const OffersDashboard = () => {
             </div>
           </div>
         </div>
-
-        {/* Offers Table */}
         <div className="bg-white p-6 rounded-xl shadow-lg">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
@@ -681,8 +685,8 @@ const OffersDashboard = () => {
                   <tr key={offer.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="relative inline-block text-right">
-                        <button 
-                          onClick={() => toggleDropdown(index)} 
+                        <button
+                          onClick={() => toggleDropdown(index)}
                           className="text-gray-500 hover:text-gray-700 focus:outline-none"
                         >
                           <IoFilter className="h-5 w-5 transform rotate-90" />
@@ -702,10 +706,10 @@ const OffersDashboard = () => {
                                 <IoStatsChart className="w-4 h-4 ml-2" />
                                 مشاهدة الأداء
                               </button>
-                              <button onClick={() => handleToggleOfferStatus()} className="flex items-center w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                              {/* <button onClick={() => handleToggleOfferStatus()} className="flex items-center w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                 {offer.status === 'نشط' ? <IoPause className="w-4 h-4 ml-2" /> : <IoPlay className="w-4 h-4 ml-2" />}
                                 {offer.status === 'نشط' ? 'إيقاف العرض' : 'تفعيل العرض'}
-                              </button>
+                              </button> */}
                               <button onClick={() => openDeleteModal(offer)} className="flex items-center w-full text-right px-4 py-2 text-sm text-red-600 hover:bg-red-50">
                                 <IoTrash className="w-4 h-4 ml-2" />
                                 حذف العرض
@@ -751,7 +755,6 @@ const OffersDashboard = () => {
               </tbody>
             </table>
           </div>
-
           {filteredOffers.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               <IoAlertCircle className="w-12 h-12 mx-auto mb-4 text-gray-300" />
@@ -759,16 +762,12 @@ const OffersDashboard = () => {
             </div>
           )}
         </div>
-
-        {/* Modals */}
-        <Modal isOpen={isAddModalOpen} onClose={closeModal} title="إنشاء عرض جديد" size="lg">
-          <OfferForm onSubmit={handleAddOffer} onClose={closeModal} />
+        <Modal isOpen={isAddModalOpen} onClose={closeModal} title="إنشاء عرض جديد" size="md">
+          <OfferForm onSubmit={handleAddOffer} onClose={closeModal} categories={categories} products={products} />
         </Modal>
-
-        <Modal isOpen={isEditModalOpen} onClose={closeModal} title="تعديل العرض" size="lg">
-          <OfferForm offer={selectedOffer} onSubmit={handleEditOffer} onClose={closeModal} isEdit={true} />
+        <Modal isOpen={isEditModalOpen} onClose={closeModal} title="تعديل العرض" size="md">
+          <OfferForm offer={selectedOffer} onSubmit={handleEditOffer} onClose={closeModal} isEdit={true} categories={categories} products={products} />
         </Modal>
-
         <Modal isOpen={isDetailsModalOpen} onClose={closeModal} title="تفاصيل العرض" size="md">
           {selectedOffer && (
             <div className="space-y-4 text-right">
@@ -809,11 +808,9 @@ const OffersDashboard = () => {
             </div>
           )}
         </Modal>
-
         <Modal isOpen={isPerformanceModalOpen} onClose={closeModal} title="أداء العرض" size="lg">
           <PerformanceChart data={performanceData} title={`أداء العرض: ${selectedOffer?.name}`} />
         </Modal>
-
         <Modal isOpen={isDeleteModalOpen} onClose={closeModal} title="حذف العرض" size="sm">
           <div className="text-center">
             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
@@ -846,5 +843,4 @@ const OffersDashboard = () => {
     </div>
   );
 };
-
 export default OffersDashboard;
