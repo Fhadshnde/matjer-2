@@ -44,30 +44,29 @@ const Dashboard = () => {
                 return 'bg-gray-100 text-gray-700';
         }
     };
-
     const fetchProducts = async (page = 1, limit = pagination.limit, search = searchTerm) => {
         try {
             setLoading(true);
-            const response = await axios.get(getApiUrl(`${API_CONFIG.ENDPOINTS.PRODUCTS.LIST}?page=${page}&limit=${limit}&search=${search}`), {
+            const response = await axios.get(`https://products-api.cbc-apps.net/supplier/products?page=${page}&limit=${limit}&search=${search}`, {
                 headers: getAuthHeaders()
             });
             const data = response.data;
             setProducts(data.products || []);
             setPagination(data.pagination);
-
-            // Calculate statistics
-            const totalProducts = data.pagination.total || 0;
+    
+            // إحصائيات المنتجات
+            const totalProducts = data.pagination?.total || 0;
             const lowStockProducts = data.products?.filter(p => p.stock < 10).length || 0;
             const outOfStockProducts = data.products?.filter(p => p.stock === 0).length || 0;
             const abandonedProducts = data.products?.filter(p => p.stock > 0 && p.stock < 5).length || 0;
-
+    
             setStats({
                 totalProducts,
                 lowStockProducts,
                 outOfStockProducts,
                 abandonedProducts
             });
-
+    
             setError(null);
         } catch (error) {
             console.error('Error fetching products:', error);
@@ -77,6 +76,7 @@ const Dashboard = () => {
             setLoading(false);
         }
     };
+    
 
     useEffect(() => {
         fetchProducts(pagination.page, pagination.limit, searchTerm);
