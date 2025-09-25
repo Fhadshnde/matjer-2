@@ -28,6 +28,7 @@ import TicketsPage from './components/Settings/TicketsPage';
 import StoreInfoPage from './components/Settings/StoreInfoPage';
 import Sections from './components/Sections/Sections';
 import Login from './components/Login/Login';
+import AbandonedPage from './components/AbandonedPage/AbandonedPage';
 
 const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -80,6 +81,7 @@ const App = () => {
         <Route path="/tickets" element={<ProtectedRoute><TicketsPage /></ProtectedRoute>} />
         <Route path="/store-info" element={<ProtectedRoute><StoreInfoPage /></ProtectedRoute>} />
         <Route path="/sections" element={<ProtectedRoute><Sections /></ProtectedRoute>} />
+        <Route path="/abandoned-page" element={<ProtectedRoute><AbandonedPage /></ProtectedRoute>} />
       </Routes>
     </div>
   );
