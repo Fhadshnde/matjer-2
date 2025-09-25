@@ -78,6 +78,16 @@ const Td = ({ children }) => (
   <td className="p-3 text-sm text-gray-700">{children}</td>
 );
 
+const statusMap = {
+  'الكل': 'الكل',
+  'PROCESSING': 'قيد المعالجة',
+  'SHIPPED': 'تم الشحن',
+  'DELIVERING': 'قيد التوصيل',
+  'DELIVERED': 'تم التسليم',
+  'CANCELLED': 'ملغي',
+  'RETURNED': 'مرتجع',
+};
+
 const Dropdown = ({ options, selected, onSelect, placeholder, className }) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownOptions = options.includes('الكل') ? options : ['الكل', ...options];
@@ -88,7 +98,7 @@ const Dropdown = ({ options, selected, onSelect, placeholder, className }) => {
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full px-4 py-2 text-sm font-semibold text-gray-700 bg-white border rounded-lg flex items-center justify-between transition ${isOpen ? 'border-red-500' : 'border-gray-300'}`}
       >
-        <span>{selected || placeholder}</span>
+        <span>{selected ? statusMap[selected] : placeholder}</span>
         <FaChevronDown className={`transform transition-transform ${isOpen ? 'rotate-180' : 'rotate-0'}`} />
       </button>
       {isOpen && (
@@ -102,7 +112,7 @@ const Dropdown = ({ options, selected, onSelect, placeholder, className }) => {
               }}
               className={`w-full text-right px-4 py-2 text-sm ${option === selected ? 'bg-red-500 text-white' : 'text-gray-700 hover:bg-gray-100'}`}
             >
-              {option}
+              {statusMap[option]}
             </button>
           ))}
         </div>
