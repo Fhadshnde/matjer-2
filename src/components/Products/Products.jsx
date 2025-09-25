@@ -162,9 +162,9 @@ const Dashboard = () => {
     const handleExportToExcel = () => {
         // Prepare the data for export
         const dataToExport = products.map(product => ({
-            'اسم المنتج': product.name,
+            'اسم المنتج': product.originalPrice,
             'سعر البيع': product.price,
-            'سعر الجملة': product.originalPrice,
+            'سعر الجملة': product.wholesalePrice,
             'الكمية': product.stock,
             'الحالة': product.status,
             'القسم': product.category?.name || '',
@@ -348,8 +348,8 @@ const Dashboard = () => {
                         <thead>
                             <tr className="border-b border-gray-300">
                                 <th className="py-3 px-4 text-gray-500 font-normal text-sm">الإجراءات</th>
+                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">الفئة</th>
                                 <th className="py-3 px-4 text-gray-500 font-normal text-sm">القسم</th>
-                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">الحالة</th>
                                 <th className="py-3 px-4 text-gray-500 font-normal text-sm">الكمية</th>
                                 <th className="py-3 px-4 text-gray-500 font-normal text-sm">سعر البيع</th>
                                 <th className="py-3 px-4 text-gray-500 font-normal text-sm">سعر الجملة</th>
@@ -413,8 +413,8 @@ const Dashboard = () => {
                                         <td className="py-3 px-4 text-sm text-gray-800">{product.category?.name || ''}</td>
                                         <td className="py-3 px-4 text-sm text-gray-800">{product.section?.name || ''}</td>
                                         <td className="py-3 px-4 text-sm text-gray-800">{product.stock}</td>
-                                        <td className="py-3 px-4 text-sm text-gray-800">{product.price?.toLocaleString()}د.ع</td>
-                                        <td className="py-3 px-4 text-sm text-gray-800">{product.originalPrice ? `${product.originalPrice.toLocaleString()}د.ع` : '-'}</td>
+                                        <td className="py-3 px-4 text-sm text-gray-800">{product.originalPrice?.toLocaleString()}د.ع</td>
+                                        <td className="py-3 px-4 text-sm text-gray-800">{product.wholesalePrice ? `${product.wholesalePrice.toLocaleString()}د.ع` : '-'}</td>
                                         <td className="py-3 px-4 text-sm text-gray-800">{product.name}</td>
                                         <td className="py-3 px-4">
                                             <img
