@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IoChevronUpOutline, IoChevronDownOutline, IoSearchOutline, IoAdd, IoEllipsisHorizontal, IoEyeOutline, IoPencilOutline, IoTrashOutline } from 'react-icons/io5';
+import { IoChevronUpOutline, IoChevronDownOutline, IoSearchOutline, IoAdd } from 'react-icons/io5';
 import axios from 'axios';
 import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
 import * as XLSX from 'xlsx'; // Import the xlsx library
@@ -11,7 +11,6 @@ const Dashboard = () => {
     const [isEditPriceModalOpen, setIsEditPriceModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isProductDetailsModalOpen, setIsProductDetailsModalOpen] = useState(false);
-    const [isMoreActionsDropdownOpen, setIsMoreActionsDropdownOpen] = useState(null);
     const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [products, setProducts] = useState([]);
@@ -44,6 +43,7 @@ const Dashboard = () => {
                 return 'bg-gray-100 text-gray-700';
         }
     };
+
     const fetchProducts = async (page = 1, limit = pagination.limit, search = searchTerm) => {
         try {
             setLoading(true);
@@ -53,20 +53,20 @@ const Dashboard = () => {
             const data = response.data;
             setProducts(data.products || []);
             setPagination(data.pagination);
-    
+
             // إحصائيات المنتجات
             const totalProducts = data.pagination?.total || 0;
             const lowStockProducts = data.products?.filter(p => p.stock < 10).length || 0;
             const outOfStockProducts = data.products?.filter(p => p.stock === 0).length || 0;
             const abandonedProducts = data.products?.filter(p => p.stock > 0 && p.stock < 5).length || 0;
-    
+
             setStats({
                 totalProducts,
                 lowStockProducts,
                 outOfStockProducts,
                 abandonedProducts
             });
-    
+
             setError(null);
         } catch (error) {
             console.error('Error fetching products:', error);
@@ -76,7 +76,6 @@ const Dashboard = () => {
             setLoading(false);
         }
     };
-    
 
     useEffect(() => {
         fetchProducts(pagination.page, pagination.limit, searchTerm);
@@ -101,7 +100,6 @@ const Dashboard = () => {
     const handleOpenProductDetails = (product) => {
         setSelectedProduct(product);
         setIsProductDetailsModalOpen(true);
-        setIsMoreActionsDropdownOpen(false);
     };
 
     const handleOpenEditProduct = (product) => {
@@ -112,7 +110,6 @@ const Dashboard = () => {
         setSelectedProduct(product);
         setStockToUpdate(product.stock);
         setIsEditStockModalOpen(true);
-        setIsMoreActionsDropdownOpen(false);
     };
 
     const handleUpdateStock = async () => {
@@ -150,13 +147,11 @@ const Dashboard = () => {
 
     const handleOpenEditPrice = () => {
         setIsEditPriceModalOpen(true);
-        setIsMoreActionsDropdownOpen(false);
     };
 
     const handleOpenDeleteModal = (product) => {
         setSelectedProduct(product);
         setIsDeleteModalOpen(true);
-        setIsMoreActionsDropdownOpen(false);
     };
 
     const handleExportToExcel = () => {
@@ -344,94 +339,120 @@ const Dashboard = () => {
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="min-w-full text-right bg-white">
-                        <thead>
-                            <tr className="border-b border-gray-300">
-                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">الإجراءات</th>
-                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">الفئة</th>
-                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">القسم</th>
-                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">الكمية</th>
-                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">سعر البيع</th>
-                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">سعر الجملة</th>
-                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">اسم المنتج</th>
-                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">صورة المنتج</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {loading ? (
-                                <tr>
-                                    <td colSpan="8" className="p-8 text-center">
-                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                                        <p className="text-gray-600">جاري تحميل المنتجات...</p>
-                                    </td>
-                                </tr>
-                            ) : error ? (
-                                <tr>
-                                    <td colSpan="8" className="p-8 text-center">
-                                        <p className="text-red-600 mb-4">{error}</p>
-                                        <button
-                                            onClick={() => fetchProducts()}
-                                            className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
-                                        >
-                                            إعادة المحاولة
-                                        </button>
-                                    </td>
-                                </tr>
-                            ) : products.length === 0 ? (
-                                <tr>
-                                    <td colSpan="8" className="p-8 text-center text-gray-500">
-                                        لا توجد منتجات
-                                    </td>
-                                </tr>
-                            ) : (
-                                products.map((product) => (
-                                    <tr key={product.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
-                                        <td className="py-3 px-4 relative">
-                                            <button
-                                                className="text-gray-500 hover:text-gray-900"
-                                                onClick={() => setIsMoreActionsDropdownOpen(isMoreActionsDropdownOpen === product.id ? null : product.id)}
-                                            >
-                                                <IoEllipsisHorizontal className="w-5 h-5" />
-                                            </button>
-                                            {isMoreActionsDropdownOpen === product.id && (
-                                                <div className="absolute left-5 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-10 text-sm text-gray-700">
-                                                    <button className="flex items-center w-full text-right px-4 py-2 hover:bg-gray-100" onClick={() => handleOpenProductDetails(product)}>
-                                                        <IoEyeOutline className="w-5 h-5 ml-2 text-gray-500" />
-                                                        عرض التفاصيل
-                                                    </button>
-                                                    <button className="flex items-center w-full text-right px-4 py-2 hover:bg-gray-100" onClick={() => handleOpenEditProduct(product)}>
-                                                        <IoPencilOutline className="w-5 h-5 ml-2 text-gray-500" />
-                                                        تعديل المنتج
-                                                    </button>
-                                                    <button className="flex items-center w-full text-right px-4 py-2 text-red-600 hover:bg-red-50" onClick={() => handleOpenDeleteModal(product)}>
-                                                        <IoTrashOutline className="w-5 h-5 ml-2 text-red-600" />
-                                                        حذف المنتج
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </td>
-                                        <td className="py-3 px-4 text-sm text-gray-800">{product.category?.name || ''}</td>
-                                        <td className="py-3 px-4 text-sm text-gray-800">{product.section?.name || ''}</td>
-                                        <td className="py-3 px-4 text-sm text-gray-800">{product.stock}</td>
-                                        <td className="py-3 px-4 text-sm text-gray-800">{product.originalPrice?.toLocaleString()}د.ع</td>
-                                        <td className="py-3 px-4 text-sm text-gray-800">{product.wholesalePrice ? `${product.wholesalePrice.toLocaleString()}د.ع` : '-'}</td>
-                                        <td className="py-3 px-4 text-sm text-gray-800">{product.name}</td>
-                                        <td className="py-3 px-4">
-                                            <img
-                                                src={
-                                                    product.mainImageUrl && product.mainImageUrl.trim() !== ""
-                                                        ? product.mainImageUrl
-                                                        : product.media?.[0]?.url || "/placeholder.png"
-                                                }
-                                                alt={product.name}
-                                                className="w-10 h-10 rounded-md object-cover"
-                                            />
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                <table className="min-w-full bg-white" dir="rtl">
+  <thead>
+    <tr className="border-b border-gray-300">
+      <th className="py-3 px-4 text-gray-500 font-normal text-sm">صورة المنتج</th>
+      <th className="py-3 px-4 text-gray-500 font-normal text-sm">اسم المنتج</th>
+      <th className="py-3 px-4 text-gray-500 font-normal text-sm">سعر الجملة</th>
+      <th className="py-3 px-4 text-gray-500 font-normal text-sm">سعر البيع</th>
+      <th className="py-3 px-4 text-gray-500 font-normal text-sm">الكمية</th>
+      <th className="py-3 px-4 text-gray-500 font-normal text-sm">القسم</th>
+      <th className="py-3 px-4 text-gray-500 font-normal text-sm">الفئة</th>
+      <th className="py-3 px-4 text-gray-500 font-normal text-sm">الإجراءات</th>
+    </tr>
+  </thead>
+  <tbody>
+    {loading ? (
+      <tr>
+        <td colSpan="8" className="p-8 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">جاري تحميل المنتجات...</p>
+        </td>
+      </tr>
+    ) : error ? (
+      <tr>
+        <td colSpan="8" className="p-8 text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button
+            onClick={() => fetchProducts()}
+            className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
+          >
+            إعادة المحاولة
+          </button>
+        </td>
+      </tr>
+    ) : products.length === 0 ? (
+      <tr>
+        <td colSpan="8" className="p-8 text-center text-gray-500">
+          لا توجد منتجات
+        </td>
+      </tr>
+    ) : (
+      products.map((product) => (
+        <tr
+          key={product.id}
+          className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
+        >
+          {/* عمود صورة المنتج */}
+          <td className="py-3 px-4">
+            <img
+              src={
+                product.mainImageUrl && product.mainImageUrl.trim() !== ''
+                  ? product.mainImageUrl
+                  : product.media?.[0]?.url || '/placeholder.png'
+              }
+              alt={product.name}
+              className="w-10 h-10 rounded-md object-cover"
+            />
+          </td>
+
+          {/* عمود اسم المنتج */}
+          <td className="py-3 px-4 text-sm text-gray-800">{product.name}</td>
+
+          {/* عمود سعر الجملة */}
+          <td className="py-3 px-4 text-sm text-gray-800">
+            {product.wholesalePrice
+              ? `${product.wholesalePrice.toLocaleString()} د.ع`
+              : '-'}
+          </td>
+
+          {/* عمود سعر البيع */}
+          <td className="py-3 px-4 text-sm text-gray-800">
+            {product.originalPrice?.toLocaleString()} د.ع
+          </td>
+
+          {/* عمود الكمية */}
+          <td className="py-3 px-4 text-sm text-gray-800">{product.stock}</td>
+
+          {/* عمود القسم */}
+          <td className="py-3 px-4 text-sm text-gray-800">
+            {product.section?.name || ''}
+          </td>
+
+          {/* عمود الفئة */}
+          <td className="py-3 px-4 text-sm text-gray-800">
+            {product.category?.name || ''}
+          </td>
+
+          {/* عمود الإجراءات */}
+          <td className="py-3 px-4">
+            <div className="flex items-center space-x-2">
+              <button
+                className=" bg-gray-500 text-white ml-2 px-3 py-1 rounded-full text-sm  transition-colors"
+                onClick={() => handleOpenProductDetails(product)}
+              >
+                عرض
+              </button>
+              <button
+                className="bg-blue-500 text-white px-3 py-1 rounded-full text-sm transition-colors"
+                onClick={() => handleOpenEditProduct(product)}
+              >
+                تعديل
+              </button>
+              <button
+                className="bg-red-500 text-white px-3 py-1 rounded-full text-sm  transition-colors"
+                onClick={() => handleOpenDeleteModal(product)}
+              >
+                حذف
+              </button>
+            </div>
+          </td>
+        </tr>
+      ))
+    )}
+  </tbody>
+</table>
                 </div>
 
                 <div className="flex justify-between items-center mt-4 text-gray-500 text-sm">
@@ -540,7 +561,9 @@ const Dashboard = () => {
             <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)}>
                 <div className="flex flex-col items-center text-center">
                     <div className="bg-red-100 text-red-600 p-4 rounded-full mb-4">
-                        <IoTrashOutline className="w-10 h-10" />
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
                     </div>
                     <h3 className="text-xl font-bold mt-2 text-gray-800">هل أنت متأكد أنك تريد حذف المنتج؟</h3>
                     <p className="text-sm text-gray-500 mt-2">سوف يتم حذف هذا المنتج نهائيًا من قائمة المنتجات لديك</p>

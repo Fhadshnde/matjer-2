@@ -18,7 +18,7 @@ const fetchAPI = async (endpoint) => {
 };
 
 const formatNumber = (num) => {
-  return new Intl.NumberFormat('ar-SA', { style: 'currency', currency: 'IQD', minimumFractionDigits: 0 }).format(num);
+  return new Intl.NumberFormat({ style: 'currency', currency: 'IQD', minimumFractionDigits: 0 }).format(num);
 };
 
 const formatShortNumber = (num) => {
@@ -36,26 +36,26 @@ const exportToPDF = async (data, chartsRef) => {
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
-    
+
     // إضافة العنوان الرئيسي
     pdf.setFontSize(24);
     pdf.setFont('helvetica', 'bold');
     pdf.text('تقرير الأرباح الشامل', pageWidth / 2, 20, { align: 'center' });
-    
+
     // إضافة التاريخ
     pdf.setFontSize(12);
     pdf.setFont('helvetica', 'normal');
     const currentDate = new Date().toLocaleDateString('ar-SA');
     pdf.text(`تاريخ التقرير: ${currentDate}`, pageWidth / 2, 30, { align: 'center' });
-    
+
     let yPosition = 40;
-    
+
     // إضافة ملخص البيانات
     pdf.setFontSize(16);
     pdf.setFont('helvetica', 'bold');
     pdf.text('ملخص البيانات', 20, yPosition);
     yPosition += 10;
-    
+
     pdf.setFontSize(12);
     pdf.setFont('helvetica', 'normal');
     pdf.text(`إجمالي المبيعات: ${formatNumber(data.overview?.totalSales || 0)}`, 20, yPosition);
@@ -66,14 +66,14 @@ const exportToPDF = async (data, chartsRef) => {
     yPosition += 8;
     pdf.text(`عمولة التطبيق: ${formatNumber(data.overview?.appCommission || 0)}`, 20, yPosition);
     yPosition += 15;
-    
+
     // إضافة جدول البيانات الشهرية
     if (data.monthly && data.monthly.length > 0) {
       pdf.setFontSize(16);
       pdf.setFont('helvetica', 'bold');
       pdf.text('البيانات الشهرية', 20, yPosition);
       yPosition += 10;
-      
+
       // رؤوس الجدول
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'bold');
@@ -83,11 +83,11 @@ const exportToPDF = async (data, chartsRef) => {
       pdf.text('عمولة التطبيق', 140, yPosition);
       pdf.text('الطلبات', 180, yPosition);
       yPosition += 8;
-      
+
       // خط تحت الرؤوس
       pdf.line(20, yPosition, 200, yPosition);
       yPosition += 5;
-      
+
       // بيانات الجدول
       pdf.setFont('helvetica', 'normal');
       data.monthly.forEach((item, index) => {
@@ -95,7 +95,7 @@ const exportToPDF = async (data, chartsRef) => {
           pdf.addPage();
           yPosition = 20;
         }
-        
+
         pdf.text(item.month || `الشهر ${index + 1}`, 20, yPosition);
         pdf.text(formatNumber(item.totalSales || 0), 60, yPosition);
         pdf.text(formatNumber(item.netProfit || 0), 100, yPosition);
@@ -104,7 +104,7 @@ const exportToPDF = async (data, chartsRef) => {
         yPosition += 6;
       });
     }
-    
+
     // إضافة الرسوم البيانية
     if (chartsRef.current) {
       const canvas = await html2canvas(chartsRef.current, {
@@ -112,24 +112,24 @@ const exportToPDF = async (data, chartsRef) => {
         useCORS: true,
         allowTaint: true
       });
-      
+
       const imgData = canvas.toDataURL('image/png');
       const imgWidth = pageWidth - 40;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
+
       if (yPosition + imgHeight > pageHeight - 20) {
         pdf.addPage();
         yPosition = 20;
       }
-      
+
       pdf.addImage(imgData, 'PNG', 20, yPosition, imgWidth, imgHeight);
     }
-    
+
     // إضافة تذييل
     pdf.setFontSize(10);
     pdf.setFont('helvetica', 'italic');
     pdf.text('تم إنشاء هذا التقرير تلقائياً من نظام إدارة الموردين', pageWidth / 2, pageHeight - 10, { align: 'center' });
-    
+
     pdf.save(`تقرير_الأرباح_${currentDate.replace(/\//g, '_')}.pdf`);
   } catch (error) {
     console.error('Error generating PDF:', error);
@@ -140,7 +140,7 @@ const exportToPDF = async (data, chartsRef) => {
 const exportToExcel = (data) => {
   try {
     const workbook = XLSX.utils.book_new();
-    
+
     // ورقة ملخص البيانات
     const summaryData = [
       ['المؤشر', 'القيمة'],
@@ -151,10 +151,10 @@ const exportToExcel = (data) => {
       ['نسبة النمو', `${data.overview?.profitsGrowth || 0}%`],
       ['تاريخ التقرير', new Date().toLocaleDateString('ar-SA')]
     ];
-    
+
     const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
     XLSX.utils.book_append_sheet(workbook, summarySheet, 'ملخص البيانات');
-    
+
     // ورقة البيانات الشهرية
     if (data.monthly && data.monthly.length > 0) {
       const monthlyHeaders = ['الشهر', 'إجمالي المبيعات', 'صافي الأرباح', 'عمولة التطبيق', 'عدد الطلبات'];
@@ -165,12 +165,12 @@ const exportToExcel = (data) => {
         item.appCommission || 0,
         item.orders || 0
       ]);
-      
+
       const monthlySheetData = [monthlyHeaders, ...monthlyData];
       const monthlySheet = XLSX.utils.aoa_to_sheet(monthlySheetData);
       XLSX.utils.book_append_sheet(workbook, monthlySheet, 'البيانات الشهرية');
     }
-    
+
     // ورقة البيانات اليومية
     if (data.daily && data.daily.length > 0) {
       const dailyHeaders = ['التاريخ', 'صافي الربح', 'إجمالي المبيعات', 'عدد الطلبات'];
@@ -180,12 +180,12 @@ const exportToExcel = (data) => {
         item.totalSales || 0,
         item.orders || 0
       ]);
-      
+
       const dailySheetData = [dailyHeaders, ...dailyData];
       const dailySheet = XLSX.utils.aoa_to_sheet(dailySheetData);
       XLSX.utils.book_append_sheet(workbook, dailySheet, 'البيانات اليومية');
     }
-    
+
     // ورقة سجل المدفوعات
     if (data.payments && data.payments.length > 0) {
       const paymentHeaders = ['التاريخ', 'المبلغ', 'الطريقة', 'الحالة'];
@@ -193,15 +193,15 @@ const exportToExcel = (data) => {
         item.date || '',
         item.amount || 0,
         item.method || '',
-        item.status === 'completed' ? 'مكتمل' : 
-        item.status === 'pending' ? 'معلق' : 'فشل'
+        item.status === 'completed' ? 'مكتمل' :
+          item.status === 'pending' ? 'معلق' : 'فشل'
       ]);
-      
+
       const paymentSheetData = [paymentHeaders, ...paymentData];
       const paymentSheet = XLSX.utils.aoa_to_sheet(paymentSheetData);
       XLSX.utils.book_append_sheet(workbook, paymentSheet, 'سجل المدفوعات');
     }
-    
+
     // حفظ الملف
     const currentDate = new Date().toLocaleDateString('ar-SA').replace(/\//g, '_');
     XLSX.writeFile(workbook, `تقرير_الأرباح_${currentDate}.xlsx`);
@@ -214,7 +214,7 @@ const exportToExcel = (data) => {
 const exportToCSV = (data) => {
   try {
     const currentDate = new Date().toLocaleDateString('ar-SA').replace(/\//g, '_');
-    
+
     // CSV للملخص
     const summaryCSV = [
       'المؤشر,القيمة',
@@ -225,7 +225,7 @@ const exportToCSV = (data) => {
       `نسبة النمو,${data.overview?.profitsGrowth || 0}%`,
       `تاريخ التقرير,${new Date().toLocaleDateString('ar-SA')}`
     ].join('\n');
-    
+
     // تحميل ملف CSV
     const blob = new Blob([summaryCSV], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -310,32 +310,38 @@ const CustomPieTooltip = ({ active, payload }) => {
 // Stat Card Component
 const StatCard = ({ title, value, change, icon, color, trend, details }) => {
   const isPositive = change >= 0;
-  const trendIcon = trend === 'up' ? <IoTrendingUp className="h-4 w-4" /> : <IoTrendingDown className="h-4 w-4" />;
-  
+  const trendIcon =
+    trend === "up" ? (
+      <IoTrendingUp className="h-4 w-4" />
+    ) : (
+      <IoTrendingDown className="h-4 w-4" />
+    );
+
   return (
-    <div className="bg-white p-6 rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100">
-      <div className="flex items-center justify-between">
+    <div className="bg-white px-6 py-3 rounded-xl shadow-md hover:shadow-lg transition-shadow duration-300 border border-gray-100 min-h-[110px] flex">
+      <div className="flex items-center justify-between w-full">
         <div className="flex-1">
-          <p className="text-sm text-gray-500 mb-2 font-medium">{title}</p>
-          <h3 className="text-3xl font-bold text-gray-900 mb-2">{formatNumber(value)}</h3>
-          <div className={`flex items-center text-sm ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+          <p className="text-sm text-gray-500 mb-1 font-medium">{title}</p>
+          <h3 className="text-3xl font-bold text-gray-900">{formatNumber(value)}</h3>
+          <div
+            className={`flex items-center text-sm ${
+              isPositive ? "text-green-600" : "text-red-600"
+            }`}
+          >
             {trendIcon}
-            <span className="mr-1 font-semibold">
-              {Math.abs(change)}%
-            </span>
+            <span className="mr-1 font-semibold">{Math.abs(change)}%</span>
             <span className="text-gray-500">عن الفترة السابقة</span>
           </div>
-          {details && (
-            <p className="text-xs text-gray-400 mt-2">{details}</p>
-          )}
+          {details && <p className="text-xs text-gray-400 mt-1">{details}</p>}
         </div>
-        <div className={`p-4 rounded-full ${color} text-white`}>
+        <div className={`p-3 rounded-full ${color} text-white`}>
           {icon}
         </div>
       </div>
     </div>
   );
 };
+
 
 // Filter Component
 const FilterComponent = ({ onFilterChange, currentFilter }) => {
@@ -474,28 +480,31 @@ const PaymentHistoryTable = ({ payments, loading }) => {
         <table className="w-full text-right">
           <thead>
             <tr className="border-b border-gray-200">
-              <th className="py-3 px-4 text-gray-500 font-semibold">التاريخ</th>
+              <th className="py-3 px-4 text-gray-500 font-semibold">تاريخ الاستحقاق</th>
+              <th className="py-3 px-4 text-gray-500 font-semibold">تاريخ الدفع</th>
               <th className="py-3 px-4 text-gray-500 font-semibold">المبلغ</th>
-              <th className="py-3 px-4 text-gray-500 font-semibold">الطريقة</th>
+              {/* <th className="py-3 px-4 text-gray-500 font-semibold">الطريقة</th> */}
               <th className="py-3 px-4 text-gray-500 font-semibold">الحالة</th>
             </tr>
           </thead>
           <tbody>
             {payments.map((payment, index) => (
               <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="py-3 px-4 text-gray-700">{payment.date}</td>
+                <td className="py-3 px-4 text-gray-700">{payment.dueDate.split('T')[0]}</td>
+                <td className="py-3 px-4 text-gray-700">
+                  {payment.paidDate?.split("T")[0] || "—"}
+                </td>
                 <td className="py-3 px-4 text-gray-900 font-semibold">{formatNumber(payment.amount)}</td>
-                <td className="py-3 px-4 text-gray-700">{payment.method}</td>
+                {/* <td className="py-3 px-4 text-gray-700">{payment.method}</td> */}
                 <td className="py-3 px-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    payment.status === 'completed' 
-                      ? 'bg-green-100 text-green-700' 
-                      : payment.status === 'pending'
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${payment.status === 'PAID'
+                    ? 'bg-green-100 text-green-700'
+                    : payment.status === 'pending'
                       ? 'bg-yellow-100 text-yellow-700'
-                      : 'bg-red-100 text-red-700'
-                  }`}>
-                    {payment.status === 'completed' ? 'مكتمل' : 
-                     payment.status === 'pending' ? 'معلق' : 'فشل'}
+                      : 'bg-blue-400 '
+                    }`}>
+                    {payment.status === 'PAID' ? 'مكتمل' :
+                      payment.status === 'pending' ? 'معلق' : 'قيد المعالجة'}
                   </span>
                 </td>
               </tr>
@@ -530,7 +539,7 @@ const ProfitsPage = () => {
         fetchAPI('/supplier/profits/daily'),
         fetchAPI('/supplier/payments/reports')
       ]);
-      
+
       setOverviewData(overview);
       setMonthlyData(monthly.monthlyReports || []);
       setDailyData(daily.dailyReports?.filter(d => d.totalSales > 0) || []);
@@ -559,14 +568,14 @@ const ProfitsPage = () => {
       setIsExporting(true);
       setExportError(null);
       setExportSuccess(false);
-      
+
       const data = {
         overview: overviewData,
         monthly: monthlyData,
         daily: dailyData,
         payments: paymentHistory
       };
-      
+
       switch (format) {
         case 'pdf':
           await exportToPDF(data, chartsRef);
@@ -583,7 +592,7 @@ const ProfitsPage = () => {
         default:
           throw new Error('نوع التصدير غير مدعوم');
       }
-      
+
       setExportSuccess(true);
       setTimeout(() => setExportSuccess(false), 3000);
     } catch (error) {
@@ -617,7 +626,7 @@ const ProfitsPage = () => {
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
           <p className="text-red-600 text-xl mb-4">حدث خطأ في تحميل البيانات</p>
           <p className="text-gray-600 mb-6">{error}</p>
-          <button 
+          <button
             onClick={handleRefresh}
             className="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors"
           >
@@ -629,10 +638,10 @@ const ProfitsPage = () => {
   }
 
   const commissionRate = overviewData?.commissionRate || 15;
-  
+
   // إضافة بيانات وهمية للعرض إذا كانت البيانات فارغة
   const hasData = overviewData?.totalSales > 0;
-  
+
   // إعداد بيانات الرسم البياني
   const chartData = hasData ? monthlyData : [
     { month: 'يناير', totalSales: 0, netProfit: 0, appCommission: 0, orders: 0 },
@@ -681,26 +690,26 @@ const ProfitsPage = () => {
       `}</style>
       <div className="rtl:text-right font-sans bg-gray-100 min-h-screen p-6">
         <div className="container mx-auto max-w-7xl">
-        {/* رسائل التصدير */}
-        {exportSuccess && (
-          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
-            تم تصدير التقرير بنجاح
-          </div>
-        )}
-        {exportError && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-            {exportError}
-          </div>
-        )}
+          {/* رسائل التصدير */}
+          {exportSuccess && (
+            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+              تم تصدير التقرير بنجاح
+            </div>
+          )}
+          {exportError && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+              {exportError}
+            </div>
+          )}
 
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">تقرير الأرباح</h1>
-            <p className="text-gray-600">مراقبة وتحليل أداء المبيعات والأرباح</p>
-          </div>
-          <div className="flex items-center space-x-4 space-x-reverse no-print">
-            {/* <button
+          {/* Header */}
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">تقرير الأرباح</h1>
+              <p className="text-gray-600">مراقبة وتحليل أداء المبيعات والأرباح</p>
+            </div>
+            <div className="flex items-center space-x-4 space-x-reverse no-print">
+              {/* <button
               onClick={handleRefresh}
               disabled={refreshing}
               className="flex items-center bg-gray-100 text-gray-700 font-semibold py-3 px-4 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
@@ -708,231 +717,233 @@ const ProfitsPage = () => {
               <IoRefresh className={`h-5 w-5 ml-2 ${refreshing ? 'animate-spin' : ''}`} />
               تحديث
             </button> */}
-            {/* <FilterComponent onFilterChange={handleFilterChange} currentFilter={currentFilter} /> */}
-            {/* <ExportComponent onExport={handleExport} isExporting={isExporting} /> */}
-          </div>
-        </div>
-
-        {/* قسم البطاقات الإحصائية */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatCard
-            title="إجمالي المبيعات"
-            value={overviewData?.totalSales || 0}
-            change={overviewData?.profitsGrowth || 0}
-            icon={<IoCash className="h-6 w-6" />}
-            color="bg-blue-500"
-            trend={overviewData?.profitsGrowth >= 0 ? 'up' : 'down'}
-            details="جميع المبيعات المكتملة"
-          />
-          <StatCard
-            title="إجمالي الطلبات"
-            value={overviewData?.totalOrders || 0}
-            change={-2}
-            icon={<IoEye className="h-6 w-6" />}
-            color="bg-green-500"
-            trend="down"
-            details="الطلبات المستلمة"
-          />
-          <StatCard
-            title="صافي الأرباح"
-            value={overviewData?.netProfit || 0}
-            change={overviewData?.profitsGrowth || 0}
-            icon={<IoTrendingUp className="h-6 w-6" />}
-            color="bg-emerald-500"
-            trend={overviewData?.profitsGrowth >= 0 ? 'up' : 'down'}
-            details="بعد خصم العمولة"
-          />
-          <StatCard
-            title={`عمولة التطبيق (${commissionRate}%)`}
-            value={overviewData?.appCommission || 0}
-            change={overviewData?.profitsGrowth || 0}
-            icon={<IoTrendingDown className="h-6 w-6" />}
-            color="bg-purple-500"
-            trend={overviewData?.profitsGrowth >= 0 ? 'up' : 'down'}
-            details="من كل عملية بيع"
-          />
-        </div>
-
-        {/* تقرير الأرباح (AreaChart) */}
-        <div ref={chartsRef} className="bg-white p-6 rounded-xl shadow-lg mb-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">تقرير الأرباح الشهري</h2>
-            <div className="flex items-center space-x-4 space-x-reverse">
-              <span className="text-sm text-gray-500">آخر 12 شهر</span>
+              {/* <FilterComponent onFilterChange={handleFilterChange} currentFilter={currentFilter} /> */}
+              {/* <ExportComponent onExport={handleExport} isExporting={isExporting} /> */}
             </div>
           </div>
-          <div style={{ width: '100%', height: 400 }}>
-            <ResponsiveContainer>
-              <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1} />
-                  </linearGradient>
-                  <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#10B981" stopOpacity={0.1} />
-                  </linearGradient>
-                  <linearGradient id="colorCommission" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.1} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                <XAxis 
-                  dataKey="month" 
-                  axisLine={false} 
-                  tickLine={false}
-                  tick={{ fontSize: 12, fill: '#6B7280' }}
-                />
-                <YAxis 
-                  orientation="right" 
-                  axisLine={false} 
-                  tickLine={false}
-                  tickFormatter={(value) => formatShortNumber(value)}
-                  tick={{ fontSize: 12, fill: '#6B7280' }}
-                />
-                <Tooltip content={<CustomLineTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="totalSales"
-                  stroke="#3B82F6"
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill="url(#colorSales)"
-                  name="إجمالي المبيعات"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="netProfit"
-                  stroke="#10B981"
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill="url(#colorProfit)"
-                  name="صافي الأرباح"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="appCommission"
-                  stroke="#F59E0B"
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill="url(#colorCommission)"
-                  name="عمولة التطبيق"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
 
-        {/* الأرباح اليومية والتحليل */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* الأرباح اليومية */}
-          <div className="bg-white p-6 rounded-xl shadow-lg">
-            <h3 className="text-xl font-bold text-gray-800 mb-6">الأرباح اليومية - آخر 30 يوم</h3>
-            <div style={{ width: '100%', height: 300 }}>
+          {/* قسم البطاقات الإحصائية */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-4">
+
+
+            <StatCard
+              title={`عمولة التطبيق (${commissionRate}%)`}
+              value={overviewData?.appCommission || 0}
+              change={overviewData?.profitsGrowth || 0}
+              icon={<IoTrendingDown className="h-6 w-6" />}
+              color="bg-purple-500"
+              trend={overviewData?.profitsGrowth >= 0 ? 'up' : 'down'}
+              details="من كل عملية بيع"
+            />
+            <StatCard
+              title="صافي الأرباح"
+              value={overviewData?.netProfit || 0}
+              change={overviewData?.profitsGrowth || 0}
+              icon={<IoTrendingUp className="h-6 w-6" />}
+              color="bg-emerald-500"
+              trend={overviewData?.profitsGrowth >= 0 ? 'up' : 'down'}
+              details="بعد خصم العمولة"
+            />
+            <StatCard
+              title="إجمالي المبيعات"
+              value={overviewData?.totalSales || 0}
+              change={overviewData?.profitsGrowth || 0}
+              icon={<IoCash className="h-6 w-6" />}
+              color="bg-blue-500"
+              trend={overviewData?.profitsGrowth >= 0 ? 'up' : 'down'}
+              details="جميع المبيعات المكتملة"
+            />
+            <StatCard
+              title="إجمالي الطلبات"
+              value={overviewData?.totalOrders || 0}
+              change={-2}
+              icon={<IoEye className="h- w-6" />}
+              color="bg-green-500"
+              trend="down"
+              details="الطلبات المستلمة"
+            />
+          </div>
+
+          {/* تقرير الأرباح (AreaChart) */}
+          <div ref={chartsRef} className="bg-white p-6 rounded-xl shadow-lg mb-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800">تقرير الأرباح الشهري</h2>
+              <div className="flex items-center space-x-4 space-x-reverse">
+                <span className="text-sm text-gray-500">آخر 12 شهر</span>
+              </div>
+            </div>
+            <div style={{ width: '100%', height: 400 }}>
               <ResponsiveContainer>
-                <BarChart data={dailyData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.1} />
+                    </linearGradient>
+                    <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#10B981" stopOpacity={0.1} />
+                    </linearGradient>
+                    <linearGradient id="colorCommission" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.1} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                  <XAxis 
-                    dataKey="date" 
-                    axisLine={false} 
+                  <XAxis
+                    dataKey="month"
+                    axisLine={false}
                     tickLine={false}
-                    tick={{ fontSize: 10, fill: '#6B7280' }}
+                    tick={{ fontSize: 12, fill: '#6B7280' }}
                   />
-                  <YAxis 
-                    orientation="right" 
-                    axisLine={false} 
+                  <YAxis
+                    orientation="right"
+                    axisLine={false}
                     tickLine={false}
                     tickFormatter={(value) => formatShortNumber(value)}
-                    tick={{ fontSize: 10, fill: '#6B7280' }}
+                    tick={{ fontSize: 12, fill: '#6B7280' }}
                   />
-                  <Tooltip content={<CustomBarTooltip />} />
-                  <Bar dataKey="netProfit" fill="#F59E0B" name="صافي الربح" radius={[4, 4, 0, 0]} />
-                </BarChart>
+                  <Tooltip content={<CustomLineTooltip />} />
+                  <Area
+                    type="monotone"
+                    dataKey="totalSales"
+                    stroke="#3B82F6"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorSales)"
+                    name="إجمالي المبيعات"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="netProfit"
+                    stroke="#10B981"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorProfit)"
+                    name="صافي الأرباح"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="appCommission"
+                    stroke="#F59E0B"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorCommission)"
+                    name="عمولة التطبيق"
+                  />
+                </AreaChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          {/* توزيع الأرباح */}
-          <div className="bg-white p-6 rounded-xl shadow-lg">
-            <h3 className="text-xl font-bold text-gray-800 mb-6">توزيع الأرباح</h3>
-            <div style={{ width: '100%', height: 300 }}>
-              <ResponsiveContainer>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<CustomPieTooltip />} />
-                </PieChart>
-              </ResponsiveContainer>
+          {/* الأرباح اليومية والتحليل */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            {/* الأرباح اليومية */}
+            <div className="bg-white p-6 rounded-xl shadow-lg">
+              <h3 className="text-xl font-bold text-gray-800 mb-6">الأرباح اليومية - آخر 30 يوم</h3>
+              <div style={{ width: '100%', height: 300 }}>
+                <ResponsiveContainer>
+                  <BarChart data={dailyData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="date"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 10, fill: '#6B7280' }}
+                    />
+                    <YAxis
+                      orientation="right"
+                      axisLine={false}
+                      tickLine={false}
+                      tickFormatter={(value) => formatShortNumber(value)}
+                      tick={{ fontSize: 10, fill: '#6B7280' }}
+                    />
+                    <Tooltip content={<CustomBarTooltip />} />
+                    <Bar dataKey="netProfit" fill="#F59E0B" name="صافي الربح" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-            <div className="mt-4 space-y-2">
-              {pieData.map((item, index) => (
-                <div key={index} className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="w-4 h-4 rounded-full ml-2" style={{ backgroundColor: item.color }}></div>
-                    <span className="text-sm text-gray-600">{item.name}</span>
+
+            {/* توزيع الأرباح */}
+            <div className="bg-white p-6 rounded-xl shadow-lg">
+              <h3 className="text-xl font-bold text-gray-800 mb-6">توزيع الأرباح</h3>
+              <div style={{ width: '100%', height: 300 }}>
+                <ResponsiveContainer>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomPieTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="mt-4 space-y-2">
+                {pieData.map((item, index) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 rounded-full ml-2" style={{ backgroundColor: item.color }}></div>
+                      <span className="text-sm text-gray-600">{item.name}</span>
+                    </div>
+                    <span className="text-sm font-semibold text-gray-900">{formatNumber(item.value)}</span>
                   </div>
-                  <span className="text-sm font-semibold text-gray-900">{formatNumber(item.value)}</span>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* معلومات العمولة والتحويل */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">معلومات العمولة والتحويل</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white p-6 rounded-xl shadow-lg text-center border-l-4 border-blue-500">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">5,000 د.ع</h3>
-              <p className="text-sm text-gray-500">الحد الأدنى للتحويل</p>
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow-lg text-center border-l-4 border-green-500">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">مجانية</h3>
-              <p className="text-sm text-gray-500">رسوم التحويل</p>
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow-lg text-center border-l-4 border-purple-500">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">كل 15 يوم</h3>
-              <p className="text-sm text-gray-500">موعد التحويل</p>
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow-lg text-center border-l-4 border-red-500">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">{commissionRate}%</h3>
-              <p className="text-sm text-gray-500">نسبة العمولة</p>
+          {/* معلومات العمولة والتحويل */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">معلومات العمولة والتحويل</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="bg-white p-6 rounded-xl shadow-lg text-center border-l-4 border-blue-500">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">5,000 د.ع</h3>
+                <p className="text-sm text-gray-500">الحد الأدنى للتحويل</p>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-lg text-center border-l-4 border-green-500">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">مجانية</h3>
+                <p className="text-sm text-gray-500">رسوم التحويل</p>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-lg text-center border-l-4 border-purple-500">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">كل 30 يوم</h3>
+                <p className="text-sm text-gray-500">موعد التحويل</p>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-lg text-center border-l-4 border-red-500">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">{commissionRate}%</h3>
+                <p className="text-sm text-gray-500"> نسبة العمولة (نسبة التطبيق)</p>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* سجل المدفوعات */}
-        <PaymentHistoryTable payments={paymentHistory} loading={loading} />
+          {/* سجل المدفوعات */}
+          <PaymentHistoryTable payments={paymentHistory} loading={loading} />
 
-        {/* معلومة مهمة */}
-        <div className="bg-blue-50 p-6 rounded-xl border border-blue-200 mt-8">
-          <div className="flex items-start">
-            <div className="flex-shrink-0 text-blue-500 ml-4">
-              <IoInformationCircleOutline className="h-6 w-6" />
-            </div>
-            <div>
-              <h4 className="text-lg font-bold text-blue-900 mb-2">معلومة مهمة</h4>
-              <p className="text-sm text-blue-700 leading-relaxed">
-                يتم خصم عمولة التطبيق فقط عند إتمام الطلب بنجاح. في حالة إلغاء الطلب، لا يتم خصم أي عمولة. 
-                مستحقاتك المتراكمة سيتم تحويلها إلى حسابك البنكي المسجل كل 15 من الشهر تلقائيًا.
-                يمكنك تتبع جميع المعاملات والمدفوعات من خلال هذا التقرير.
-              </p>
+          {/* معلومة مهمة */}
+          <div className="bg-blue-50 p-6 rounded-xl border border-blue-200 mt-8">
+            <div className="flex items-start">
+              <div className="flex-shrink-0 text-blue-500 ml-4">
+                <IoInformationCircleOutline className="h-6 w-6" />
+              </div>
+              <div>
+                <h4 className="text-lg font-bold text-blue-900 mb-2">معلومة مهمة</h4>
+                <p className="text-sm text-blue-700 leading-relaxed">
+                  يتم خصم عمولة التطبيق فقط عند إتمام الطلب بنجاح. في حالة إلغاء الطلب، لا يتم خصم أي عمولة.
+                  مستحقاتك المتراكمة سيتم تحويلها إلى حسابك البنكي المسجل كل 15 من الشهر تلقائيًا.
+                  يمكنك تتبع جميع المعاملات والمدفوعات من خلال هذا التقرير.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
         </div>
       </div>
     </>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { IoAdd, IoEye, IoPencil, IoTrash, IoPause, IoPlay, IoRefresh, IoFilter, IoSearch, IoCalendar, IoStatsChart, IoDownload, IoClose, IoCheckmark, IoAlertCircle, IoTrendingUp, IoTrendingDown, IoTime, IoCash, IoPeople, IoStar } from 'react-icons/io5';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { IoAdd, IoEye, IoPencil, IoTrash, IoPause, IoPlay, IoRefresh, IoFilter, IoSearch, IoCalendar, IoStatsChart, IoDownload, IoClose, IoCheckmark, IoAlertCircle, IoTrendingUp, IoTrendingDown, IoTime, IoCash, IoPeople, IoStar, IoImage } from 'react-icons/io5';
 import axios from 'axios';
 import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
 
@@ -121,11 +121,11 @@ const Modal = ({ isOpen, onClose, children, title, size = "md" }) => {
   return (
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50" onClick={onClose}>
       <div className={`relative bg-white p-6 rounded-xl shadow-xl w-full ${sizeClasses[size]} mx-auto transform transition-all`} onClick={e => e.stopPropagation()}>
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+          <IoClose className="w-6 h-6" />
+        </button>
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-bold text-gray-800">{title}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <IoClose className="w-6 h-6" />
-          </button>
         </div>
         <div className="max-h-[80vh] overflow-y-auto">
           {children}
@@ -145,9 +145,23 @@ const OfferForm = ({ offer, onSubmit, onClose, isEdit = false, categories, produ
     productIds: offer?.productIds?.map(id => parseInt(id)) || [],
     discountType: offer?.discountType || 'percentage',
     discountValue: offer?.discountValue || 0,
-    isActive: offer?.isActive || false
+    isActive: offer?.isActive || false,
+    image: null,
+    imagePreview: offer?.image || ''
   });
   const [loading, setLoading] = useState(false);
+  
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData({
+        ...formData,
+        image: file,
+        imagePreview: URL.createObjectURL(file)
+      });
+    }
+  };
+
   const handleProductChange = (productId) => {
     setFormData(prev => {
       const newProductIds = prev.productIds.includes(parseInt(productId))
@@ -160,7 +174,20 @@ const OfferForm = ({ offer, onSubmit, onClose, isEdit = false, categories, produ
     e.preventDefault();
     setLoading(true);
     try {
-      await onSubmit(formData);
+      let imageUrl = formData.imagePreview;
+      if (formData.image) {
+        const imageData = new FormData();
+        imageData.append('file', formData.image);
+        const uploadResponse = await axios.post(getApiUrl('/supplier/upload/image'), imageData, {
+          headers: {
+            ...getAuthHeaders(),
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        imageUrl = uploadResponse.data.url;
+      }
+
+      await onSubmit({ ...formData, image: imageUrl });
       onClose();
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -219,6 +246,40 @@ const OfferForm = ({ offer, onSubmit, onClose, isEdit = false, categories, produ
             type="date"
             value={formData.endDate}
             onChange={(e) => setFormData({...formData, endDate: e.target.value})}
+            className="w-full py-3 px-4 bg-gray-100 text-gray-800 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500"
+            required
+          />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-gray-700 text-sm font-bold mb-2">صورة العرض</label>
+          <div className="relative border border-gray-300 rounded-lg p-4 bg-gray-100 text-center">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+            {formData.imagePreview ? (
+              <div className="flex flex-col items-center">
+                <img src={formData.imagePreview} alt="Offer Preview" className="w-32 h-32 object-cover rounded-lg mb-2" />
+                <p className="text-sm text-gray-500">تم تحديد صورة. انقر للتغيير.</p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full">
+                <IoImage className="w-10 h-10 text-gray-400 mb-2" />
+                <p className="text-sm text-gray-500">انقر أو اسحب صورة هنا للتحميل.</p>
+              </div>
+            )}
+          </div>
+        </div>
+        <div>
+          <label className="block text-gray-700 text-sm font-bold mb-2">قيمة الخصم</label>
+          <input
+            type="number"
+            value={formData.discountValue}
+            onChange={(e) => setFormData({...formData, discountValue: e.target.value})}
             className="w-full py-3 px-4 bg-gray-100 text-gray-800 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500"
             required
           />
@@ -286,18 +347,6 @@ const OfferForm = ({ offer, onSubmit, onClose, isEdit = false, categories, produ
               <p className="text-sm text-gray-500">لا توجد منتجات متاحة.</p>
             )}
           </div>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-gray-700 text-sm font-bold mb-2">قيمة الخصم</label>
-          <input
-            type="number"
-            value={formData.discountValue}
-            onChange={(e) => setFormData({...formData, discountValue: e.target.value})}
-            className="w-full py-3 px-4 bg-gray-100 text-gray-800 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-500"
-            required
-          />
         </div>
       </div>
       {isEdit && (
@@ -448,7 +497,8 @@ const OffersDashboard = () => {
         sectionId: 0,
         productIds: formData.productIds,
         discountType: formData.discountType,
-        discountValue: parseFloat(formData.discountValue)
+        discountValue: parseFloat(formData.discountValue),
+        image: formData.image
       };
       const response = await axios.post(getApiUrl(API_CONFIG.ENDPOINTS.OFFERS.ADD), newOfferBody, {
         headers: getAuthHeaders()
@@ -469,7 +519,8 @@ const OffersDashboard = () => {
         discountType: formData.discountType,
         discountValue: parseFloat(formData.discountValue),
         categoryId: formData.categoryId,
-        productIds: formData.productIds
+        productIds: formData.productIds,
+        image: formData.image
       };
       await axios.patch(getApiUrl(API_CONFIG.ENDPOINTS.OFFERS.EDIT(selectedOffer.id)), updatedOfferBody, {
         headers: getAuthHeaders()
@@ -677,6 +728,7 @@ const OffersDashboard = () => {
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">القيمة</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">النطاق</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">النوع</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">صورة العرض</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">اسم العرض</th>
                 </tr>
               </thead>
@@ -706,10 +758,6 @@ const OffersDashboard = () => {
                                 <IoStatsChart className="w-4 h-4 ml-2" />
                                 مشاهدة الأداء
                               </button>
-                              {/* <button onClick={() => handleToggleOfferStatus()} className="flex items-center w-full text-right px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                {offer.status === 'نشط' ? <IoPause className="w-4 h-4 ml-2" /> : <IoPlay className="w-4 h-4 ml-2" />}
-                                {offer.status === 'نشط' ? 'إيقاف العرض' : 'تفعيل العرض'}
-                              </button> */}
                               <button onClick={() => openDeleteModal(offer)} className="flex items-center w-full text-right px-4 py-2 text-sm text-red-600 hover:bg-red-50">
                                 <IoTrash className="w-4 h-4 ml-2" />
                                 حذف العرض
@@ -747,6 +795,15 @@ const OffersDashboard = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {offer.type}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {offer.image ? (
+                        <img src={offer.image} alt={offer.name} className="h-10 w-10 object-cover rounded-lg" />
+                      ) : (
+                        <div className="h-10 w-10 bg-gray-200 rounded-lg flex items-center justify-center">
+                          <IoImage className="text-gray-400 w-6 h-6" />
+                        </div>
+                      )}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">
                       {offer.name}
                     </td>
@@ -771,6 +828,15 @@ const OffersDashboard = () => {
         <Modal isOpen={isDetailsModalOpen} onClose={closeModal} title="تفاصيل العرض" size="md">
           {selectedOffer && (
             <div className="space-y-4 text-right">
+              <div className="flex justify-center mb-4">
+                {selectedOffer.image ? (
+                  <img src={selectedOffer.image} alt={selectedOffer.name} className="w-40 h-40 object-cover rounded-xl shadow-md" />
+                ) : (
+                  <div className="w-40 h-40 bg-gray-200 rounded-xl flex items-center justify-center">
+                    <IoImage className="text-gray-400 w-16 h-16" />
+                  </div>
+                )}
+              </div>
               <div className="flex justify-between items-center border-b pb-2">
                 <p className="text-sm text-gray-500">الاسم</p>
                 <p className="text-lg font-semibold">{selectedOffer.name}</p>
