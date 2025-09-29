@@ -29,7 +29,7 @@ import StoreInfoPage from './components/Settings/StoreInfoPage';
 import Sections from './components/Sections/Sections';
 import Login from './components/Login/Login';
 import AbandonedPage from './components/AbandonedPage/AbandonedPage';
-
+import Connectionsettings from './components/Connectionsettings/Connectionsettings';
 const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
@@ -82,6 +82,7 @@ const App = () => {
         <Route path="/store-info" element={<ProtectedRoute><StoreInfoPage /></ProtectedRoute>} />
         <Route path="/sections" element={<ProtectedRoute><Sections /></ProtectedRoute>} />
         <Route path="/abandoned-page" element={<ProtectedRoute><AbandonedPage /></ProtectedRoute>} />
+        <Route path="/connection-settings" element={<ProtectedRoute><Connectionsettings /></ProtectedRoute>} />
       </Routes>
     </div>
   );
