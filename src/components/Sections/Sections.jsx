@@ -312,8 +312,10 @@ const CategoriesPage = () => {
     const Modal = ({ isOpen, onClose, children }) => {
         if (!isOpen) return null;
         return (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
-                <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 relative font-['Tajawal']">
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50"
+            onClick={onClose}>
+                <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6 relative font-['Tajawal']"
+                onClick={(e) => e.stopPropagation()}>
                     <button onClick={onClose} className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
                     {children}
                 </div>
@@ -516,7 +518,8 @@ const CategoriesPage = () => {
         if (!isOpen) return null;
         return (
             <Modal isOpen={isOpen} onClose={onClose}>
-                <div className="flex flex-col items-center text-center">
+                <div className="flex flex-col items-center text-center"
+                onClick={(e) => e.stopPropagation()}>
                     <div className="bg-red-100 text-red-600 p-4 rounded-full mb-4">
                         <IoTrashOutline className="w-10 h-10" />
                     </div>

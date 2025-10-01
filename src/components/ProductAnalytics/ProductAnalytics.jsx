@@ -145,12 +145,13 @@ const ProductAnalytics = () => {
                         trend: enhanced.cards.abandonedProducts.trend,
                     },
                     {
-                        title: enhanced.cards.hesitantCustomers.title,
+                        title: "الزبائن النشطين",
                         value: enhanced.cards.hesitantCustomers.value.toLocaleString(),
                         growth: enhanced.cards.hesitantCustomers.change,
                         icon: 'new-visitors',
                         trend: enhanced.cards.hesitantCustomers.trend,
                     },
+                    
                 ];
                 setStatsCards(newStatsCards);
 
@@ -548,9 +549,9 @@ const ProductAnalytics = () => {
                                     <th className="py-3 px-4 font-semibold text-gray-500">المنتج</th>
                                     <th className="py-3 px-4 font-semibold text-gray-500">الزيارات</th>
                                     <th className="py-3 px-4 font-semibold text-gray-500">معدل التحويل</th>
-                                    <th className="py-3 px-4 font-semibold text-gray-500">تمت الإضافة للسلة</th>
+                                    {/* <th className="py-3 px-4 font-semibold text-gray-500">تمت الإضافة للسلة</th> */}
                                     <th className="py-3 px-4 font-semibold text-gray-500">المبيعات</th>
-                                    <th className="py-3 px-4 font-semibold text-gray-500">الكمية</th>
+                                    {/* <th className="py-3 px-4 font-semibold text-gray-500">الكمية</th> */}
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200 text-right">
@@ -566,9 +567,9 @@ const ProductAnalytics = () => {
                                         </td>
                                         <td className="py-3 px-4 text-gray-700">{product.visits}</td>
                                         <td className="py-3 px-4 text-gray-700">{product.conversion}</td>
-                                        <td className="py-3 px-4 text-gray-700">{product.addedToCart}</td>
+                                            {/* <td className="py-3 px-4 text-gray-700">{product.addedToCart}</td> */}
                                         <td className="py-3 px-4 text-gray-700">{product.sales}</td>
-                                        <td className="py-3 px-4 text-gray-700">{product.quantity}</td>
+                                        {/* <td className="py-3 px-4 text-gray-700">{product.quantity}</td> */}
                                     </tr>
                                 ))}
                             </tbody>
