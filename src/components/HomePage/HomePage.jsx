@@ -283,26 +283,7 @@ function HomePage() {
             </tbody>
           </table>
         </div>
-        {/* <div className="flex justify-between items-center mt-4">
-          <div className="text-gray-500 text-sm">إجمالي المنتجات: ٨٧٦٤</div>
-          <div className="flex items-center space-x-1" dir="rtl">
-            <button className="p-2 border rounded-md text-gray-500 hover:bg-gray-200">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 6-6 6 6 6"/></svg>
-            </button>
-            <button className="p-2 border rounded-md text-white bg-red-500">1</button>
-            <button className="p-2 border rounded-md text-gray-500 hover:bg-gray-200">2</button>
-            <button className="p-2 border rounded-md text-gray-500 hover:bg-gray-200">3</button>
-            <button className="p-2 border rounded-md text-gray-500 hover:bg-gray-200">4</button>
-            <button className="p-2 border rounded-md text-gray-500 hover:bg-gray-200">5</button>
-            <button className="p-2 border rounded-md text-gray-500 hover:bg-gray-200">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-            </button>
-          </div>
-          <div className="text-gray-500 text-sm flex items-center">
-            عرض في الصفحة 5
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-down mr-1"><path d="m6 9 6 6 6-6"/></svg>
-          </div>
-        </div> */}
+
       </div>
     </div>
   );

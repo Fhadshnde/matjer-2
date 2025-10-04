@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { IoChevronUpOutline, IoChevronDownOutline, IoSearchOutline, IoAdd } from 'react-icons/io5';
 import axios from 'axios';
 import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
-import * as XLSX from 'xlsx'; // Import the xlsx library
+import * as XLSX from 'xlsx'; 
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -208,7 +208,6 @@ const Dashboard = () => {
         return pages;
     };
 
-    // New stats data for the new design
     const cardsData = [
         {
             title: "إجمالي المنتجات",

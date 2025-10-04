@@ -173,20 +173,20 @@ export default function ConnectionSettings() {
       icon: <FaChartLine />,
       color: "indigo",
     },
-    {
-      key: "hasWholesalePrice",
-      title: "البيع بالجملة",
-      value: stats.hasWholesalePrice ? "نعم" : "لا",
-      icon: <FaCheckCircle />,
-      color: "gray",
-    },
-    {
-      key: "lastUpdated",
-      title: "آخر تحديث",
-      value: new Date(stats.lastUpdated).toLocaleString(),
-      icon: <FaClock />,
-      color: "gray",
-    },
+    // {
+    //   key: "hasWholesalePrice",
+    //   title: "البيع بالجملة",
+    //   value: stats.hasWholesalePrice ? "نعم" : "لا",
+    //   icon: <FaCheckCircle />,
+    //   color: "gray",
+    // },
+    // {
+    //   key: "lastUpdated",
+    //   title: "آخر تحديث",
+    //   value: new Date(stats.lastUpdated).toLocaleString(),
+    //   icon: <FaClock />,
+    //   color: "gray",
+    // },
   ];
 
   // بيانات PieChart
