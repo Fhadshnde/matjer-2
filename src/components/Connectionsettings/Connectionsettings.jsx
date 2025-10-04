@@ -117,13 +117,13 @@ export default function ConnectionSettings() {
       icon: <FaDollarSign />,
       color: "cyan",
     },
-    {
-      key: "totalDelivery",
-      title: "إجمالي التوصيل",
-      value: stats.totalDelivery,
-      icon: <FaTruck />,
-      color: "blue",
-    },
+    // {
+    //   key: "totalDelivery",
+    //   title: "إجمالي التوصيل",
+    //   value: stats.totalDelivery,
+    //   icon: <FaTruck />,
+    //   color: "blue",
+    // },
     {
       key: "platformNet",
       title: "صافي المنصة",
