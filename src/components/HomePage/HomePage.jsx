@@ -62,10 +62,6 @@ function HomePage() {
     currentPeriod: 'جار التحميل...',
     previousPeriod: ''
   });
-  const [salesChartData, setSalesChartData] = useState([]);
-  const [ordersChartData, setOrdersChartData] = useState([]);
-  const [chartPeriod, setChartPeriod] = useState('monthly');
-  const [ordersChartPeriod, setOrdersChartPeriod] = useState('weekly');
 
   useEffect(()=> {
     const token = localStorage.getItem('token');
@@ -97,53 +93,6 @@ function HomePage() {
       return;
     }
 
-    const fetchChartsData = async () => {
-      try {
-        const response = await axios.get(
-          getApiUrl(API_CONFIG.ENDPOINTS.DASHBOARD.CHARTS), 
-          { headers: getAuthHeaders() }
-        );
-
-        let salesData = [];
-        if (chartPeriod === 'monthly') {
-          salesData = response.data.monthlySales.map(item => ({
-            name: item.month,
-            sales: item.sales
-          }));
-        } else if (chartPeriod === 'weekly') {
-          salesData = response.data.weeklySales.map(item => ({
-            name: item.week,
-            sales: item.sales
-          }));
-        } else if (chartPeriod === 'daily') {
-          salesData = response.data.dailySales.map(item => ({
-            name: item.date,
-            sales: item.sales
-          }));
-        }
-        setSalesChartData(salesData);
-
-        let ordersData = [];
-        if (ordersChartPeriod === 'weekly') {
-          ordersData = response.data.weeklySales.map(item => ({
-            name: item.week,
-            orders: item.orders,
-            sales: item.sales
-          }));
-        } else if (ordersChartPeriod === 'daily') {
-          ordersData = response.data.dailySales.map(item => ({
-            name: item.date,
-            orders: item.orders,
-            sales: item.sales
-          }));
-        }
-        setOrdersChartData(ordersData);
-
-      } catch (error) {
-        console.error('Error fetching charts data:', error);
-      }
-    };
-    
     const fetchDashboardData = async () => {
       try {
         const response = await axios.get(
@@ -156,9 +105,32 @@ function HomePage() {
       }
     };
 
-    fetchChartsData();
     fetchDashboardData();
-  }, [chartPeriod, ordersChartPeriod]);
+  }, []);
+
+  const salesChartData = [
+    {
+      name: "الفترة السابقة",
+      sales: dashboardData.monthlySales - (dashboardData.monthlySales * (dashboardData.monthlySalesChange / 100)),
+    },
+    {
+      name: "الفترة الحالية",
+      sales: dashboardData.monthlySales,
+    }
+  ];
+
+  const ordersChartData = [
+    {
+      name: "الفترة السابقة",
+      orders: dashboardData.totalOrders - (dashboardData.totalOrders * (dashboardData.ordersChange / 100)),
+      sales: dashboardData.monthlySales - (dashboardData.monthlySales * (dashboardData.monthlySalesChange / 100)),
+    },
+    {
+      name: "الفترة الحالية",
+      orders: dashboardData.totalOrders,
+      sales: dashboardData.monthlySales,
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-gray-100 p-8 font-sans">
@@ -169,7 +141,7 @@ function HomePage() {
           change={`${Math.abs(dashboardData.averageOrderChange)}%`}
           isPositive={dashboardData.averageOrderChange >= 0}
           icon={
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-clock"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
           }
         />
         <Card
@@ -178,7 +150,7 @@ function HomePage() {
           change={`${Math.abs(dashboardData.customersChange)}%`}
           isPositive={dashboardData.customersChange >= 0}
           icon={
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucude-users"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucude-users"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           }
         />
         <Card
@@ -187,7 +159,7 @@ function HomePage() {
           change={`${Math.abs(dashboardData.monthlySalesChange)}%`}
           isPositive={dashboardData.monthlySalesChange >= 0}
           icon={
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-line-chart"><path d="M3 3v18h18"/><path d="m18 10-6 6-4-4L2 15"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="m18 10-6 6-4-4L2 15"/></svg>
           }
         />
         <Card
@@ -196,7 +168,7 @@ function HomePage() {
           change={`${Math.abs(dashboardData.ordersChange)}%`}
           isPositive={dashboardData.ordersChange >= 0}
           icon={
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-calendar-days"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/><path d="M8 18h.01"/><path d="M12 18h.01"/><path d="M16 18h.01"/></svg>
           }
         />
       </div>
@@ -204,13 +176,6 @@ function HomePage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8" style={{ direction: 'rtl' }}>
         <div className="bg-white rounded-2xl shadow-md p-6 text-right">
           <h2 className="text-xl font-bold mb-4">المبيعات</h2>
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex space-x-2" dir="rtl">
-              <button onClick={() => setChartPeriod('monthly')} className={`px-4 py-1 rounded-full text-sm font-semibold ${chartPeriod === 'monthly' ? 'bg-red-500 text-white' : 'text-gray-500'}`}>شهر</button>
-              <button onClick={() => setChartPeriod('weekly')} className={`px-4 py-1 rounded-full text-sm font-semibold ${chartPeriod === 'weekly' ? 'bg-red-500 text-white' : 'text-gray-500'}`}>أسبوع</button>
-              <button onClick={() => setChartPeriod('daily')} className={`px-4 py-1 rounded-full text-sm font-semibold ${chartPeriod === 'daily' ? 'bg-red-500 text-white' : 'text-gray-500'}`}>يوم</button>
-            </div>
-          </div>
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={salesChartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
               <defs>
@@ -229,13 +194,7 @@ function HomePage() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-md p-6 text-right">
-          <h2 className="text-xl font-bold mb-4">حالة طلبات هذا الشهر</h2>
-          <div className="flex justify-between items-center mb-4">
-            <div className="flex space-x-2" dir="rtl">
-              <button onClick={() => setOrdersChartPeriod('weekly')} className={`px-4 py-1 rounded-full text-sm font-semibold ${ordersChartPeriod === 'weekly' ? 'bg-red-500 text-white' : 'text-gray-500'}`}>أسبوعي</button>
-              <button onClick={() => setOrdersChartPeriod('daily')} className={`px-4 py-1 rounded-full text-sm font-semibold ${ordersChartPeriod === 'daily' ? 'bg-red-500 text-white' : 'text-gray-500'}`}>يومي</button>
-            </div>
-          </div>
+          <h2 className="text-xl font-bold mb-4">حالة الطلبات</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={ordersChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }} barCategoryGap="15%">
               <XAxis dataKey="name" axisLine={false} tickLine={false} />
@@ -324,11 +283,11 @@ function HomePage() {
             </tbody>
           </table>
         </div>
-        <div className="flex justify-between items-center mt-4">
+        {/* <div className="flex justify-between items-center mt-4">
           <div className="text-gray-500 text-sm">إجمالي المنتجات: ٨٧٦٤</div>
           <div className="flex items-center space-x-1" dir="rtl">
             <button className="p-2 border rounded-md text-gray-500 hover:bg-gray-200">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-left"><path d="m15 6-6 6 6 6"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 6-6 6 6 6"/></svg>
             </button>
             <button className="p-2 border rounded-md text-white bg-red-500">1</button>
             <button className="p-2 border rounded-md text-gray-500 hover:bg-gray-200">2</button>
@@ -336,14 +295,14 @@ function HomePage() {
             <button className="p-2 border rounded-md text-gray-500 hover:bg-gray-200">4</button>
             <button className="p-2 border rounded-md text-gray-500 hover:bg-gray-200">5</button>
             <button className="p-2 border rounded-md text-gray-500 hover:bg-gray-200">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-right"><path d="m9 18 6-6-6-6"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
             </button>
           </div>
           <div className="text-gray-500 text-sm flex items-center">
             عرض في الصفحة 5
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevron-down mr-1"><path d="m6 9 6 6 6-6"/></svg>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );
