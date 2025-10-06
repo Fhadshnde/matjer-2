@@ -313,12 +313,12 @@ const ProductAnalytics = () => {
                     <div className="bg-white p-6 rounded-lg shadow-md">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-xl font-bold">أداء المنتجات (الزيارات والمبيعات)</h2>
-                            <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                            {/* <div className="flex items-center space-x-2 rtl:space-x-reverse">
                                 <span className="text-sm text-gray-500">من</span>
                                 <input type="date" className="p-1 border rounded text-sm" />
                                 <span className="text-sm text-gray-500">إلى</span>
                                 <input type="date" className="p-1 border rounded text-sm" />
-                            </div>
+                            </div> */}
                         </div>
                         <ResponsiveContainer width="100%" height={450}>
                             <BarChart data={productPerformanceData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
@@ -336,12 +336,12 @@ const ProductAnalytics = () => {
                     <div className="bg-white p-6 rounded-lg shadow-md">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-xl font-bold">المبيعات والزيارات الشهرية</h2>
-                            <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                            {/* <div className="flex items-center space-x-2 rtl:space-x-reverse">
                                 <span className="text-sm text-gray-500">من</span>
                                 <input type="date" className="p-1 border rounded text-sm" />
                                 <span className="text-sm text-gray-500">إلى</span>
                                 <input type="date" className="p-1 border rounded text-sm" />
-                            </div>
+                            </div> */}
                         </div>
                         <ResponsiveContainer width="100%" height={300}>
                             <AreaChart data={monthlyData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
@@ -362,12 +362,12 @@ const ProductAnalytics = () => {
                     <div className="bg-white p-6 rounded-lg shadow-md order-1 lg:order-1">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-xl font-bold text-gray-800">أفضل الأقسام مبيعاً</h2>
-                            <div className="flex items-center space-x-2 rtl:space-x-reverse">
+                            {/* <div className="flex items-center space-x-2 rtl:space-x-reverse">
                                 <span className="text-sm text-gray-500">من</span>
                                 <input type="date" className="p-1 border rounded text-sm" />
                                 <span className="text-sm text-gray-500">إلى</span>
                                 <input type="date" className="p-1 border rounded text-sm" />
-                            </div>
+                            </div> */}
                         </div>
 
                         <div dir="rtl">

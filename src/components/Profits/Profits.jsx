@@ -660,11 +660,11 @@ const ProfitsPage = () => {
 
   // إعداد بيانات الرسم البياني الدائري
   const pieData = hasData ? [
-    { name: 'صافي الأرباح', value: overviewData?.netProfit || 0, color: '#10B981', percentage: 85 },
-    { name: 'عمولة التطبيق', value: overviewData?.appCommission || 0, color: '#F59E0B', percentage: 15 }
+    { name: 'صافي الأرباح', value: overviewData?.netProfit || 0, color: '#10B981', percentage: 75 },
+    { name: 'عمولة التطبيق', value: overviewData?.appCommission || 0, color: '#F59E0B', percentage: 25 }
   ] : [
-    { name: 'صافي الأرباح', value: 0, color: '#10B981', percentage: 85 },
-    { name: 'عمولة التطبيق', value: 0, color: '#F59E0B', percentage: 15 }
+    { name: 'صافي الأرباح', value: 0, color: '#10B981', percentage: 75 },
+    { name: 'عمولة التطبيق', value: 0, color: '#F59E0B', percentage: 25 }
   ];
 
   return (
