@@ -615,16 +615,12 @@ const Dashboard = () => {
                                 <div className="flex items-center p-2 bg-gray-50 rounded-lg">
                                     <span className="w-1/3 text-gray-500 text-right pr-4">صورة المنتج</span>
                                     <span className="w-2/3 text-left pl-4">
-                                        <img src={selectedProduct.mainImageUrl} alt="product" className="w-16 h-16 rounded-lg object-cover" />
+                                        <img src={selectedProduct.mainImageUrl} alt="product" className="w-36 h-36 rounded-lg object-cover" />
                                     </span>
                                 </div>
                                 <div className="flex items-center p-2 bg-gray-50 rounded-lg">
                                     <span className="w-1/3 text-gray-500 text-right pr-4">السعر</span>
-                                    <span className="w-2/3 text-left pl-4 text-gray-900">{selectedProduct.price}</span>
-                                </div>
-                                <div className="flex items-center p-2 bg-gray-50 rounded-lg">
-                                    <span className="w-1/3 text-gray-500 text-right pr-4">الحالة</span>
-                                    <span className="w-2/3 text-left pl-4 text-gray-900">{selectedProduct.status}</span>
+                                    <span className="w-2/3 text-left pl-4 text-gray-900">{selectedProduct.originalPrice}</span>
                                 </div>
                                 <div className="flex items-center p-2 bg-gray-50 rounded-lg">
                                     <span className="w-1/3 text-gray-500 text-right pr-4">المخزون</span>
@@ -637,10 +633,6 @@ const Dashboard = () => {
                                 <div className="flex items-center p-2 bg-gray-50 rounded-lg">
                                     <span className="w-1/3 text-gray-500 text-right pr-4">القسم الفرعي</span>
                                     <span className="w-2/3 text-left pl-4 text-gray-900">{selectedProduct.section?.name || ''}</span>
-                                </div>
-                                <div className="flex items-center p-2 bg-gray-50 rounded-lg">
-                                    <span className="w-1/3 text-gray-500 text-right pr-4">تحديث تلقائي</span>
-                                    <span className="w-2/3 text-left pl-4 text-gray-900">نشط</span>
                                 </div>
                                 <div className="p-2 bg-gray-50 rounded-lg">
                                     <span className="block text-gray-500 text-right pr-4 mb-1">وصف المنتج</span>
