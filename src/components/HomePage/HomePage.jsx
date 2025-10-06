@@ -235,7 +235,7 @@ function HomePage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-md p-6 text-right mb-8" style={{ direction: 'rtl' }}>
+      {/* <div className="bg-white rounded-2xl shadow-md p-6 text-right mb-8" style={{ direction: 'rtl' }}>
         <h2 className="text-xl font-bold mb-4">المنتجات الأكثر إضافةً إلى العربة</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-right text-sm">
@@ -258,7 +258,7 @@ function HomePage() {
             </tbody>
           </table>
         </div>
-      </div>
+      </div> */}
 
       <div className="bg-white rounded-2xl shadow-md p-6 text-right" style={{ direction: 'rtl' }}>
         <h2 className="text-xl font-bold mb-4">المنتجات ذات المخزون المنخفض</h2>
@@ -277,7 +277,7 @@ function HomePage() {
                     <span className="text-base font-semibold text-gray-800">{product.name}</span>
                     <img src={product.image || "https://via.placeholder.com/30"} alt="product" className="h-8 w-8 ml-2 rounded-md" />
                   </td>
-                  <td className="py-4 px-4 text-gray-700">{product.stockQuantity}</td>
+                  <td className="py-4 px-4 text-gray-700">{product.currentStock}</td>
                 </tr>
               ))}
             </tbody>

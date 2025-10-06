@@ -313,7 +313,7 @@ const EditProduct = () => {
                     
                     <h2 className="text-xl font-bold mb-6 pb-2 border-b border-gray-200">الأسعار والكمية</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 mb-8">
-                        <div className="mb-4">
+                        {/* <div className="mb-4">
                             <label className="block text-gray-700 text-sm font-medium mb-1">السعر الأصلي</label>
                             <input
                                 type="number"
@@ -323,7 +323,7 @@ const EditProduct = () => {
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
                                 required
                             />
-                        </div>
+                        </div> */}
                         <div className="mb-4">
                             <label className="block text-gray-700 text-sm font-medium mb-1">السعر</label>
                             <input
@@ -356,7 +356,7 @@ const EditProduct = () => {
                                 required
                             />
                         </div>
-                        <div className="col-span-1">
+                        {/* <div className="col-span-1">
                             <label className="block text-gray-700 text-sm font-medium mb-1">حالة المنتج</label>
                             <div className="flex items-center mt-2">
                                 <input
@@ -368,7 +368,7 @@ const EditProduct = () => {
                                 />
                                 <span className="ml-2 text-gray-700">منتج نشط</span>
                             </div>
-                        </div>
+                        </div> */}
                     </div>
 
                     <h2 className="text-xl font-bold mb-6 pb-2 border-b border-gray-200">الصور</h2>

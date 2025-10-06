@@ -576,8 +576,8 @@ const CategoriesPage = () => {
     return (
         <div className="bg-gray-100 min-h-screen p-8 text-right font-['Tajawal']" dir="rtl">
             <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-800 mb-2">إدارة الأقسام والفئات</h1>
-                <p className="text-gray-600">تنظيم وإدارة أقسام المنتجات وفئاتها</p>
+                <h1 className="text-3xl font-bold text-gray-800 mb-2">إدارة الأقسام </h1>
+                <p className="text-gray-600">تنظيم وإدارة أقسام المنتجات </p>
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow-md mb-8">
@@ -621,11 +621,11 @@ const CategoriesPage = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div className="bg-white p-6 rounded-lg shadow-md">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-gray-500 text-sm">إجمالي الفئات</p>
+                            <p className="text-gray-500 text-sm">إجمالي الاقسام الرئيسية</p>
                             <p className="text-2xl font-bold text-gray-800">{categoriesData.length}</p>
                         </div>
                         <div className="bg-blue-100 p-3 rounded-full">
@@ -636,7 +636,7 @@ const CategoriesPage = () => {
                 <div className="bg-white p-6 rounded-lg shadow-md">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-gray-500 text-sm">إجمالي الأقسام</p>
+                            <p className="text-gray-500 text-sm">إجمالي الاقسام الفرعية</p>
                             <p className="text-2xl font-bold text-gray-800">{sectionsData.length}</p>
                         </div>
                         <div className="bg-green-100 p-3 rounded-full">
@@ -644,7 +644,7 @@ const CategoriesPage = () => {
                         </div>
                     </div>
                 </div>
-                <div className="bg-white p-6 rounded-lg shadow-md">
+                {/* <div className="bg-white p-6 rounded-lg shadow-md">
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-gray-500 text-sm">إجمالي المنتجات</p>
@@ -656,11 +656,11 @@ const CategoriesPage = () => {
                             <IoEllipsisHorizontal className="w-6 h-6 text-red-600" />
                         </div>
                     </div>
-                </div>
+                </div> */}
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-                <h2 className="text-xl font-bold text-gray-800 mb-6">الفئات الرئيسية</h2>
+                <h2 className="text-xl font-bold text-gray-800 mb-6">الاقسام الرئيسية</h2>
                 <div className="space-y-4">
                     {filteredCategories.map((category) => (
                         <div key={category.id} className="border border-gray-200 rounded-lg p-4">
@@ -759,7 +759,7 @@ const CategoriesPage = () => {
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow-md">
-                <h2 className="text-xl font-bold text-gray-800 mb-6">جميع الأقسام</h2>
+                <h2 className="text-xl font-bold text-gray-800 mb-6">جميع الاقسام الفرعية</h2>
                 <div className="overflow-x-auto">
                     <table className="min-w-full text-right bg-white">
                         <thead>
@@ -767,8 +767,8 @@ const CategoriesPage = () => {
                                 <th className="py-3 px-4 text-gray-500 font-normal text-sm text-center">الإجراءات</th>
                                 {/* <th className="py-3 px-4 text-gray-500 font-normal text-sm">الصورة</th> */}
                                 <th className="py-3 px-4 text-gray-500 font-normal text-sm">عدد المنتجات</th>
-                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">الفئة</th>
-                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">اسم القسم</th>
+                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">القسم الرئيسي</th>
+                                <th className="py-3 px-4 text-gray-500 font-normal text-sm">اسم القسم الفرعي</th>
                             </tr>
                         </thead>
                         <tbody>

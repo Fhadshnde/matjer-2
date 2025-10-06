@@ -313,7 +313,7 @@ const AddProduct = () => {
           <h2 className="text-xl font-bold mb-6 pb-2 border-b border-gray-200">التسعير والمخزون</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6 mb-8">
             <div>
-              <div className="mb-4">
+              {/* <div className="mb-4">
                 <label className="block text-gray-700 text-sm font-medium mb-1">السعر الأصلي</label>
                 <input
                   type="number"
@@ -324,16 +324,16 @@ const AddProduct = () => {
                   placeholder="السعر الأصلي"
                   required
                 />
-              </div>
+              </div> */}
               <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-medium mb-1">السعر الحالي</label>
+                <label className="block text-gray-700 text-sm font-medium mb-1">سعر البيع </label>
                 <input
                   type="number"
                   name="price"
                   value={product.price}
                   onChange={handleChange}
                   className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors"
-                  placeholder="السعر الحالي"
+                  placeholder=" سعر البيع"
                   required
                 />
               </div>

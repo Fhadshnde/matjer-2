@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid, PieChart, Pie, LineChart, Line } from 'recharts';
 import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
 
+// Custom tooltip for Product Performance chart
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
         return (
@@ -16,6 +17,7 @@ const CustomTooltip = ({ active, payload, label }) => {
     return null;
 };
 
+// Custom tooltip for Monthly Sales and Visits chart
 const TimelineTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
         const visitsPayload = payload.find(p => p.dataKey === 'visits');
@@ -47,6 +49,21 @@ const TimelineTooltip = ({ active, payload, label }) => {
         );
     }
     return null;
+};
+
+// Function to format tick labels for better display
+const formatTickLabel = (value) => {
+    // A simple formatter that returns the value as is.
+    // The library's internal rendering handles the rest with the proper CSS.
+    return value;
+};
+
+// NEW: Function to truncate long labels and add '...'
+const formatLabel = (label, maxLength = 15) => {
+    if (label && label.length > maxLength) {
+        return `${label.substring(0, maxLength)}...`;
+    }
+    return label;
 };
 
 const ProductAnalytics = () => {
@@ -116,13 +133,6 @@ const ProductAnalytics = () => {
                         icon: 'time',
                         trend: enhanced.cards.totalViews.trend,
                     },
-                    // {
-                    //     title: enhanced.cards.addToCartRate.title,
-                    //     value: enhanced.cards.addToCartRate.value,
-                    //     growth: enhanced.cards.addToCartRate.change,
-                    //     icon: 'conversion',
-                    //     trend: enhanced.cards.addToCartRate.trend,
-                    // },
                     {
                         title: enhanced.cards.conversionRate.title,
                         value: enhanced.cards.conversionRate.value,
@@ -130,20 +140,6 @@ const ProductAnalytics = () => {
                         icon: 'visitors',
                         trend: enhanced.cards.conversionRate.trend,
                     },
-                    // {
-                    //     title: enhanced.cards.avgViewTime.title,
-                    //     value: enhanced.cards.avgViewTime.value,
-                    //     growth: enhanced.cards.avgViewTime.change,
-                    //     icon: 'sales',
-                    //     trend: enhanced.cards.avgViewTime.trend,
-                    // },
-                    // {
-                    //     title: enhanced.cards.abandonedProducts.title,
-                    //     value: enhanced.cards.abandonedProducts.value.toLocaleString(),
-                    //     growth: enhanced.cards.abandonedProducts.change,
-                    //     icon: 'daily-visitors',
-                    //     trend: enhanced.cards.abandonedProducts.trend,
-                    // },
                     {
                         title: "الزبائن النشطين",
                         value: enhanced.cards.hesitantCustomers.value.toLocaleString(),
@@ -151,7 +147,6 @@ const ProductAnalytics = () => {
                         icon: 'new-visitors',
                         trend: enhanced.cards.hesitantCustomers.trend,
                     },
-                    
                 ];
                 setStatsCards(newStatsCards);
 
@@ -272,77 +267,46 @@ const ProductAnalytics = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                     {statsCards.map((card, index) => (
                         <div
-  key={index}
-  className="bg-white p-6 h-[150px] rounded-3xl shadow-md flex flex-row items-center justify-between gap-4 cursor-pointer hover:shadow-lg transition-shadow"
->
-  <div className="bg-gray-100 p-3 rounded-xl text-red-600">
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      className="h-6 w-6"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
-      />
-    </svg>
-  </div>
-
-  <div className="flex flex-col text-right">
-    <h3 className="text-gray-500 text-sm font-medium">{card.title}</h3>
-    <p className="text-xl font-bold text-gray-800">{card.value}</p>
-    <span
-      className={`text-sm flex items-center ${
-        card.trend === "up"
-          ? "text-green-500"
-          : card.trend === "down"
-          ? "text-red-500"
-          : "text-gray-500"
-      }`}
-    >
-      {card.trend === "up" && <span className="mr-1">▲</span>}
-      {card.trend === "down" && <span className="mr-1">▼</span>}
-      {card.growth}
-      <span className="text-gray-400 mr-1">عن الفترة السابقة</span>
-    </span>
-  </div>
-</div>
-
-                    ))}
-                </div>
-
-                {/* Sales KPIs */}
-                {salesKpis && (
-                    <div className="bg-white p-6 rounded-lg shadow-md mb-8">
-                        <h2 className="text-xl font-bold mb-4">مؤشرات المبيعات الرئيسية</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div className="text-center p-4 bg-blue-50 rounded-lg">
-                                <p className="text-2xl font-bold text-blue-600">{salesKpis.totalSales?.value || '0'}</p>
-                                <p className="text-sm text-gray-600">إجمالي المبيعات</p>
-                                <p className="text-xs text-green-500">{salesKpis.totalSales?.percentage || '0%'}</p>
+                            key={index}
+                            className="bg-white p-6 h-[150px] rounded-3xl shadow-md flex flex-row items-center justify-between gap-4 cursor-pointer hover:shadow-lg transition-shadow"
+                        >
+                            <div className="bg-gray-100 p-3 rounded-xl text-red-600">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    className="h-6 w-6"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                                    />
+                                </svg>
                             </div>
-                            <div className="text-center p-4 bg-green-50 rounded-lg">
-                                <p className="text-2xl font-bold text-green-600">{salesKpis.monthlySales?.value || '0'}</p>
-                                <p className="text-sm text-gray-600">مبيعات الشهر</p>
-                                <p className="text-xs text-green-500">{salesKpis.monthlySales?.percentage || '0%'}</p>
-                            </div>
-                            <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                                <p className="text-2xl font-bold text-yellow-600">{salesKpis.weeklySales?.value || '0'}</p>
-                                <p className="text-sm text-gray-600">مبيعات الأسبوع</p>
-                                <p className="text-xs text-green-500">{salesKpis.weeklySales?.percentage || '0%'}</p>
-                            </div>
-                            <div className="text-center p-4 bg-purple-50 rounded-lg">
-                                <p className="text-2xl font-bold text-purple-600">{salesKpis.dailySales?.value || '0'}</p>
-                                <p className="text-sm text-gray-600">مبيعات اليوم</p>
-                                <p className="text-xs text-green-500">{salesKpis.dailySales?.percentage || '0%'}</p>
+
+                            <div className="flex flex-col text-right">
+                                <h3 className="text-gray-500 text-sm font-medium">{card.title}</h3>
+                                <p className="text-xl font-bold text-gray-800">{card.value}</p>
+                                <span
+                                    className={`text-sm flex items-center ${card.trend === "up"
+                                        ? "text-green-500"
+                                        : card.trend === "down"
+                                            ? "text-red-500"
+                                            : "text-gray-500"
+                                        }`}
+                                >
+                                    {card.trend === "up" && <span className="mr-1">▲</span>}
+                                    {card.trend === "down" && <span className="mr-1">▼</span>}
+                                    {card.growth}
+                                    <span className="text-gray-400 mr-1">عن الفترة السابقة</span>
+                                </span>
                             </div>
                         </div>
-                    </div>
-                )}
+                    ))}
+                </div>
 
                 {/* Charts Row 1 */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
@@ -356,11 +320,11 @@ const ProductAnalytics = () => {
                                 <input type="date" className="p-1 border rounded text-sm" />
                             </div>
                         </div>
-                        <ResponsiveContainer width="100%" height={300}>
+                        <ResponsiveContainer width="100%" height={450}>
                             <BarChart data={productPerformanceData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" angle={-45} textAnchor="end" height={60} />
-                                <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
+                                <XAxis dataKey="name"  textAnchor="end" height={90} tickFormatter={(name) => formatLabel(name, 10)} />
+                                <YAxis height={90} yAxisId="left" orientation="left" stroke="#8884d8" />
                                 <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
                                 <Tooltip content={<CustomTooltip />} />
                                 <Bar yAxisId="left" dataKey="views" fill="#8884d8" />
@@ -395,9 +359,9 @@ const ProductAnalytics = () => {
 
                 {/* Charts Row 2 */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                    <div className="bg-white p-6 rounded-lg shadow-md">
+                    <div className="bg-white p-6 rounded-lg shadow-md order-1 lg:order-1">
                         <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold">أفضل الفئات مبيعاً</h2>
+                            <h2 className="text-xl font-bold text-gray-800">أفضل الأقسام مبيعاً</h2>
                             <div className="flex items-center space-x-2 rtl:space-x-reverse">
                                 <span className="text-sm text-gray-500">من</span>
                                 <input type="date" className="p-1 border rounded text-sm" />
@@ -405,38 +369,77 @@ const ProductAnalytics = () => {
                                 <input type="date" className="p-1 border rounded text-sm" />
                             </div>
                         </div>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={categoriesData} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                                <XAxis type="number" />
-                                <YAxis dataKey="name" type="category" />
-                                <Tooltip />
-                                <Bar dataKey="value" barSize={20}>
-                                    {categoriesData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
+
+                        <div dir="rtl">
+                            <ResponsiveContainer width={700} height={350}>
+                                <BarChart
+                                    data={categoriesData}
+                                    layout="vertical"
+                                    margin={{ top: 10, right: 40, left: 40, bottom: 10 }}
+                                >
+                                    <XAxis type="number" tick={{ fontSize: 12, fill: "#4B5563" }} />
+                                    <YAxis
+                                        dataKey="name"
+                                        type="category"
+                                        tick={{
+                                            fontSize: 13,
+                                            fill: "#1F2937",
+                                            fontFamily: "Cairo, sans-serif",
+                                        }}
+                                        width={200}
+                                        tickFormatter={(name) => name}
+                                        dx={-120}
+                                    />
+                                    <Tooltip
+                                        wrapperStyle={{ direction: "rtl", textAlign: "right" }}
+                                        contentStyle={{
+                                            fontSize: "13px",
+                                            fontFamily: "Cairo, sans-serif",
+                                        }}
+                                    />
+                                    <Bar dataKey="value" barSize={20} radius={[6, 6, 6, 6]}>
+                                        {categoriesData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </div>
                     </div>
 
-                    <div className="bg-white p-6 rounded-lg shadow-md">
-                        <h2 className="text-xl font-bold mb-8"> المنتجات المرغوبة (فتح المنتج + شراء)</h2>
+                    {/* 🔹 المنتجات المرغوبة - بعده */}
+                    <div className="bg-white p-6 rounded-lg shadow-md order-2 lg:order-2">
+                        <h2 className="text-xl font-bold mb-8 text-gray-800">
+                            المنتجات المرغوبة (فتح المنتج + شراء)
+                        </h2>
                         <div className="space-y-4">
                             {funnelData.map((item, index) => (
                                 <div key={index} className="flex items-center justify-between">
-                                    <span className="w-1/4 text-sm text-gray-700">{item.stage}</span>
-                                    <div className="w-3/4 bg-gray-200 rounded-full h-4">
-                                        <div className="h-4 rounded-full" style={{ width: `${(item.value / (funnelData[0]?.value || 1)) * 100}%`, backgroundColor: item.color }}></div>
+                                    <span className="w-1/4 text-sm text-gray-700 text-right">
+                                        {item.stage}
+                                    </span>
+                                    <div className="w-3/4 bg-gray-200 rounded-full h-4 mx-2">
+                                        <div
+                                            className="h-4 rounded-full"
+                                            style={{
+                                                width: `${(item.value / (funnelData[0]?.value || 1)) * 100}%`,
+                                                backgroundColor: item.color,
+                                            }}
+                                        ></div>
                                     </div>
-                                    <span className="ml-4 font-bold text-gray-900">{item.value.toLocaleString()}</span>
+                                    <span className="font-bold text-gray-900">
+                                        {item.value.toLocaleString()}
+                                    </span>
                                 </div>
                             ))}
                         </div>
                     </div>
                 </div>
 
+
+
                 {/* Charts Row 3 */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                     <div className="bg-white p-6 rounded-lg shadow-md">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-xl font-bold">تسجيل المستخدمين</h2>
@@ -448,7 +451,7 @@ const ProductAnalytics = () => {
                             </div>
                         </div>
                         <ResponsiveContainer width="100%" height={300}>
-                            <BarChart data={userRegistrationData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                            <BarChart data={userRegistrationData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="month" />
                                 <YAxis />
@@ -477,47 +480,6 @@ const ProductAnalytics = () => {
                                 <Area type="monotone" dataKey="عدد الجلسات" stroke="#82ca9d" fill="#82ca9d" />
                             </AreaChart>
                         </ResponsiveContainer>
-                    </div>
-                </div>
-
-                {/* Sales by Department and City */}
-                {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                    <div className="bg-white p-6 rounded-lg shadow-md">
-                        <h2 className="text-xl font-bold mb-4">المبيعات حسب القسم</h2>
-                        <ResponsiveContainer width="100%" height={300}>
-                            <PieChart>
-                                <Pie
-                                    data={salesByDepartment}
-                                    cx="50%"
-                                    cy="50%"
-                                    labelLine={false}
-                                    label={({ name, percentage }) => `${name} (${percentage}%)`}
-                                    outerRadius={80}
-                                    fill="#8884d8"
-                                    dataKey="sales"
-                                >
-                                    {salesByDepartment.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={['#8884d8', '#82ca9d', '#ffc658', '#ff7300'][index % 4]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-lg shadow-md">
-                        <h2 className="text-xl font-bold mb-4">المبيعات حسب المدينة</h2>
-                        <div className="space-y-3">
-                            {salesByCity.map((city, index) => (
-                                <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                                    <span className="font-medium">{city.name}</span>
-                                    <div className="text-left">
-                                        <p className="font-bold text-lg">{city.sales.toLocaleString()} د.ع</p>
-                                        <p className="text-sm text-gray-500">{city.percentage}%</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
                     </div>
                 </div> */}
 
@@ -549,9 +511,7 @@ const ProductAnalytics = () => {
                                     <th className="py-3 px-4 font-semibold text-gray-500">المنتج</th>
                                     <th className="py-3 px-4 font-semibold text-gray-500">الزيارات</th>
                                     <th className="py-3 px-4 font-semibold text-gray-500">معدل التحويل</th>
-                                    {/* <th className="py-3 px-4 font-semibold text-gray-500">تمت الإضافة للسلة</th> */}
                                     <th className="py-3 px-4 font-semibold text-gray-500">المبيعات</th>
-                                    {/* <th className="py-3 px-4 font-semibold text-gray-500">الكمية</th> */}
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200 text-right">
@@ -567,9 +527,7 @@ const ProductAnalytics = () => {
                                         </td>
                                         <td className="py-3 px-4 text-gray-700">{product.visits}</td>
                                         <td className="py-3 px-4 text-gray-700">{product.conversion}</td>
-                                            {/* <td className="py-3 px-4 text-gray-700">{product.addedToCart}</td> */}
                                         <td className="py-3 px-4 text-gray-700">{product.sales}</td>
-                                        {/* <td className="py-3 px-4 text-gray-700">{product.quantity}</td> */}
                                     </tr>
                                 ))}
                             </tbody>

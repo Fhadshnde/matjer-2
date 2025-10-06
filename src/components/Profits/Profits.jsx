@@ -764,7 +764,7 @@ const ProfitsPage = () => {
             />
           </div>
 
-          {/* تقرير الأرباح (AreaChart) */}
+          {/* تقرير الأرباح (AreaChart)
           <div ref={chartsRef} className="bg-white p-6 rounded-xl shadow-lg mb-8">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-800">تقرير الأرباح الشهري</h2>
@@ -834,7 +834,7 @@ const ProfitsPage = () => {
                 </AreaChart>
               </ResponsiveContainer>
             </div>
-          </div>
+          </div> */}
 
           {/* الأرباح اليومية والتحليل */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
