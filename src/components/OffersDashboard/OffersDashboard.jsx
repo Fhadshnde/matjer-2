@@ -646,10 +646,7 @@ const OffersDashboard = () => {
     <div className="rtl:text-right font-sans bg-gray-100 min-h-screen p-6">
       <div className="container mx-auto max-w-7xl">
         <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">لوحة العروض</h1>
-            <p className="text-gray-600">إدارة العروض والإعلانات</p>
-          </div>
+
           <div className="flex items-center space-x-4 space-x-reverse">
             <button
               onClick={fetchOffers}
@@ -666,6 +663,10 @@ const OffersDashboard = () => {
               <IoAdd className="h-5 w-5 ml-2" />
               إنشاء عرض جديد
             </button>
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">لوحة العروض</h1>
+            <p className="text-gray-600">إدارة العروض والإعلانات</p>
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
