@@ -23,7 +23,6 @@ const EditProduct = () => {
     media: []
   });
 
-  const [mainImageFile, setMainImageFile] = useState(null);
   const [mediaFiles, setMediaFiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updateLoading, setUpdateLoading] = useState(false);
@@ -177,11 +176,13 @@ const EditProduct = () => {
       const uploadedMedia = await Promise.all(
         mediaFiles.map(async (file) => {
           if (file.isExisting) return { url: file.url, type: 'image', isMain: false };
+          if (!file.file) return null; // منع undefined
           const url = await uploadImage(file.file);
           return url ? { url, type: 'image', isMain: false } : null;
         })
       ).then(arr => arr.filter(Boolean));
 
+      // تحديد الصورة الرئيسية
       const mainUrl = uploadedMedia[mainImageIndex]?.url || (mediaFiles[mainImageIndex]?.url || null);
 
       // تحديث isMain لكل صورة
@@ -206,7 +207,7 @@ const EditProduct = () => {
         media: mediaPayload
       };
 
-      const res = await axios.put(
+      await axios.put(
         getApiUrl(API_CONFIG.ENDPOINTS.PRODUCTS.UPDATE(id)),
         payload,
         { headers: getAuthHeaders() }
@@ -271,57 +272,51 @@ const EditProduct = () => {
           </div>
 
           {/* الصور */}
-{/* الصور */}
-<h2 className="text-xl font-bold mb-2">صور المنتج</h2>
-<div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-  {mediaFiles.map((file, index) => (
-    <div key={index} className="relative border rounded overflow-hidden">
-      {/* المعاينة */}
-      <img
-        src={file.isExisting ? file.url : URL.createObjectURL(file.file)}
-        alt={file.name}
-        className={`w-full h-32 object-cover ${index === mainImageIndex ? 'border-4 border-green-500' : ''}`}
-      />
+          <h2 className="text-xl font-bold mb-2">صور المنتج</h2>
+          <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+            {mediaFiles.map((file, index) => (
+              <div key={index} className="relative border rounded overflow-hidden">
+                <img
+                  src={file.isExisting ? file.url : file.file ? URL.createObjectURL(file.file) : ''}
+                  alt={file.name}
+                  className={`w-full h-32 object-cover ${index === mainImageIndex ? 'border-4 border-green-500' : ''}`}
+                />
 
-      {/* أزرار التحكم */}
-      <div className="absolute top-1 right-1 flex flex-col gap-1">
-        <button
-          type="button"
-          onClick={() => selectMainImage(index)}
-          className="bg-green-500 text-white text-xs px-1 rounded"
-        >
-          رئيسية
-        </button>
-        <button
-          type="button"
-          onClick={() => handleDeleteMedia(index)}
-          className="bg-red-500 text-white text-xs px-1 rounded"
-        >
-          حذف
-        </button>
-      </div>
-    </div>
-  ))}
+                <div className="absolute top-1 right-1 flex flex-col gap-1">
+                  <button
+                    type="button"
+                    onClick={() => selectMainImage(index)}
+                    className="bg-green-500 text-white text-xs px-1 rounded"
+                  >
+                    رئيسية
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteMedia(index)}
+                    className="bg-red-500 text-white text-xs px-1 rounded"
+                  >
+                    حذف
+                  </button>
+                </div>
+              </div>
+            ))}
 
-  {/* رفع صور جديدة */}
-  <div className="border border-dashed rounded flex items-center justify-center h-32">
-    <input
-      type="file"
-      accept="image/*"
-      multiple
-      onChange={handleMediaChange}
-      className="w-full h-full opacity-0 cursor-pointer absolute"
-    />
-    <span className="text-gray-500">رفع صور جديدة</span>
-  </div>
-</div>
+            <div className="border border-dashed rounded flex items-center justify-center h-32 relative">
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleMediaChange}
+                className="w-full h-full opacity-0 cursor-pointer absolute"
+              />
+              <span className="text-gray-500 z-10">رفع صور جديدة</span>
+            </div>
+          </div>
 
-
-          {/* باقي الألوان والمقاسات كما هي */}
-          
+          {/* رسالة النجاح أو الخطأ */}
           {message && <p className={`mt-4 text-center ${message.includes('نجاح') ? 'text-green-600' : 'text-red-600'}`}>{message}</p>}
 
-          <div className="flex gap-4 mt-6">
+          <div className="flex gap-4 mt-24">
             <button type="submit" disabled={updateLoading} className="bg-red-600 hover:bg-red-700 text-white p-3 rounded">
               {updateLoading ? 'جاري الحفظ...' : 'حفظ التعديلات'}
             </button>
