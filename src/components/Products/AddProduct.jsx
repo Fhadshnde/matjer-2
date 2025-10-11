@@ -25,6 +25,7 @@ const AddProduct = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [categories, setCategories] = useState([]);
+  const [mainImageIndex, setMainImageIndex] = useState(0); // لتحديد الصورة الرئيسية
 
   useEffect(() => {
     const fetchData = async () => {
@@ -94,6 +95,12 @@ const AddProduct = () => {
 
   const handleDeleteFile = (index) => {
     setFilesToUpload(prev => prev.filter((_, i) => i !== index));
+    if (mainImageIndex === index) setMainImageIndex(0);
+    else if (mainImageIndex > index) setMainImageIndex(prev => prev - 1);
+  };
+
+  const selectMainImage = (index) => {
+    setMainImageIndex(index);
   };
 
   const uploadImage = async (file) => {
@@ -136,12 +143,12 @@ const AddProduct = () => {
         if (url) uploadedUrls.push(url);
       }
 
-      // الصورة الرئيسية هي الأولى
-      const mainImageUrl = uploadedUrls[0];
+      // تعيين الصورة الرئيسية حسب اختيار المستخدم
+      const mainImageUrl = uploadedUrls[mainImageIndex];
       const mediaPayload = uploadedUrls.map((url, index) => ({
         url,
         type: 'image',
-        isMain: index === 0
+        isMain: index === mainImageIndex
       }));
 
       const payload = {
@@ -245,8 +252,11 @@ const AddProduct = () => {
           <div className="mb-6">
             {filesToUpload.map((file, index) => (
               <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded border mb-2">
-                <span>{file.name} {index === 0 && "(رئيسية)"}</span>
-                <button type="button" onClick={() => handleDeleteFile(index)} className="text-red-500">حذف</button>
+                <span>{file.name} {index === mainImageIndex && "(رئيسية)"}</span>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => selectMainImage(index)} className="text-green-500">تعيين رئيسية</button>
+                  <button type="button" onClick={() => handleDeleteFile(index)} className="text-red-500">حذف</button>
+                </div>
               </div>
             ))}
             <input type="file" accept="image/*" multiple onChange={handleFileChange} className="mt-2" />
