@@ -103,12 +103,7 @@ const Login = ({ setIsLoggedIn }) => {
               </span>
             </div>
           </div>
-          {/* <div className="text-right mb-5">
-            <label htmlFor="remember" className="text-sm text-gray-600">
-              تذكرني
-            </label>
-            <input type="checkbox" id="remember" className="align-middle mr-2" />
-          </div> */}
+
           <button
             type="submit"
             className="w-full py-4 bg-red-600 text-white border-none rounded-lg cursor-pointer text-lg font-bold hover:bg-red-700 transition-colors duration-200"
@@ -117,9 +112,7 @@ const Login = ({ setIsLoggedIn }) => {
             {loading ? 'جاري الدخول...' : 'تسجيل الدخول'}
           </button>
         </form>
-        {/* <p className="mt-5 text-sm text-gray-600">
-          تاجر جديد؟ <a href="#" className="text-blue-600 no-underline">أنشئ حساب تاجر الآن</a>
-        </p> */}
+
       </div>
     </div>
   );

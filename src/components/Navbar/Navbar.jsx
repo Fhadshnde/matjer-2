@@ -102,7 +102,7 @@ const Navbar = ({ setIsLoggedIn }) => {
     { path: "/sections", icon: <Bell className="w-4 h-4" />, text: "الأقسام" },
     // { path: "/customers", icon: <Globe className="w-4 h-4" />, text: "إعدادات التوصيل" },
     { path: "/offers-dashboard", icon: <Tag className="w-4 h-4" />, text: "العروض والخصومات" },
-    { path: "/connection-settings", icon: <Tag className="w-4 h-4" />, text: "اعدادات التوصيل" },
+    // { path: "/connection-settings", icon: <Tag className="w-4 h-4" />, text: "اعدادات التوصيل" },
 
     { path: "/abandoned-page", icon: <Inbox className="w-4 h-4" />, text: "المهجورات" },
     { path: "/store-info", icon: <Tag className="w-4 h-4" />, text: "الإعدادات" },
