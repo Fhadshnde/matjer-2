@@ -57,7 +57,7 @@ function Card({ title, value, change, icon, trend, details }) {
   const isUp = trend === 'up';
 
   return (
-    <div className="flex-1 p-6 bg-white rounded-lg shadow-md flex justify-between items-center text-right hover:shadow-lg transition-shadow">
+    <div className="flex-1 p-3 bg-white rounded-lg shadow-md flex justify-between items-center text-right hover:shadow-lg transition-shadow">
       <div className="flex flex-col items-end">
         <h3 className="text-sm text-gray-500 mb-1">{title}</h3>
         <p className="text-2xl font-bold text-gray-900 mb-1">{value}</p>
@@ -1045,13 +1045,14 @@ function App() {
   return (
     <div className="bg-gray-100 min-h-screen text-gray-900 p-8 font-['Tajawal']">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">إعدادات التوصيل</h1>
-        <p className="text-gray-600">إدارة مناطق التوصيل وعروض التوصيل المجاني</p>
-      </div>
+      <div dir="rtl" className="mb-8 items-start justify-start text-right">
+  <h1 className="text-3xl font-bold text-gray-800 mb-2">إعدادات التوصيل</h1>
+  <p className="text-gray-600">إدارة مناطق التوصيل وعروض التوصيل المجاني</p>
+</div>
+
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <Card
           title={shippingSettings?.cards?.avgDeliveryTime?.title || 'متوسط وقت التوصيل'}
           value={shippingSettings?.cards?.avgDeliveryTime?.value || '0 يوم'}
@@ -1060,14 +1061,14 @@ function App() {
           details={shippingSettings?.cards?.avgDeliveryTime?.details || 'لا توجد بيانات'}
           icon={<IoTime className="w-6 h-6" />}
         />
-        <Card
+        {/* <Card
           title={shippingSettings?.cards?.activeOffers?.title || 'العروض النشطة'}
           value={`${shippingSettings?.cards?.activeOffers?.value || 0} عروض`}
           change={shippingSettings?.cards?.activeOffers?.change || '+0%'}
           trend={shippingSettings?.cards?.activeOffers?.trend || 'up'}
           details={shippingSettings?.cards?.activeOffers?.details || 'لا توجد بيانات'}
           icon={<IoCash className="w-6 h-6" />}
-        />
+        /> */}
         <Card
           title={shippingSettings?.cards?.disabledAreas?.title || 'المناطق المعطلة'}
           value={`${shippingSettings?.cards?.disabledAreas?.value || 0} مناطق`}
@@ -1099,7 +1100,7 @@ function App() {
       />
 
       {/* Delivery Offers Table */}
-      <Table
+      {/* <Table
         title="عروض التوصيل المحلي المجاني"
         columns={deliveryColumns}
         tableData={deliveryOffers}
@@ -1108,7 +1109,7 @@ function App() {
         pagination={deliveryPagination}
         refreshData={() => fetchShippingData(deliveryPagination?.currentPage || 1)}
         onAction={handleTableAction}
-      />
+      /> */}
     </div>
   );
 }

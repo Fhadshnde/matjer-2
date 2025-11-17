@@ -44,7 +44,7 @@ const MyDues = () => {
 
             const data = await duesResponse.json();
             
-            // تحديث حالة المكون باستخدام البيانات الجديدة
+            // تحديث حالة المكون باستخدام البيانات الجديدةXPP
             setDuesData(data.summary);
             setOrders(data.ordersTable);
 

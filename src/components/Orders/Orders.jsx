@@ -74,10 +74,9 @@ const Th = ({ children, className = '' }) => (
   <th className={`p-3 font-semibold text-gray-500 ${className}`}>{children}</th>
 );
 
-const Td = ({ children }) => (
-  <td className="p-3 text-sm text-gray-700">{children}</td>
+const Td = ({ children, className = '' }) => (
+  <td className={`p-3 text-sm text-gray-700 ${className}`}>{children}</td>
 );
-
 const statusMap = {
   'الكل': 'الكل',
   'PROCESSING': 'قيد المعالجة',
@@ -220,7 +219,20 @@ const OrderDetailsModal = ({ isOpen, onClose, order, updateOrderStatus }) => {
               <p className="font-bold text-gray-800">{new Date(order.updatedAt).toLocaleDateString('ar-EG')}</p>
             </div>
           </div>
+          
           <div className="flex justify-end mt-4 space-x-2 rtl:space-x-reverse">
+
+            
+            {(order.status === 'CANCELLED' || order.status === 'RETURNED' || order.status === 'CANCELED') && (
+              <button
+                onClick={() => updateOrderStatus(order.id, 'SHIPPED')}
+                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
+              >
+                إعادة تنشيط إلى تم الشحن
+              </button>
+            )}
+
+            
             {order.status === 'PROCESSING' && (
               <button
                 onClick={() => updateOrderStatus(order.id, 'SHIPPED')}
@@ -229,7 +241,9 @@ const OrderDetailsModal = ({ isOpen, onClose, order, updateOrderStatus }) => {
                 تغيير إلى تم الشحن
               </button>
             )}
-            {order.status === 'SHIPPED' && (
+
+            
+            {(order.status === 'SHIPPED' || order.status === 'DELIVERING') && (
               <button
                 onClick={() => updateOrderStatus(order.id, 'DELIVERED')}
                 className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition"
@@ -237,12 +251,24 @@ const OrderDetailsModal = ({ isOpen, onClose, order, updateOrderStatus }) => {
                 تغيير إلى تم التسليم
               </button>
             )}
-            {order.status !== 'CANCELLED' && order.status !== 'DELIVERED' && (
+            
+            
+            {order.status !== 'CANCELLED' && order.status !== 'CANCELED' && order.status !== 'DELIVERED' && order.status !== 'RETURNED' && (
               <button
                 onClick={() => updateOrderStatus(order.id, 'CANCELLED')}
                 className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition"
               >
                 إلغاء الطلب
+              </button>
+            )}
+
+            
+            {order.status === 'DELIVERED' && (
+              <button
+                onClick={() => updateOrderStatus(order.id, 'RETURNED')}
+                className="bg-red-400 text-white px-4 py-2 rounded-lg hover:bg-red-500 transition"
+              >
+                تغيير إلى مرتجع
               </button>
             )}
           </div>
@@ -336,7 +362,7 @@ const OrdersPage = () => {
       });
       const data = response.data;
       setOrders(data.orders);
-      setFilteredOrders(data.orders); // تحديث القائمة المرشحة بالبيانات الجديدة
+      setFilteredOrders(data.orders);
       setTotalPages(data.pagination.pages);
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -366,9 +392,15 @@ const OrdersPage = () => {
         headers: getAuthHeaders()
       });
       if (response.status === 200) {
-        alert('تم تحديث حالة الطلب بنجاح!');
-        fetchOrders();
+        alert(`تم تحديث حالة الطلب #${orderId} بنجاح إلى ${getStatusText(newStatus)}!`);
+        
+        setOrders(prevOrders => prevOrders.map(order => 
+          order.id === orderId ? { ...order, status: newStatus } : order
+        ));
+        
         fetchOrderDetails(orderId);
+        
+        fetchOrders();
       } else {
         alert('فشل في تحديث حالة الطلب.');
       }
@@ -389,7 +421,7 @@ const OrdersPage = () => {
 
   const handleSearchClick = () => {
     if (!searchQuery) {
-      setFilteredOrders(orders); // إذا كان مربع البحث فارغًا، أظهر جميع الطلبات
+      setFilteredOrders(orders);
       return;
     }
     const lowercasedQuery = searchQuery.toLowerCase();
@@ -487,6 +519,19 @@ const OrdersPage = () => {
     }));
   
     const ws = XLSX.utils.json_to_sheet(dataForExport);
+
+    
+    const wscols = [
+        { wch: 10 }, // A: رقم الطلب
+        { wch: 20 }, // B: العميل
+        { wch: 15 }, // C: هاتف العميل
+        { wch: 90 }, // D: المنتجات (تم زيادة العرض)
+        { wch: 15 }, // E: الإجمالي (د.ع)
+        { wch: 15 }, // F: الحالة
+        { wch: 15 }  // G: تاريخ الطلب
+    ];
+    ws['!cols'] = wscols;
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "الطلبات");
     
@@ -508,11 +553,7 @@ const OrdersPage = () => {
       format: 'a4'
     });
     
-    // إزالة السطر الذي يضيف الخط لأنه يسبب الخطأ
-    // doc.addFont('Amiri-Regular.ttf', 'Amiri', 'normal');
-    // doc.setFont('Amiri');
     
-    // استخدام خط مدمج مع دعم للعربية لضمان عمل التصدير
     doc.setFont('helvetica', 'normal');
     doc.setR2L(true);
 
@@ -604,13 +645,7 @@ const OrdersPage = () => {
             >
               تصدير Excel
             </button>
-            {/* <button
-              onClick={handleExportToPdf}
-              disabled={selectedOrders.length === 0}
-              className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              تصدير PDF
-            </button> */}
+            
           </div>
         </div>
         <div className="overflow-x-auto">

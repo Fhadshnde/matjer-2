@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
 import { SketchPicker } from 'react-color';
@@ -7,6 +7,8 @@ import { SketchPicker } from 'react-color';
 const EditProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation(); 
+  const { prevPage, prevLimit } = location.state || {}; // جلب الحالة الممررة
   const token = localStorage.getItem('token');
 
   const [product, setProduct] = useState({
@@ -18,7 +20,7 @@ const EditProduct = () => {
     sectionId: '',
     mainImageUrl: '',
     wholesalePrice: '',
-    isActive: true,
+    isActive: true, 
     colors: [],
     media: []
   });
@@ -57,7 +59,7 @@ const EditProduct = () => {
           wholesalePrice: fetchedProduct.wholesalePrice?.toString() || '',
           categoryId: fetchedProduct.categoryId?.toString() || '',
           sectionId: fetchedProduct.sectionId?.toString() || '',
-          isActive: fetchedProduct.isActive,
+          isActive: fetchedProduct.isActive !== undefined ? fetchedProduct.isActive : true, 
           colors: fetchedProduct.colors || [],
           media: fetchedProduct.media || []
         });
@@ -88,8 +90,8 @@ const EditProduct = () => {
   }, [id]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setProduct(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setProduct(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const handleColorChange = (index, field, value) => {
@@ -113,7 +115,7 @@ const EditProduct = () => {
   const addColor = () => {
     setProduct(prev => ({
       ...prev,
-      colors: [...prev.colors, { name: '', code: '', stock: 0, sizes: [{ size: '', stock: 0 }] }]
+      colors: [...prev.colors, { name: '', code: '#FFFFFF', stock: 0, sizes: [{ size: '', stock: 0 }] }]
     }));
   };
 
@@ -176,7 +178,7 @@ const EditProduct = () => {
       const uploadedMedia = await Promise.all(
         mediaFiles.map(async (file) => {
           if (file.isExisting) return { url: file.url, type: 'image', isMain: false };
-          if (!file.file) return null; // منع undefined
+          if (!file.file) return null; 
           const url = await uploadImage(file.file);
           return url ? { url, type: 'image', isMain: false } : null;
         })
@@ -214,7 +216,10 @@ const EditProduct = () => {
       );
 
       setMessage('تم تحديث المنتج بنجاح!');
-      navigate('/products');
+      
+      // العودة مع تمرير حالة التصفح عند النجاح
+      navigate('/products', { state: { page: prevPage, limit: prevLimit } }); 
+      
     } catch (err) {
       console.error(err);
       setMessage('حدث خطأ أثناء تحديث المنتج.');
@@ -254,8 +259,22 @@ const EditProduct = () => {
               </select>
             </div>
           </div>
+          
+          {/* حالة المنتج (isActive) */}
+          <div className="mb-6">
+            <label className="inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                name="isActive" 
+                checked={product.isActive} 
+                onChange={handleChange} 
+                className="form-checkbox h-5 w-5 text-red-600 rounded" 
+              />
+              <span className="rtl:mr-3 ltr:ml-3 text-lg font-medium text-gray-900">المنتج فعال/نشط</span>
+            </label>
+          </div>
 
-          {/* الأسعار والمخزون */}
+          {/* الأسعار والمخزون العام */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <div>
               <label className="block mb-1 font-medium text-gray-700">السعر الأصلي</label>
@@ -266,9 +285,76 @@ const EditProduct = () => {
               <input type="number" name="wholesalePrice" value={product.wholesalePrice} onChange={handleChange} className="w-full border p-2 rounded" />
             </div>
             <div>
-              <label className="block mb-1 font-medium text-gray-700">المخزون</label>
+              <label className="block mb-1 font-medium text-gray-700">المخزون العام</label>
               <input type="number" name="stock" value={product.stock} onChange={handleChange} className="w-full border p-2 rounded" required />
             </div>
+          </div>
+
+          {/* الألوان والأحجام */}
+          <h2 className="text-xl font-bold mb-4 mt-6">الألوان والأحجام</h2>
+          <div className="space-y-6 mb-6 border p-4 rounded-lg bg-gray-50">
+            {product.colors.map((color, colorIndex) => (
+              <div key={colorIndex} className="p-4 border rounded-lg bg-white shadow-sm">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold">اللون {colorIndex + 1}</h3>
+                  <button type="button" onClick={() => deleteColor(colorIndex)} className="text-red-500 hover:text-red-700 font-bold">
+                    حذف اللون
+                  </button>
+                </div>
+                
+                {/* حقول اللون الأساسية */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 items-end">
+                    <div>
+                        <label className="block mb-1 font-medium text-gray-700">اسم اللون</label>
+                        <input type="text" value={color.name} onChange={(e) => handleColorChange(colorIndex, 'name', e.target.value)} className="w-full border p-2 rounded" required />
+                    </div>
+                    <div>
+                        <label className="block mb-1 font-medium text-gray-700">رمز اللون (Hex)</label>
+                        <input type="text" value={color.code} onChange={(e) => handleColorChange(colorIndex, 'code', e.target.value)} className="w-full border p-2 rounded" required />
+                    </div>
+                    <div>
+                        <label className="block mb-1 font-medium text-gray-700">مخزون اللون</label>
+                        <input type="number" value={color.stock} onChange={(e) => handleColorChange(colorIndex, 'stock', e.target.value)} className="w-full border p-2 rounded" />
+                    </div>
+                    <div className="flex justify-start">
+                        <div className="border p-1 rounded">
+                            <SketchPicker
+                                color={color.code}
+                                onChangeComplete={(c) => handleColorChange(colorIndex, 'code', c.hex)}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* حقول الأحجام */}
+                <h4 className="font-medium text-gray-700 mt-4 mb-2">الأحجام الخاصة بهذا اللون:</h4>
+                <div className="space-y-2">
+                    {color.sizes.map((size, sizeIndex) => (
+                        <div key={sizeIndex} className="grid grid-cols-5 gap-4 items-center p-2 bg-gray-100 rounded">
+                            <div className="col-span-2">
+                                <label className="block mb-1 text-sm text-gray-600">اسم الحجم</label>
+                                <input type="text" value={size.size} onChange={(e) => handleSizeChange(colorIndex, sizeIndex, 'size', e.target.value)} className="w-full border p-2 rounded text-sm" required />
+                            </div>
+                            <div className="col-span-2">
+                                <label className="block mb-1 text-sm text-gray-600">مخزون الحجم</label>
+                                <input type="number" value={size.stock} onChange={(e) => handleSizeChange(colorIndex, sizeIndex, 'stock', e.target.value)} className="w-full border p-2 rounded text-sm" required />
+                            </div>
+                            <div className="col-span-1 text-left">
+                                <button type="button" onClick={() => deleteSize(colorIndex, sizeIndex)} className="text-red-500 hover:text-red-700 text-sm p-1">
+                                    حذف
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                <button type="button" onClick={() => addSize(colorIndex)} className="mt-3 bg-blue-500 hover:bg-blue-600 text-white p-2 rounded text-sm">
+                  + إضافة حجم جديد
+                </button>
+              </div>
+            ))}
+            <button type="button" onClick={addColor} className="mt-4 bg-purple-600 hover:bg-purple-700 text-white p-3 rounded w-full">
+              + إضافة لون جديد
+            </button>
           </div>
 
           {/* الصور */}
@@ -279,7 +365,7 @@ const EditProduct = () => {
                 <img
                   src={file.isExisting ? file.url : file.file ? URL.createObjectURL(file.file) : ''}
                   alt={file.name}
-                  className={`w-full h-32 object-cover ${index === mainImageIndex ? 'border-4 border-green-500' : ''}`}
+                  className={`w-full h-48 object-cover ${index === mainImageIndex ? 'border-4 border-green-500' : ''}`}
                 />
 
                 <div className="absolute top-1 right-1 flex flex-col gap-1">
@@ -301,7 +387,7 @@ const EditProduct = () => {
               </div>
             ))}
 
-            <div className="border border-dashed rounded flex items-center justify-center h-32 relative">
+            <div className="border border-dashed rounded flex items-center justify-center h-48 relative">
               <input
                 type="file"
                 accept="image/*"
@@ -316,11 +402,15 @@ const EditProduct = () => {
           {/* رسالة النجاح أو الخطأ */}
           {message && <p className={`mt-4 text-center ${message.includes('نجاح') ? 'text-green-600' : 'text-red-600'}`}>{message}</p>}
 
-          <div className="flex gap-4 mt-24">
+          <div className="flex gap-4 mt-6">
             <button type="submit" disabled={updateLoading} className="bg-red-600 hover:bg-red-700 text-white p-3 rounded">
               {updateLoading ? 'جاري الحفظ...' : 'حفظ التعديلات'}
             </button>
-            <button type="button" onClick={() => navigate('/products')} className="bg-gray-200 hover:bg-gray-300 text-gray-800 p-3 rounded">
+            <button 
+              type="button" 
+              onClick={() => navigate('/products', { state: { page: prevPage, limit: prevLimit } })}
+              className="bg-gray-200 hover:bg-gray-300 text-gray-800 p-3 rounded"
+            >
               إلغاء
             </button>
           </div>

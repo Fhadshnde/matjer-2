@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { IoChevronUpOutline, IoChevronDownOutline, IoSearchOutline, IoAdd } from 'react-icons/io5';
 import axios from 'axios';
 import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
@@ -7,6 +7,7 @@ import * as XLSX from 'xlsx';
 
 const Dashboard = () => {
     const navigate = useNavigate();
+    const location = useLocation(); 
     const [isEditStockModalOpen, setIsEditStockModalOpen] = useState(false);
     const [isEditPriceModalOpen, setIsEditPriceModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -52,7 +53,13 @@ const Dashboard = () => {
             });
             const data = response.data;
             setProducts(data.products || []);
-            setPagination(data.pagination);
+            setPagination(prev => ({ 
+                ...prev, 
+                page: data.pagination.page, 
+                limit: data.pagination.limit, 
+                pages: data.pagination.pages,
+                total: data.pagination.total
+            }));
 
             // إحصائيات المنتجات
             const totalProducts = data.pagination?.total || 0;
@@ -78,8 +85,31 @@ const Dashboard = () => {
     };
 
     useEffect(() => {
-        fetchProducts(pagination.page, pagination.limit, searchTerm);
-    }, [pagination.page, pagination.limit, searchTerm]);
+        const statePage = location.state?.page;
+        const stateLimit = location.state?.limit;
+        let pageToFetch = pagination.page;
+        let limitToFetch = pagination.limit;
+
+        if (statePage && stateLimit) {
+            // الحالة 1: العودة من شاشة التعديل (استخدام الحالة الممررة)
+            pageToFetch = statePage;
+            limitToFetch = stateLimit;
+
+            // تحديث حالة التصفح بالصفحة والـ limit الممررين 
+            setPagination(prev => ({ 
+                ...prev, 
+                page: statePage, 
+                limit: stateLimit 
+            }));
+            
+            // إزالة الحالة من history لتجنب إعادة التطبيق عند الانتقالات اللاحقة
+            window.history.replaceState({}, document.title, location.pathname); 
+        }
+
+        // الحالة 2: الجلب العادي، التنقل بين الصفحات، أو تغيير الـ Limit، أو البحث
+        fetchProducts(pageToFetch, limitToFetch, searchTerm);
+        
+    }, [location.pathname, searchTerm, pagination.page, pagination.limit]); 
 
     const handlePageChange = (page) => {
         if (page > 0 && page <= pagination.pages) {
@@ -103,7 +133,13 @@ const Dashboard = () => {
     };
 
     const handleOpenEditProduct = (product) => {
-        navigate(`/edit-product/${product.id}`);
+        // تمرير الصفحة الحالية والـ limit كحالة
+        navigate(`/edit-product/${product.id}`, { 
+            state: { 
+                prevPage: pagination.page, 
+                prevLimit: pagination.limit 
+            } 
+        });
     };
 
     const handleOpenEditStock = (product) => {
@@ -485,6 +521,7 @@ const Dashboard = () => {
                             <option value="10">10</option>
                             <option value="20">20</option>
                             <option value="50">50</option>
+                            <option value="100">100</option> {/* <-- التعديل هنا */}
                         </select>
                     </div>
                 </div>
