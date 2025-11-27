@@ -4,11 +4,37 @@ import axios from 'axios';
 import { getApiUrl, getAuthHeaders, API_CONFIG } from '../../config/api';
 import { SketchPicker } from 'react-color';
 
+// المكون الفرعي للنافذة المنبثقة لعرض الصورة الكبيرة
+const ImageModal = ({ imageUrl, onClose }) => {
+  if (!imageUrl) return null;
+
+  return (
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-75 z-50 flex justify-center items-center p-4"
+      onClick={onClose} // إغلاق عند الضغط خارج الصورة
+    >
+      <div 
+        className="relative max-w-4xl max-h-full overflow-auto"
+        onClick={e => e.stopPropagation()} // منع إغلاق النافذة عند الضغط داخلها
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-2 text-white text-3xl font-bold bg-gray-900 rounded-full w-10 h-10 flex items-center justify-center hover:bg-red-600 transition"
+        >
+          &times;
+        </button>
+        <img src={imageUrl} alt="صورة مكبرة" className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" />
+      </div>
+    </div>
+  );
+};
+
+
 const EditProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation(); 
-  const { prevPage, prevLimit } = location.state || {}; // جلب الحالة الممررة
+  const { prevPage, prevLimit } = location.state || {};
   const token = localStorage.getItem('token');
 
   const [product, setProduct] = useState({
@@ -32,6 +58,7 @@ const EditProduct = () => {
   const [categories, setCategories] = useState([]);
   const [sections, setSections] = useState([]);
   const [mainImageIndex, setMainImageIndex] = useState(0);
+  const [selectedImage, setSelectedImage] = useState(null); // حالة للنافذة المنبثقة
 
   useEffect(() => {
     const fetchProductData = async () => {
@@ -64,10 +91,12 @@ const EditProduct = () => {
           media: fetchedProduct.media || []
         });
 
+        // تحضير ملفات الميديا الموجودة
         const existingMedia = fetchedProduct.media?.map(m => ({
           url: m.url,
           name: m.url.split('/').pop(),
-          isExisting: true
+          isExisting: true,
+          file: null // لا يوجد كائن ملف لملفات موجودة
         })) || [];
 
         setMediaFiles(existingMedia);
@@ -87,7 +116,16 @@ const EditProduct = () => {
     };
 
     fetchProductData();
-  }, [id]);
+    
+    // وظيفة التنظيف: تحرير عناوين URL المؤقتة
+    return () => {
+      mediaFiles.forEach(file => {
+        if (file.file && file.preview) {
+          URL.revokeObjectURL(file.preview);
+        }
+      });
+    };
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -134,18 +172,28 @@ const EditProduct = () => {
     const files = Array.from(e.target.files).map(file => ({
       file,
       name: file.name,
-      isExisting: false
+      isExisting: false,
+      preview: URL.createObjectURL(file) // إنشاء URL مؤقت للمعاينة
     }));
     setMediaFiles(prev => [...prev, ...files]);
   };
 
   const handleDeleteMedia = (index) => {
+    const fileToDelete = mediaFiles[index];
+    if (fileToDelete.file && fileToDelete.preview) {
+      URL.revokeObjectURL(fileToDelete.preview); // تحرير URL المؤقت إذا كان ملف جديد
+    }
+    
     setMediaFiles(prev => prev.filter((_, i) => i !== index));
     if (mainImageIndex === index) setMainImageIndex(0);
     else if (mainImageIndex > index) setMainImageIndex(prev => prev - 1);
   };
 
   const selectMainImage = (index) => setMainImageIndex(index);
+
+  const getMediaUrl = (file) => {
+    return file.isExisting ? file.url : (file.file ? file.preview : '');
+  };
 
   const uploadImage = async (file) => {
     const formData = new FormData();
@@ -174,23 +222,30 @@ const EditProduct = () => {
     setMessage('');
 
     try {
-      // رفع الصور الجديدة فقط
-      const uploadedMedia = await Promise.all(
-        mediaFiles.map(async (file) => {
-          if (file.isExisting) return { url: file.url, type: 'image', isMain: false };
-          if (!file.file) return null; 
+      // رفع الصور الجديدة فقط والاحتفاظ بعناوين URL للصور الموجودة
+      const uploadedMedia = [];
+      
+      for (let i = 0; i < mediaFiles.length; i++) {
+        const file = mediaFiles[i];
+        if (file.isExisting) {
+          uploadedMedia.push({ url: file.url, type: 'image', isMain: false });
+        } else if (file.file) {
           const url = await uploadImage(file.file);
-          return url ? { url, type: 'image', isMain: false } : null;
-        })
-      ).then(arr => arr.filter(Boolean));
+          if (url) {
+            uploadedMedia.push({ url, type: 'image', isMain: false });
+          }
+        }
+      }
 
-      // تحديد الصورة الرئيسية
-      const mainUrl = uploadedMedia[mainImageIndex]?.url || (mediaFiles[mainImageIndex]?.url || null);
-
-      // تحديث isMain لكل صورة
+      // التأكد من أن مؤشر الصورة الرئيسية لا يتجاوز عدد الصور المرفوعة
+      const finalMainImageIndex = Math.min(mainImageIndex, uploadedMedia.length - 1);
+      
+      // تحديد الصورة الرئيسية وتحديث isMain لكل صورة
+      const mainUrl = uploadedMedia[finalMainImageIndex]?.url || null;
+      
       const mediaPayload = uploadedMedia.map((m, idx) => ({
         ...m,
-        isMain: idx === mainImageIndex
+        isMain: idx === finalMainImageIndex
       }));
 
       const payload = {
@@ -321,6 +376,7 @@ const EditProduct = () => {
                             <SketchPicker
                                 color={color.code}
                                 onChangeComplete={(c) => handleColorChange(colorIndex, 'code', c.hex)}
+                                presetColors={[]}
                             />
                         </div>
                     </div>
@@ -359,35 +415,46 @@ const EditProduct = () => {
 
           {/* الصور */}
           <h2 className="text-xl font-bold mb-2">صور المنتج</h2>
-          <div className="mb-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="mb-4 flex flex-wrap gap-4">
             {mediaFiles.map((file, index) => (
-              <div key={index} className="relative border rounded overflow-hidden">
+              // تم تكبير حجم المعاينة وتفعيل النقر
+              <div 
+                key={index} 
+                className={`relative border-2 rounded overflow-hidden cursor-pointer w-64 h-64 ${index === mainImageIndex ? 'border-red-500' : 'border-gray-300'}`}
+                onClick={() => setSelectedImage(getMediaUrl(file))}
+              >
                 <img
-                  src={file.isExisting ? file.url : file.file ? URL.createObjectURL(file.file) : ''}
+                  src={getMediaUrl(file)}
                   alt={file.name}
-                  className={`w-full h-48 object-cover ${index === mainImageIndex ? 'border-4 border-green-500' : ''}`}
+                  className="w-full h-full object-cover"
                 />
 
-                <div className="absolute top-1 right-1 flex flex-col gap-1">
-                  <button
-                    type="button"
-                    onClick={() => selectMainImage(index)}
-                    className="bg-green-500 text-white text-xs px-1 rounded"
-                  >
-                    رئيسية
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteMedia(index)}
-                    className="bg-red-500 text-white text-xs px-1 rounded"
-                  >
-                    حذف
-                  </button>
+                {index === mainImageIndex && (
+                    <span className="absolute top-0 right-0 bg-red-500 text-white text-sm px-2 py-0.5 rounded-bl font-semibold">رئيسية</span>
+                )}
+                
+                <div className="absolute inset-0 flex flex-col justify-end bg-black bg-opacity-30 opacity-0 hover:opacity-100 transition-opacity rounded">
+                    <div className='flex justify-center gap-1 p-1'>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); selectMainImage(index); }}
+                        className="text-white bg-green-600 hover:bg-green-700 text-xs py-1 px-2 rounded transition-colors"
+                      >
+                        تعيين رئيسية
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleDeleteMedia(index); }}
+                        className="text-white bg-red-600 hover:bg-red-700 text-xs py-1 px-2 rounded transition-colors"
+                      >
+                        حذف
+                      </button>
+                    </div>
                 </div>
               </div>
             ))}
 
-            <div className="border border-dashed rounded flex items-center justify-center h-48 relative">
+            <div className="border border-dashed rounded flex items-center justify-center w-64 h-64 relative">
               <input
                 type="file"
                 accept="image/*"
@@ -416,6 +483,12 @@ const EditProduct = () => {
           </div>
         </form>
       </div>
+
+      {/* إضافة مكون النافذة المنبثقة هنا */}
+      <ImageModal 
+        imageUrl={selectedImage} 
+        onClose={() => setSelectedImage(null)} 
+      />
     </div>
   );
 };

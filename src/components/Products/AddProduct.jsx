@@ -4,6 +4,32 @@ import axios from 'axios';
 import { getAuthHeaders } from '../../config/api';
 import { SketchPicker } from 'react-color';
 
+// المكون الفرعي للنافذة المنبثقة لعرض الصورة الكبيرة
+const ImageModal = ({ imageUrl, onClose }) => {
+  if (!imageUrl) return null;
+
+  return (
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-75 z-50 flex justify-center items-center p-4"
+      onClick={onClose} // إغلاق عند الضغط خارج الصورة
+    >
+      <div 
+        className="relative max-w-4xl max-h-full overflow-auto"
+        onClick={e => e.stopPropagation()} // منع إغلاق النافذة عند الضغط داخلها
+      >
+        <button
+          onClick={onClose}
+          className="absolute top-2 right-2 text-white text-3xl font-bold bg-gray-900 rounded-full w-10 h-10 flex items-center justify-center hover:bg-red-600 transition"
+        >
+          &times;
+        </button>
+        <img src={imageUrl} alt="صورة مكبرة" className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" />
+      </div>
+    </div>
+  );
+};
+
+
 const AddProduct = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
@@ -25,7 +51,9 @@ const AddProduct = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [categories, setCategories] = useState([]);
-  const [mainImageIndex, setMainImageIndex] = useState(0); // لتحديد الصورة الرئيسية
+  const [mainImageIndex, setMainImageIndex] = useState(0); 
+  // حالة جديدة لفتح الصورة المكبرة
+  const [selectedImage, setSelectedImage] = useState(null); 
 
   useEffect(() => {
     const fetchData = async () => {
@@ -45,7 +73,13 @@ const AddProduct = () => {
     };
 
     fetchData();
-  }, []);
+
+    return () => {
+      filesToUpload.forEach(file => {
+        if (file.preview) URL.revokeObjectURL(file.preview);
+      });
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -89,14 +123,21 @@ const AddProduct = () => {
   };
 
   const handleFileChange = (e) => {
-    const newFiles = Array.from(e.target.files);
+    const newFiles = Array.from(e.target.files).map(file => 
+      Object.assign(file, {
+        preview: URL.createObjectURL(file) 
+      })
+    );
     setFilesToUpload(prev => [...prev, ...newFiles]);
   };
 
   const handleDeleteFile = (index) => {
+    const fileToDelete = filesToUpload[index];
+    URL.revokeObjectURL(fileToDelete.preview); 
     setFilesToUpload(prev => prev.filter((_, i) => i !== index));
+    
     if (mainImageIndex === index) setMainImageIndex(0);
-    else if (mainImageIndex > index) setMainImageIndex(prev => prev - 1);
+    else if (mainImageIndex > index) setMainImageIndex(prev => Math.max(0, prev - 1));
   };
 
   const selectMainImage = (index) => {
@@ -136,19 +177,26 @@ const AddProduct = () => {
         return;
       }
 
-      // رفع الصور
       const uploadedUrls = [];
-      for (const file of filesToUpload) {
+      const filesOnly = filesToUpload.map(f => f); 
+      for (const file of filesOnly) {
         const url = await uploadImage(file);
         if (url) uploadedUrls.push(url);
       }
 
-      // تعيين الصورة الرئيسية حسب اختيار المستخدم
-      const mainImageUrl = uploadedUrls[mainImageIndex];
+      if (uploadedUrls.length !== filesToUpload.length) {
+        setMessage('فشل رفع بعض الصور. يرجى المحاولة مرة أخرى.');
+        setLoading(false);
+        return;
+      }
+      
+      const finalMainImageIndex = Math.min(mainImageIndex, uploadedUrls.length - 1);
+      
+      const mainImageUrl = uploadedUrls[finalMainImageIndex];
       const mediaPayload = uploadedUrls.map((url, index) => ({
         url,
         type: 'image',
-        isMain: index === mainImageIndex
+        isMain: index === finalMainImageIndex
       }));
 
       const payload = {
@@ -232,6 +280,8 @@ const AddProduct = () => {
             </div>
           </div>
 
+          ---
+
           {/* التسعير والمخزون */}
           <h2 className="text-xl font-bold mb-4 pb-2 border-b border-gray-200">التسعير والمخزون</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -247,51 +297,88 @@ const AddProduct = () => {
             </div>
           </div>
 
-          {/* رفع الصور */}
+          ---
+
+          {/* رفع الصور ومعاينتها */}
           <h2 className="text-xl font-bold mb-4 pb-2 border-b border-gray-200">صور المنتج</h2>
           <div className="mb-6">
-            {filesToUpload.map((file, index) => (
-              <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded border mb-2">
-                <span>{file.name} {index === mainImageIndex && "(رئيسية)"}</span>
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => selectMainImage(index)} className="text-green-500">تعيين رئيسية</button>
-                  <button type="button" onClick={() => handleDeleteFile(index)} className="text-red-500">حذف</button>
+            <input type="file" accept="image/*" multiple onChange={handleFileChange} className="mt-2 mb-4" />
+
+            <div className="flex flex-wrap gap-4">
+              {filesToUpload.map((file, index) => (
+                // تم تكبير حجم المعاينة إلى 40x40
+                <div key={index} 
+                  className={`relative w-40 h-40 border-2 rounded p-1 cursor-pointer transition-all duration-200 hover:shadow-lg ${index === mainImageIndex ? 'border-red-500' : 'border-gray-300'}`}
+                  // عند الضغط على الصورة، يتم فتح النافذة المنبثقة
+                  onClick={() => setSelectedImage(file.preview)} 
+                >
+                  <img src={file.preview} alt={`معاينة ${file.name}`} className="w-full h-full object-cover rounded" />
+                  
+                  {index === mainImageIndex && (
+                    <span className="absolute top-0 right-0 bg-red-500 text-white text-sm px-2 py-0.5 rounded-bl font-semibold">رئيسية</span>
+                  )}
+
+                  <div className="absolute inset-0 flex flex-col justify-end bg-black bg-opacity-30 opacity-0 hover:opacity-100 transition-opacity rounded">
+                    <div className='flex justify-center gap-1 p-1'>
+                      <button type="button" onClick={(e) => { e.stopPropagation(); selectMainImage(index); }} className="text-white bg-green-600 hover:bg-green-700 text-xs py-1 px-2 rounded transition-colors">
+                        تعيين رئيسية
+                      </button>
+                      <button type="button" onClick={(e) => { e.stopPropagation(); handleDeleteFile(index); }} className="text-white bg-red-600 hover:bg-red-700 text-xs py-1 px-2 rounded transition-colors">
+                        حذف
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
-            <input type="file" accept="image/*" multiple onChange={handleFileChange} className="mt-2" />
+              ))}
+            </div>
+            
           </div>
+
+          ---
 
           {/* الألوان والمقاسات */}
           <h2 className="text-xl font-bold mb-4 pb-2 border-b border-gray-200">الألوان والمقاسات</h2>
           {product.colors.map((color, colorIndex) => (
             <div key={colorIndex} className="border p-4 rounded mb-4">
-              <div className="flex gap-2 mb-2">
-                <input type="text" placeholder="اسم اللون" value={color.name} onChange={(e) => handleColorChange(colorIndex, 'name', e.target.value)} className="border p-2 rounded w-1/3" />
-                <input type="text" placeholder="كود اللون" value={color.code} onChange={(e) => handleColorChange(colorIndex, 'code', e.target.value)} className="border p-2 rounded w-1/3" />
-                <input type="number" placeholder="المخزون الكلي" value={color.stock} onChange={(e) => handleColorChange(colorIndex, 'stock', Number(e.target.value))} className="border p-2 rounded w-1/3" />
+              <div className="flex flex-wrap gap-3 mb-4 items-center">
+                <input type="text" placeholder="اسم اللون" value={color.name} onChange={(e) => handleColorChange(colorIndex, 'name', e.target.value)} className="border p-2 rounded flex-grow min-w-[150px]" />
+                <input type="text" placeholder="كود اللون (مثال: #ff0000)" value={color.code} onChange={(e) => handleColorChange(colorIndex, 'code', e.target.value)} className="border p-2 rounded flex-grow min-w-[150px]" />
+                <input type="number" placeholder="المخزون الكلي" value={color.stock} onChange={(e) => handleColorChange(colorIndex, 'stock', e.target.value)} className="border p-2 rounded flex-grow min-w-[150px]" />
+                <button type="button" onClick={() => deleteColor(colorIndex)} className="text-white bg-red-600 p-2 rounded hover:bg-red-700 transition-colors">حذف اللون</button>
               </div>
-              <SketchPicker color={color.code} onChange={(updatedColor) => handleColorChange(colorIndex, 'code', updatedColor.hex)} />
-              <div className="mt-2">
-                <button type="button" onClick={() => addSize(colorIndex)} className="text-blue-500">+ إضافة مقاس</button>
-                {color.sizes.map((size, sizeIndex) => (
-                  <div key={sizeIndex} className="flex gap-2 mt-2">
-                    <input type="text" placeholder="المقاس" value={size.size} onChange={(e) => handleSizeChange(colorIndex, sizeIndex, 'size', e.target.value)} className="border p-2 rounded w-1/2" />
-                    <input type="number" placeholder="المخزون" value={size.stock} onChange={(e) => handleSizeChange(colorIndex, sizeIndex, 'stock', Number(e.target.value))} className="border p-2 rounded w-1/2" />
-                    <button type="button" onClick={() => deleteSize(colorIndex, sizeIndex)} className="text-red-500">حذف</button>
-                  </div>
-                ))}
+              
+              <div className="flex flex-wrap gap-4 mb-4">
+                <div className='max-w-xs'>
+                  <SketchPicker color={color.code} onChange={(updatedColor) => handleColorChange(colorIndex, 'code', updatedColor.hex)} presetColors={[]} />
+                </div>
+
+                <div className='flex-grow min-w-[250px]'>
+                  <h3 className="font-semibold mb-2">المقاسات المحددة لهذا اللون:</h3>
+                  <button type="button" onClick={() => addSize(colorIndex)} className="text-blue-500 mb-2 border border-blue-500 p-1 rounded hover:bg-blue-50 transition-colors">+ إضافة مقاس</button>
+                  {color.sizes.map((size, sizeIndex) => (
+                    <div key={sizeIndex} className="flex gap-2 mt-2 items-center">
+                      <input type="text" placeholder="اسم المقاس" value={size.size} onChange={(e) => handleSizeChange(colorIndex, sizeIndex, 'size', e.target.value)} className="border p-2 rounded w-2/5" />
+                      <input type="number" placeholder="المخزون لهذا المقاس" value={size.stock} onChange={(e) => handleSizeChange(colorIndex, sizeIndex, 'stock', e.target.value)} className="border p-2 rounded w-2/5" />
+                      <button type="button" onClick={() => deleteSize(colorIndex, sizeIndex)} className="text-red-500 hover:text-red-700 w-1/5">حذف</button>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <button type="button" onClick={() => deleteColor(colorIndex)} className="mt-2 text-red-600">حذف اللون</button>
             </div>
           ))}
-          <button type="button" onClick={addColor} className="mb-4 text-blue-500">+ إضافة لون</button>
+          <button type="button" onClick={addColor} className="mb-6 text-white bg-blue-500 p-2 rounded hover:bg-blue-600 transition-colors">+ إضافة لون</button>
 
-          <button type="submit" disabled={loading} className="w-full bg-red-500 text-white p-2 rounded hover:bg-red-600 transition-colors">
+          <button type="submit" disabled={loading} className="w-full bg-red-500 text-white p-3 rounded hover:bg-red-600 transition-colors font-bold text-lg">
             {loading ? 'جاري الإضافة...' : 'إضافة المنتج'}
           </button>
         </form>
       </div>
+
+      {/* إضافة مكون النافذة المنبثقة هنا */}
+      <ImageModal 
+        imageUrl={selectedImage} 
+        onClose={() => setSelectedImage(null)} 
+      />
     </div>
   );
 };
